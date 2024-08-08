@@ -7,28 +7,17 @@ import "suave-std/Context.sol";
 import "suave-std/Transactions.sol";
 import "suave-std/suavelib/Suave.sol";
 
+import "./interfaces/ITransferableAccountStore.sol";
 import "./lib/EllipticCurve.sol";
 import "./lib/Utils.sol";
 
-contract TransferableAccountStore is Suapp {
+contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     uint256 public constant GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
     uint256 public constant GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
     uint256 public constant AA = 0;
     uint256 public constant BB = 7;
     uint256 public constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
     string public KEY_FA = "KEY";
-
-    struct Account {
-        Suave.DataId accountId;
-        address creator;
-        address owner;
-        address ethereumAddress;
-        uint256 publicKeyX;
-        uint256 publicKeyY;
-        address[] approvedAddresses;
-        // for debug
-        string key;
-    }
 
     struct Approval {
         mapping(address => bool) approvedAddresses;
@@ -37,12 +26,6 @@ contract TransferableAccountStore is Suapp {
     mapping(string => Account) public accountsStore;
     mapping(string => Suave.DataId) public accountIdStore;
     mapping(string => Approval) internal approvals;
-
-    event AccountCreated(string accountId, Account account);
-    event AccountTransferred(string accountId, Account account);
-    event Signature(string accountId, bytes signature);
-    event AddressApproved(string accountId, address approvedAddress);
-    event AddressRevoked(string accountId, address revokedAddress);
 
     modifier onlyApproved(string memory accountId) {
         require(isApproved(accountId, msg.sender), "Address not approved");
@@ -70,11 +53,6 @@ contract TransferableAccountStore is Suapp {
 
     function getAccount(string memory accountId) public view returns (Account memory) {
         return accountsStore[accountId];
-    }
-
-    function getEthereumAddress(string memory accountId) public view returns (address) {
-        Account storage account = accountsStore[accountId];
-        return account.ethereumAddress;
     }
 
     function approveAddressCallback(string memory accountId, address _address) public emitOffchainLogs {
@@ -134,7 +112,6 @@ contract TransferableAccountStore is Suapp {
             accountId: record.id,
             creator: msg.sender,
             owner: msg.sender,
-            ethereumAddress: generateEthereumAddress(Utils.hexStringToUint256(keyData)),
             publicKeyX: x,
             publicKeyY: y,
             approvedAddresses: approvedAddresses,
@@ -176,18 +153,7 @@ contract TransferableAccountStore is Suapp {
         return signature;
     }
 
-    function generatePublicKey(uint256 privKey) public pure returns (uint256, uint256) {
+    function generatePublicKey(uint256 privKey) private pure returns (uint256, uint256) {
         return EllipticCurve.ecMul(privKey, GX, GY, AA, PP);
-    }
-
-    function generateEthereumAddress(uint256 privKey) public pure returns (address) {
-        (uint256 x, uint256 y) = generatePublicKey(privKey);
-        bytes memory publicKey = abi.encodePacked(x, y);
-
-        // Perform Keccak-256 hashing
-        bytes32 hashedKey = keccak256(publicKey);
-
-        // Take the last 20 bytes of the hashed key as the Ethereum address
-        return address(uint160(uint256(hashedKey)));
     }
 }
