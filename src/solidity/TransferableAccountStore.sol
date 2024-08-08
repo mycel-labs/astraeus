@@ -12,6 +12,9 @@ import "./lib/EllipticCurve.sol";
 import "./lib/Utils.sol";
 
 contract TransferableAccountStore is Suapp, ITransferableAccountStore {
+    /**
+     * Constants
+     */
     uint256 public constant GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
     uint256 public constant GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
     uint256 public constant AA = 0;
@@ -27,11 +30,24 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     mapping(string => Suave.DataId) public accountIdStore;
     mapping(string => Approval) internal approvals;
 
+    /**
+     * Modifiers
+     */
     modifier onlyApproved(string memory accountId) {
         require(isApproved(accountId, msg.sender), "Address not approved");
         _;
     }
 
+    /**
+     * Functions
+     */
+
+    /**
+     * @dev Check if an address is approved for a given account
+     * @param accountId The account ID
+     * @param _address The address to check
+     * @return bool Whether the address is approved
+     */
     function isApproved(string memory accountId, address _address) public view returns (bool) {
         Account storage account = accountsStore[accountId];
         for (uint256 i = 0; i < account.approvedAddresses.length; i++) {
@@ -42,6 +58,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return false;
     }
 
+    /**
+     * @dev Check if an address is the owner of a given account
+     * @param accountId The account ID
+     * @param _address The address to check
+     * @return bool Whether the address is the owner
+     */
     function isOwner(string memory accountId, address _address) public view returns (bool) {
         Account storage account = accountsStore[accountId];
         if (account.owner == _address) {
@@ -51,22 +73,43 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return false;
     }
 
+    /**
+     * @dev Get an account by its ID
+     * @param accountId The account ID
+     * @return Account The account
+     */
     function getAccount(string memory accountId) public view returns (Account memory) {
         return accountsStore[accountId];
     }
 
+    /**
+     * @dev Approve an address for a given account
+     * @param accountId The account ID
+     * @param _address The address to approve
+     */
     function approveAddressCallback(string memory accountId, address _address) public emitOffchainLogs {
         Account storage account = accountsStore[accountId];
         account.approvedAddresses.push(_address);
         emit AddressApproved(accountId, _address);
     }
 
+    /**
+     * @dev Approve an address for a given account
+     * @param accountId The account ID
+     * @param _address The address to approve
+     * @return bytes The encoded callback data
+     */
     function approveAddress(string memory accountId, address _address) public view returns (bytes memory) {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(accountId, _address));
     }
 
+    /**
+     * @dev Revoke an address for a given account
+     * @param accountId The account ID
+     * @param _address The address to revoke
+     */
     function revokeAddress(string memory accountId, address _address) public {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
@@ -83,7 +126,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         }
     }
 
-    function storeAccount(Account memory account) public returns (string memory) {
+    /**
+     * @dev Store an account in the store
+     * @param account The account to store
+     * @return string The account ID
+     */
+    function storeAccount(Account memory account) internal returns (string memory) {
         string memory accountId = Utils.iToHex(abi.encodePacked(account.accountId));
         accountsStore[accountId] = account;
         accountIdStore[accountId] = account.accountId;
@@ -91,11 +139,20 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return accountId;
     }
 
+    /**
+     * @dev Create an account
+     * @param account The account to create
+     * @return string The account ID
+     */
     function createAccountCallback(Account memory account) public emitOffchainLogs returns (string memory) {
         string memory accountId = storeAccount(account);
         return accountId;
     }
 
+    /**
+     * @dev Create an account
+     * @return bytes The encoded callback data
+     */
     function createAccount() public returns (bytes memory) {
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
@@ -121,6 +178,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
     }
 
+    /**
+     * @dev Transfer an account to another address
+     * @param to The address to transfer the account to
+     * @param accountId The account ID
+     */
     function transferAccountCallback(address to, string memory accountId) public onlyApproved(accountId) {
         Account storage account = accountsStore[accountId];
         require(account.creator != address(0), "Account not found");
@@ -134,12 +196,24 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emit AccountTransferred(accountId, account);
     }
 
+    /**
+     * @dev Transfer an account to another address
+     * @param to The address to transfer the account to
+     * @param accountId The account ID
+     * @return bytes The encoded callback data
+     */
     function transferAccount(address to, string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }
 
     function signCallback() public emitOffchainLogs {}
 
+    /**
+     * @dev Sign data
+     * @param accountId The account ID
+     * @param data The data to sign
+     * @return bytes The encoded callback data
+     */
     function sign(Suave.DataId accountId, bytes memory data) public returns (bytes memory) {
         bytes memory signingKey = Suave.confidentialRetrieve(accountId, KEY_FA);
         bytes memory signature = signData(data, string(signingKey));
@@ -148,11 +222,23 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return abi.encodePacked(this.signCallback.selector);
     }
 
+    /**
+     * @dev Sign data
+     * @param data The data to sign
+     * @param privateKeyString The private key to sign the data with
+     * @return bytes The signature
+     */
     function signData(bytes memory data, string memory privateKeyString) private returns (bytes memory) {
         bytes memory signature = Suave.signMessage(data, Suave.CryptoSignature.SECP256, privateKeyString);
         return signature;
     }
 
+    /**
+     * @dev Generate a public key from a private key
+     * @param privKey The private key
+     * @return uint256 The x coordinate of the public key
+     * @return uint256 The y coordinate of the public key
+     */
     function generatePublicKey(uint256 privKey) private pure returns (uint256, uint256) {
         return EllipticCurve.ecMul(privKey, GX, GY, AA, PP);
     }
