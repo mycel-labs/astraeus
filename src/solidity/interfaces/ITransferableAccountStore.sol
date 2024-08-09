@@ -14,6 +14,12 @@ interface ITransferableAccountStore {
         uint256 nonce;
     }
 
+    struct TimeLock {
+        uint256 expiresAt;
+        address lockedBy;
+        address unlockTo;
+    }
+
     struct EIP712Domain {
         string name;
         string version;
