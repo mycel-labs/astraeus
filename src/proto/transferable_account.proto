@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package account;
+
+// Structs
+message Account {
+    string account_id = 1;
+    string owner = 2;
+    uint64 public_key_x = 3;
+    uint64 public_key_y = 4;
+    string key = 5;
+    uint64 nonce = 6;
+}
+
+message TimeLock {
+    uint64 expires_at = 1;
+    string locked_by = 2;
+    string unlock_to = 3;
+}
+
+message EIP712Domain {
+    string name = 1;
+    string version = 2;
+    uint64 chain_id = 3;
+    string verifying_contract = 4;
+}
+
+message Proof {
+    string owner = 1;
+    uint64 nonce = 2;
+    uint64 deadline = 3;
+}
+
+// Requests
+message CreateAccountRequest {}
+message TransferAccountRequest {
+    string to = 1;
+    string account_id = 2;
+}
+message LockAccountRequest {
+    string account_id = 1;
+}
+message UnlockAccountRequest {
+    string account_id = 1;
+}
+message ApproveAddressRequest {
+    string account_id = 1;
+    string address = 2;
+}
+message RevokeApprovalRequest {
+    string account_id = 1;
+    string address = 2;
+}
+message SignRequest {
+    string account_id = 1;
+    bytes data = 2;
+}
+message VerifyProofRequest {
+    string owner = 1;
+    uint64 nonce = 2;
+    uint64 deadline = 3;
+    uint32 v = 4;
+    bytes r = 5;
+    bytes s = 6;
+}
+
+// Responses
+message AccountResponse {
+    string status = 1;
+    string message = 2;
+    Account account = 3;
+}
+
+message BoolResponse {
+    bool result = 1;
+}
+
+message BytesResponse {
+    bytes data = 1;
+}
+
+message UInt64Response {
+    uint64 value = 1;
+}
+
+// Service
+service AccountService {
+    rpc CreateAccount(CreateAccountRequest) returns (BytesResponse);
+    rpc TransferAccount(TransferAccountRequest) returns (BytesResponse);
+    rpc LockAccount(LockAccountRequest) returns (BytesResponse);
+    rpc UnlockAccount(UnlockAccountRequest) returns (BytesResponse);
+    rpc ApproveAddress(ApproveAddressRequest) returns (BytesResponse);
+    rpc RevokeApproval(RevokeApprovalRequest) returns (BoolResponse);
+    rpc Sign(SignRequest) returns (BytesResponse);
+    rpc VerifyProof(VerifyProofRequest) returns (BoolResponse);
+    rpc GetAccount(string) returns (AccountResponse);
+    rpc IsApproved(ApproveAddressRequest) returns (BoolResponse);
+    rpc IsOwner(ApproveAddressRequest) returns (BoolResponse);
+    rpc IsLocked(string) returns (BoolResponse);
+    rpc GetDomainSeparator() returns (BytesResponse);
+    rpc GetNonce(string) returns (UInt64Response);
+}
