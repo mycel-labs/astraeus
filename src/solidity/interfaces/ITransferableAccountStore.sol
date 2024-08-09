@@ -19,17 +19,12 @@ interface ITransferableAccountStore {
         address unlockTo;
     }
 
-    struct EIP712Domain {
-        string name;
-        string version;
-        uint256 chainId;
-        address verifyingContract;
-    }
-
-    struct Proof {
-        address owner;
-        uint256 nonce;
-        uint256 deadline;
+    struct TimedSignature {
+        uint256 timestamp;
+        bytes32 messageHash;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
     // Events
@@ -47,7 +42,6 @@ interface ITransferableAccountStore {
     function isOwner(string memory accountId, address _address) external view returns (bool);
     function isLocked(string memory accountId) external view returns (bool);
     function getLock(string memory accountId) external view returns (TimeLock memory);
-    function getDomainSeparator() external view returns (bytes32);
 
     // Actions
     function createAccount() external returns (bytes memory);
@@ -59,7 +53,7 @@ interface ITransferableAccountStore {
     function revokeApproval(string memory accountId, address _address) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
-    function verifyProof(address owner, uint256 nonce, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature)
         external
         view
         returns (bool);
