@@ -10,7 +10,6 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        address[] approvedAddresses;
         string key;
         uint256 nonce;
     }
@@ -32,10 +31,10 @@ interface ITransferableAccountStore {
     event AccountCreated(string accountId, Account account);
     event AccountTransferred(string accountId, Account account);
     event AddressApproved(string accountId, address approvedAddress);
-    event AddressRevoked(string accountId, address revokedAddress);
-    event Signature(string accountId, bytes signature);
+    event ApprovalRevoked(string accountId, address revokedAddress);
     event AccountLocked(string accountId);
     event AccountUnlocked(string accountId);
+    event Signature(string accountId, bytes signature);
 
     // Getters
     function getAccount(string memory accountId) external view returns (Account memory);
@@ -51,7 +50,7 @@ interface ITransferableAccountStore {
     function unlockAccount(string memory accountId) external returns (bytes memory);
 
     function approveAddress(string memory accountId, address _address) external view returns (bytes memory);
-    function revokeAddress(string memory accountId, address _address) external;
+    function revokeApproval(string memory accountId, address _address) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
     function verifyProof(address owner, uint256 nonce, uint256 deadline, uint8 v, bytes32 r, bytes32 s)

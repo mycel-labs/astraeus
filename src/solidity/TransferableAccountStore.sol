@@ -22,13 +22,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     uint256 public constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
     string public KEY_FA = "KEY";
 
-    struct Approval {
-        mapping(address => bool) approvedAddresses;
-    }
-
     mapping(string => Account) public accountsStore;
-    mapping(string => Suave.DataId) public accountIdStore;
-    mapping(string => Approval) internal approvals;
+    mapping(Suave.DataId => address) public accountApprovals;
 
     /**
      * Modifiers
@@ -50,12 +45,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function isApproved(string memory accountId, address _address) public view returns (bool) {
         Account storage account = accountsStore[accountId];
-        for (uint256 i = 0; i < account.approvedAddresses.length; i++) {
-            if (account.approvedAddresses[i] == _address) {
-                return true;
-            }
-        }
-        return false;
+        return accountApprovals[account.accountId] == _address;
     }
 
     /**
@@ -87,10 +77,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to approve
      */
-    function approveAddressCallback(string memory accountId, address _address) public emitOffchainLogs {
-        Account storage account = accountsStore[accountId];
-        account.approvedAddresses.push(_address);
-        emit AddressApproved(accountId, _address);
+    function approveAddressCallback(Suave.DataId accountId, address _address) public emitOffchainLogs {
+        accountApprovals[accountId] = _address;
+        emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }
 
     /**
@@ -102,7 +91,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function approveAddress(string memory accountId, address _address) public view returns (bytes memory) {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
-        return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(accountId, _address));
+        return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
     }
 
     /**
@@ -110,20 +99,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeAddress(string memory accountId, address _address) public {
+    function revokeApproval(string memory accountId, address _address) public {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
-
-        // Remove address from approvedAddresses
-        uint256 length = account.approvedAddresses.length;
-        for (uint256 i = 0; i < length; i++) {
-            if (account.approvedAddresses[i] == _address) {
-                account.approvedAddresses[i] = account.approvedAddresses[length - 1];
-                account.approvedAddresses.pop();
-                emit AddressRevoked(accountId, _address);
-                break;
-            }
-        }
+        delete accountApprovals[account.accountId];
+        emit ApprovalRevoked(accountId, _address);
     }
 
     /**
@@ -134,7 +114,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function storeAccount(Account memory account) internal returns (string memory) {
         string memory accountId = Utils.iToHex(abi.encodePacked(account.accountId));
         accountsStore[accountId] = account;
-        accountIdStore[accountId] = account.accountId;
         emit AccountCreated(accountId, account);
         return accountId;
     }
@@ -171,8 +150,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
             owner: msg.sender,
             publicKeyX: x,
             publicKeyY: y,
-            approvedAddresses: approvedAddresses,
-            key: keyData
+            key: keyData,
+            nonce: 0
         });
 
         return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
@@ -190,8 +169,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         account.owner = to;
 
         // Reset approved addresses
-        delete account.approvedAddresses;
-        account.approvedAddresses.push(to);
+        delete accountApprovals[account.accountId];
 
         emit AccountTransferred(accountId, account);
     }
