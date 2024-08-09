@@ -46,6 +46,7 @@ interface ITransferableAccountStore {
     function isApproved(string memory accountId, address _address) external view returns (bool);
     function isOwner(string memory accountId, address _address) external view returns (bool);
     function isLocked(string memory accountId) external view returns (bool);
+    function getLock(string memory accountId) external view returns (TimeLock memory);
     function getDomainSeparator() external view returns (bytes32);
 
     // Actions
