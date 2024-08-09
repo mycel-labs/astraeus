@@ -12,6 +12,20 @@ interface ITransferableAccountStore {
         uint256 publicKeyY;
         address[] approvedAddresses;
         string key;
+        uint256 nonce;
+    }
+
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+        address verifyingContract;
+    }
+
+    struct Proof {
+        address owner;
+        uint256 nonce;
+        uint256 deadline;
     }
 
     // Events
@@ -20,18 +34,29 @@ interface ITransferableAccountStore {
     event AddressApproved(string accountId, address approvedAddress);
     event AddressRevoked(string accountId, address revokedAddress);
     event Signature(string accountId, bytes signature);
+    event AccountLocked(string accountId);
+    event AccountUnlocked(string accountId);
 
     // Getters
     function getAccount(string memory accountId) external view returns (Account memory);
     function isApproved(string memory accountId, address _address) external view returns (bool);
     function isOwner(string memory accountId, address _address) external view returns (bool);
+    function isLocked(string memory accountId) external view returns (bool);
+    function getDomainSeparator() external view returns (bytes32);
 
     // Actions
     function createAccount() external returns (bytes memory);
     function transferAccount(address to, string memory accountId) external pure returns (bytes memory);
+    function lockAccount(string memory accountId) external returns (bytes memory);
+    function unlockAccount(string memory accountId) external returns (bytes memory);
 
     function approveAddress(string memory accountId, address _address) external view returns (bytes memory);
     function revokeAddress(string memory accountId, address _address) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
+    function verifyProof(address owner, uint256 nonce, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+        view
+        returns (bool);
+    function getNonce(string memory accountId) external view returns (uint256);
 }
