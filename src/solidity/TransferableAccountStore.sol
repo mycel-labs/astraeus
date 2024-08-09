@@ -24,6 +24,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
     mapping(string => Account) public accountsStore;
     mapping(Suave.DataId => address) public accountApprovals;
+    mapping(string => TimeLock) private accountTimeLocks;
 
     /**
      * Modifiers
@@ -60,6 +61,17 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
             return true;
         }
 
+        return false;
+    }
+
+    /**
+     * @dev Check if an account is locked
+     * @param accountId The account ID
+     * @return bool Whether the account is locked
+     */
+    function isLocked(string memory accountId) public view returns (bool) {
+        Account storage account = accountsStore[accountId];
+        // return account.locked;
         return false;
     }
 

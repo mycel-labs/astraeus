@@ -6,7 +6,6 @@ import "suave-std/suavelib/Suave.sol";
 interface ITransferableAccountStore {
     struct Account {
         Suave.DataId accountId;
-        address creator;
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
