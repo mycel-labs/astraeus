@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "suave-std/suavelib/Suave.sol";
+import "../lib/SignatureVerifier.sol";
 
 interface ITransferableAccountStore {
     struct Account {
@@ -35,14 +36,30 @@ interface ITransferableAccountStore {
     function getLock(string memory accountId) external view returns (TimeLock memory);
 
     // Actions
-    function createAccount() external returns (bytes memory);
-    function transferAccount(address to, string memory accountId) external pure returns (bytes memory);
-    function deleteAccount(string memory accountId) external returns (bytes memory);
-    function lockAccount(string memory accountId) external returns (bytes memory);
-    function unlockAccount(string memory accountId) external returns (bytes memory);
+    function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
+    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
+        external
+        returns (bytes memory);
+    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
+    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
+        external
+        returns (bytes memory);
+    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
 
-    function approveAddress(string memory accountId, address _address) external view returns (bytes memory);
-    function revokeApproval(string memory accountId, address _address) external;
+    function approveAddress(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external returns (bytes memory);
+    function revokeApproval(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
 }
