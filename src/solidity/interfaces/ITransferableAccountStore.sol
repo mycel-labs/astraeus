@@ -25,6 +25,7 @@ interface ITransferableAccountStore {
     event ApprovalRevoked(string accountId, address revokedAddress);
     event AccountLocked(string accountId);
     event AccountUnlocked(string accountId);
+    event AccountDeleted(string accountId);
     event Signature(string accountId, bytes signature);
 
     // Getters
