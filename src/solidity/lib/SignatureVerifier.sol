@@ -50,3 +50,4 @@ library SignatureVerifier {
 
         require(v == 27 || v == 28, "Invalid signature 'v' value");
     }
+}
