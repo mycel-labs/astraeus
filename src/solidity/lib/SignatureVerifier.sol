@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {ISignatureVerifier} from "./interfaces/ISignatureVerifier.sol";
+library SignatureVerifier {
+    struct TimedSignature {
+        uint256 validFor;
+        bytes32 messageHash;
+        bytes signature;
+    }
 
-contract SignatureVerifier is ISignatureVerifier {
-    function hashMessage(uint256 validFor, address sender) public pure returns (bytes32) {
+    event SignatureFailed(bytes32 messageHash, address signer, uint256 validFor);
+    event SignatureVerified(bytes32 messageHash, address signer, uint256 validFor);
+
+    function hashMessage(uint256 validFor, address sender) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(validFor, sender));
     }
 
-    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature)
-        external
+    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature, address signer)
+        internal
         view
         returns (bool)
     {
         require(block.timestamp <= validFor, "Signature has expired");
 
         // Recalculate the message hash
-        bytes32 calculatedHash = hashMessage(validFor, msg.sender);
+        bytes32 calculatedHash = hashMessage(validFor, signer);
         require(messageHash == calculatedHash, "Invalid message hash");
 
         // Verify the signature
@@ -24,7 +31,7 @@ contract SignatureVerifier is ISignatureVerifier {
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
         address recoveredSigner = ecrecover(ethSignedMessageHash, v, r, s);
 
-        return recoveredSigner == msg.sender;
+        return recoveredSigner == signer;
     }
 
     function splitSignature(bytes memory sig) internal pure returns (bytes32 r, bytes32 s, uint8 v) {
@@ -42,4 +49,3 @@ contract SignatureVerifier is ISignatureVerifier {
 
         require(v == 27 || v == 28, "Invalid signature 'v' value");
     }
-}

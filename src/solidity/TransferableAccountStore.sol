@@ -10,8 +10,11 @@ import "suave-std/suavelib/Suave.sol";
 import "./interfaces/ITransferableAccountStore.sol";
 import "./lib/EllipticCurve.sol";
 import "./lib/Utils.sol";
+import "./lib/SignatureVerifier.sol";
 
 contract TransferableAccountStore is Suapp, ITransferableAccountStore {
+    using SignatureVerifier for SignatureVerifier.TimedSignature;
+
     /**
      * Constants
      */
