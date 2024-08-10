@@ -6,6 +6,7 @@ library SignatureVerifier {
         uint256 validFor;
         bytes32 messageHash;
         bytes signature;
+        address signer;
     }
 
     event SignatureFailed(bytes32 messageHash, address signer, uint256 validFor);
