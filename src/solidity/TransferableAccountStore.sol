@@ -71,8 +71,17 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function isLocked(string memory accountId) public view returns (bool) {
         Account storage account = accountsStore[accountId];
-        // return account.locked;
+        // TODO: Implement locking
         return false;
+    }
+
+    /**
+     * @dev Get the lock for an account
+     * @param accountId The account ID
+     * @return TimeLock The lock
+     */
+    function getLock(string memory accountId) public view returns (TimeLock memory) {
+        return accountTimeLocks[accountId];
     }
 
     /**
@@ -185,6 +194,40 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function transferAccount(address to, string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
+    }
+
+    /**
+     * @dev Delete an account
+     * @param accountId The account ID
+     */
+    function deleteAccountCallback(string memory accountId) public onlyApproved(accountId) {
+        delete accountsStore[accountId];
+        emit AccountDeleted(accountId);
+    }
+
+    /**
+     * @dev Delete an account
+     * @param accountId The account ID
+     * @return bytes The encoded callback data
+     */
+    function deleteAccount(string memory accountId) public pure returns (bytes memory) {
+        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
+    }
+
+    function lockAccountCallback(string memory accountId) public onlyApproved(accountId) {
+        // TODO: Implement locking
+    }
+
+    function lockAccount(string memory accountId) public pure returns (bytes memory) {
+        return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
+    }
+
+    function unlockAccountCallback(string memory accountId) public onlyApproved(accountId) {
+        // TODO: Implement unlocking
+    }
+
+    function unlockAccount(string memory accountId) public pure returns (bytes memory) {
+        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
     function signCallback() public emitOffchainLogs {}
