@@ -70,9 +70,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return bool Whether the account is locked
      */
     function isLocked(string memory accountId) public view returns (bool) {
-        Account storage account = accountsStore[accountId];
-        // TODO: Implement locking
-        return false;
+        TimeLock memory lock = accountTimeLocks[accountId];
+        return (lock.lockUntil > block.timestamp);
     }
 
     /**
@@ -214,18 +213,41 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
-    function lockAccountCallback(string memory accountId) public onlyApproved(accountId) {
-        // TODO: Implement locking
+    /**
+     * @dev Lock an account
+     * @param accountId The account ID
+     * @param duration The duration to lock the account for
+     */
+    function lockAccountCallback(string memory accountId, uint256 duration) public onlyApproved(accountId) {
+        require(!isLocked(accountId), "Account is already locked");
+        accountTimeLocks[accountId] = TimeLock({lockUntil: block.timestamp + duration, lockedBy: msg.sender});
+        emit AccountLocked(accountId, duration);
     }
 
+    /**
+     * @dev Lock an account
+     * @param accountId The account ID
+     * @return bytes The encoded callback data
+     */
     function lockAccount(string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
     }
 
+    /**
+     * @dev Unlock an account
+     * @param accountId The account ID
+     */
     function unlockAccountCallback(string memory accountId) public onlyApproved(accountId) {
-        // TODO: Implement unlocking
+        require(isLocked(accountId), "Account is not locked");
+        delete accountTimeLocks[accountId];
+        emit AccountUnlocked(accountId);
     }
 
+    /**
+     * @dev Unlock an account
+     * @param accountId The account ID
+     * @return bytes The encoded callback data
+     */
     function unlockAccount(string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }

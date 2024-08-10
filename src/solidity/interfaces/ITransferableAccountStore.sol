@@ -13,9 +13,8 @@ interface ITransferableAccountStore {
     }
 
     struct TimeLock {
-        uint256 expiresAt;
+        uint256 lockUntil;
         address lockedBy;
-        address unlockTo;
     }
 
     // Events
@@ -23,7 +22,7 @@ interface ITransferableAccountStore {
     event AccountTransferred(string accountId, Account account);
     event AddressApproved(string accountId, address approvedAddress);
     event ApprovalRevoked(string accountId, address revokedAddress);
-    event AccountLocked(string accountId);
+    event AccountLocked(string accountId, uint256 duration);
     event AccountUnlocked(string accountId);
     event AccountDeleted(string accountId);
     event Signature(string accountId, bytes signature);
