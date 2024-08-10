@@ -156,15 +156,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address[] memory approvedAddresses = new address[](1);
         approvedAddresses[0] = msg.sender;
 
-        Account memory account = Account({
-            accountId: record.id,
-            creator: msg.sender,
-            owner: msg.sender,
-            publicKeyX: x,
-            publicKeyY: y,
-            key: keyData,
-            nonce: 0
-        });
+        Account memory account =
+            Account({accountId: record.id, owner: msg.sender, publicKeyX: x, publicKeyY: y, key: keyData});
 
         return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
     }
@@ -176,8 +169,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function transferAccountCallback(address to, string memory accountId) public onlyApproved(accountId) {
         Account storage account = accountsStore[accountId];
-        require(account.creator != address(0), "Account not found");
-        require(account.owner == account.creator, "Account already transferred");
         account.owner = to;
 
         // Reset approved addresses
