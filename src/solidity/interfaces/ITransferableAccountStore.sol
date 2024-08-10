@@ -37,6 +37,7 @@ interface ITransferableAccountStore {
     // Actions
     function createAccount() external returns (bytes memory);
     function transferAccount(address to, string memory accountId) external pure returns (bytes memory);
+    function deleteAccount(string memory accountId) external returns (bytes memory);
     function lockAccount(string memory accountId) external returns (bytes memory);
     function unlockAccount(string memory accountId) external returns (bytes memory);
 
