@@ -10,21 +10,12 @@ interface ITransferableAccountStore {
         uint256 publicKeyX;
         uint256 publicKeyY;
         string key;
-        uint256 nonce;
     }
 
     struct TimeLock {
         uint256 expiresAt;
         address lockedBy;
         address unlockTo;
-    }
-
-    struct TimedSignature {
-        uint256 timestamp;
-        bytes32 messageHash;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
     }
 
     // Events
@@ -53,9 +44,4 @@ interface ITransferableAccountStore {
     function revokeApproval(string memory accountId, address _address) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
-    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature)
-        external
-        view
-        returns (bool);
-    function getNonce(string memory accountId) external view returns (uint256);
 }
