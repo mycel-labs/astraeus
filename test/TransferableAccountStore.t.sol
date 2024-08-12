@@ -2,37 +2,107 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "../src/solidity/TransferableAccountStore.sol";
 
-import "src/solidity/TransferableAccountStore.sol";
-
-contract TestContract is Test {
-    TransferableAccountStore c;
-    uint256 privateKey = 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
+contract TransferableAccountStoreTest is Test {
+    TransferableAccountStore public store;
+    address public owner;
+    address public user1;
+    address public user2;
 
     function setUp() public {
-        c = new TransferableAccountStore();
+        store = new TransferableAccountStore();
+        owner = address(this);
+        user1 = address(0x1);
+        user2 = address(0x2);
     }
 
-    function assertBytesEq(bytes memory a, bytes memory b) internal pure {
-        assertEq(a.length, b.length, "Bytes length mismatch");
-        for (uint256 i = 0; i < a.length; i++) {
-            assertEq(uint8(a[i]), uint8(b[i]), "Byte mismatch at index");
-        }
+    function testCreateAccount() public {
+        bytes memory callbackData = store.createAccount();
+        (bytes4 selector, Account memory account) = abi.decode(callbackData[4:], (bytes4, Account));
+
+        assertEq(selector, store.createAccountCallback.selector);
+        assertEq(account.owner, owner);
+        assertTrue(account.publicKeyX != 0);
+        assertTrue(account.publicKeyY != 0);
     }
 
-    function testGeneratePublicKey() public view {
-        (uint256 x, uint256 y) = c.generatePublicKey(privateKey);
-        bytes memory publicKey = abi.encodePacked(x, y);
+    function testApproveAddress() public {
+        // アカウントを作成
+        bytes memory createCallbackData = store.createAccount();
+        (, Account memory account) = abi.decode(createCallbackData[4:], (bytes4, Account));
+        string memory accountId = store.createAccountCallback(account);
 
-        bytes memory expectedPublicKey =
-            hex"a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235";
-        assertBytesEq(publicKey, expectedPublicKey);
+        // アドレスを承認
+        bytes memory approveCallbackData = store.approveAddress(accountId, user1);
+        (bytes4 approveSelector, Suave.DataId approveAccountId, address approveAddress) =
+            abi.decode(approveCallbackData[4:], (bytes4, Suave.DataId, address));
+
+        assertEq(approveSelector, store.approveAddressCallback.selector);
+        assertEq(approveAccountId, account.accountId);
+        assertEq(approveAddress, user1);
+
+        // 承認を確認
+        store.approveAddressCallback(account.accountId, user1);
+        assertTrue(store.isApproved(accountId, user1));
     }
 
-    function testGenerateEthereumAddress() public view {
-        address generatedAddress = c.generateEthereumAddress(privateKey);
+    function testTransferAccount() public {
+        // アカウントを作成
+        bytes memory createCallbackData = store.createAccount();
+        (, Account memory account) = abi.decode(createCallbackData[4:], (bytes4, Account));
+        string memory accountId = store.createAccountCallback(account);
 
-        address expectedAddress = 0x41aD2bc63A2059f9b623533d87fe99887D794847;
-        assertEq(generatedAddress, expectedAddress);
+        // アカウントを転送
+        bytes memory transferCallbackData = store.transferAccount(user1, accountId);
+        (bytes4 transferSelector, address transferTo, string memory transferAccountId) =
+            abi.decode(transferCallbackData[4:], (bytes4, address, string));
+
+        assertEq(transferSelector, store.transferAccountCallback.selector);
+        assertEq(transferTo, user1);
+        assertEq(transferAccountId, accountId);
+
+        // 転送を実行
+        vm.prank(owner);
+        store.transferAccountCallback(user1, accountId);
+
+        // 新しい所有者を確認
+        Account memory updatedAccount = store.getAccount(accountId);
+        assertEq(updatedAccount.owner, user1);
+    }
+
+    function testLockAndUnlockAccount() public {
+        // アカウントを作成
+        bytes memory createCallbackData = store.createAccount();
+        (, Account memory account) = abi.decode(createCallbackData[4:], (bytes4, Account));
+        string memory accountId = store.createAccountCallback(account);
+
+        // アカウントをロック
+        bytes memory lockCallbackData = store.lockAccount(accountId);
+        (bytes4 lockSelector, string memory lockAccountId) = abi.decode(lockCallbackData[4:], (bytes4, string));
+
+        assertEq(lockSelector, store.lockAccountCallback.selector);
+        assertEq(lockAccountId, accountId);
+
+        // ロックを実行
+        vm.prank(owner);
+        store.lockAccountCallback(accountId, 3600); // 1時間ロック
+
+        // ロック状態を確認
+        assertTrue(store.isLocked(accountId));
+
+        // アカウントをアンロック
+        bytes memory unlockCallbackData = store.unlockAccount(accountId);
+        (bytes4 unlockSelector, string memory unlockAccountId) = abi.decode(unlockCallbackData[4:], (bytes4, string));
+
+        assertEq(unlockSelector, store.unlockAccountCallback.selector);
+        assertEq(unlockAccountId, accountId);
+
+        // アンロックを実行
+        vm.prank(owner);
+        store.unlockAccountCallback(accountId);
+
+        // アンロック状態を確認
+        assertFalse(store.isLocked(accountId));
     }
 }
