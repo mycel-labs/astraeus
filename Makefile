@@ -9,3 +9,11 @@ devnet-down:
 .PHONY: run-go
 run-go:
 	@go run ./src/go/*
+
+.PHONY: run-proto
+run-proto:
+	@protoc -I./src/proto \
+  --go_out=src/go/pb --go_opt=paths=source_relative \
+  --go-grpc_out=src/go/pb --go-grpc_opt=paths=source_relative \
+  --grpc-gateway_out=src/go/pb --grpc-gateway_opt=paths=source_relative \
+  src/proto/transferable_account.proto
