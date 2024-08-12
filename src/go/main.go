@@ -21,13 +21,13 @@ type server struct {
 
 func main() {
 	// Start gRPC server
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
 	s := grpc.NewServer()
 	pb.RegisterAccountServiceServer(s, &server{})
-	log.Println("gRPC server started on :50051")
+	log.Println("gRPC server started on :50052")
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC server: %v", err)
@@ -41,7 +41,7 @@ func main() {
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err = pb.RegisterAccountServiceHandlerFromEndpoint(ctx, mux, "localhost:50051", opts)
+	err = pb.RegisterAccountServiceHandlerFromEndpoint(ctx, mux, "localhost:50052", opts)
 	if err != nil {
 		log.Fatalf("Failed to register REST proxy: %v", err)
 	}
