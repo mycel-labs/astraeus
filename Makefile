@@ -8,7 +8,7 @@ devnet-down:
 
 .PHONY: run-go
 run-go:
-	@go run ./src/go/*
+	@cd src/go && go run main.go && cd ../../
 
 .PHONY: run-proto
 run-proto:
