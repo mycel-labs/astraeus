@@ -4,7 +4,7 @@ package account;
 
 import "google/api/annotations.proto";
 
-option go_package = "./pb";
+option go_package = "../go/pb";
 
 // Structs
 message Account {
@@ -65,6 +65,10 @@ message RevokeApprovalRequest {
 message SignRequest {
     AccountOperationRequest base = 1;
     bytes data = 2;
+}
+
+message AccountIdRequest {
+    string account_id = 1;
 }
 
 // Responses
@@ -133,7 +137,7 @@ service AccountService {
             body: "*"
         };
     }
-    rpc GetAccount(string) returns (AccountResponse) {
+    rpc GetAccount(AccountIdRequest) returns (AccountResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}"
         };
@@ -148,12 +152,12 @@ service AccountService {
             get: "/v1/accounts/{base.account_id}/owner/{address}"
         };
     }
-    rpc IsLocked(string) returns (BoolResponse) {
+    rpc IsLocked(AccountIdRequest) returns (BoolResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}/locked"
         };
     }
-    rpc GetLock(string) returns (TimeLockResponse) {
+    rpc GetLock(AccountIdRequest) returns (TimeLockResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}/lock"
         };
