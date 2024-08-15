@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "suave-std/Suapp.sol";
-import "suave-std/suavelib/Suave.sol";
-import "suave-std/Context.sol";
-import "suave-std/Transactions.sol";
-import "suave-std/suavelib/Suave.sol";
+import "lib/suave-std/src/Suapp.sol";
+import "lib/suave-std/src/Context.sol";
+import "lib/suave-std/src/Transactions.sol";
+import "lib/suave-std/src/suavelib/Suave.sol";
 
 import "./interfaces/ITransferableAccountStore.sol";
 import "./lib/EllipticCurve.sol";

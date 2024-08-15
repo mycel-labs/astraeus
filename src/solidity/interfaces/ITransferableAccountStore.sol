@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "suave-std/suavelib/Suave.sol";
+import "lib/suave-std/src/suavelib/Suave.sol";
 import "../lib/SignatureVerifier.sol";
 
 interface ITransferableAccountStore {
