@@ -10,6 +10,13 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
+        Curve curve;
+    }
+
+    enum Curve {
+        CURVE_UNKNOWN,
+        ECDSA,
+        EDDSA
     }
 
     struct TimeLock {
