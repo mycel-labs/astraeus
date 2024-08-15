@@ -7,7 +7,7 @@ import "lib/suave-std/src/suavelib/Suave.sol";
 
 import "src/solidity/TransferableAccountStore.sol";
 
-contract TestContract is Test {
+contract TestContract is Test, SuaveEnabled {
     TransferableAccountStore c;
     uint256 privateKey = 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
 
