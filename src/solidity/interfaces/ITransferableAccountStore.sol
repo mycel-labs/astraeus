@@ -10,7 +10,6 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        string key;
     }
 
     struct TimeLock {
