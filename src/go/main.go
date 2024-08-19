@@ -6,23 +6,30 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+
+	framework "github.com/mycel-labs/transferable-account/framework"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	framework "github.com/mycel-labs/transferable-account/framework"
 	pb "github.com/mycel-labs/transferable-account/pb"
 )
 
 const (
-	grpcPort = ":50052"
-	restPort = ":8080"
+	grpcPort            = ":50052"
+	restPort            = ":8080"
+	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore"
+)
+
+var (
+	taStoreContractAddr string
 )
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
-	framework *framework.Framework
+	fr *framework.Framework
 }
 
 // func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
@@ -58,7 +65,7 @@ type server struct {
 // }
 
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
-	return &pb.AccountResponse{Account: &pb.Account{AccountId: s.framework.KettleAddress.Hex()}}, nil
+	return &pb.AccountResponse{Account: &pb.Account{AccountId: s.fr.KettleAddress.Hex()}}, nil
 }
 
 // func (s *server) IsApproved(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BoolResponse, error) {
@@ -77,6 +84,13 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 // 	return &pb.TimeLockResponse{}, nil
 // }
 
+func init() {
+	taStoreContractAddr = os.Getenv("TA_STORE_CONTRACT_ADDRESS")
+	if taStoreContractAddr == "" {
+		log.Fatalf("TA_STORE_CONTRACT_ADDRESS is not set")
+	}
+}
+
 func main() {
 	// Start gRPC server
 	lis, err := net.Listen("tcp", grpcPort)
@@ -84,7 +98,7 @@ func main() {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterAccountServiceServer(s, &server{framework: framework.New()})
+	pb.RegisterAccountServiceServer(s, &server{fr: framework.New()})
 	log.Println("gRPC server started on", grpcPort)
 	go func() {
 		if err := s.Serve(lis); err != nil {
