@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -12,6 +13,11 @@ import (
 
 	framework "github.com/mycel-labs/transferable-account/framework"
 	pb "github.com/mycel-labs/transferable-account/pb"
+)
+
+const (
+	grpcPort = ":50052"
+	restPort = ":8080"
 )
 
 type server struct {
@@ -73,13 +79,13 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 
 func main() {
 	// Start gRPC server
-	lis, err := net.Listen("tcp", ":50052")
+	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
 	s := grpc.NewServer()
 	pb.RegisterAccountServiceServer(s, &server{framework: framework.New()})
-	log.Println("gRPC server started on :50052")
+	log.Println("gRPC server started on", grpcPort)
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC server: %v", err)
@@ -93,14 +99,14 @@ func main() {
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err = pb.RegisterAccountServiceHandlerFromEndpoint(ctx, mux, "localhost:50052", opts)
+	err = pb.RegisterAccountServiceHandlerFromEndpoint(ctx, mux, fmt.Sprintf("localhost%s", grpcPort), opts)
 	if err != nil {
 		log.Fatalf("Failed to register REST proxy: %v", err)
 	}
 
 	// Start HTTP server
 	log.Println("REST proxy started on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(restPort, mux); err != nil {
 		log.Fatalf("Failed to serve REST proxy: %v", err)
 	}
 }
