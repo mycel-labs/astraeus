@@ -68,7 +68,14 @@ type server struct {
 // }
 
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
-	return &pb.AccountResponse{Account: &pb.Account{AccountId: s.fr.KettleAddress.Hex()}}, nil
+	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})
+
+	account, ok := result[0].(*pb.Account)
+	if !ok {
+		return nil, fmt.Errorf("account data type is unexpected")
+	}
+
+	return &pb.AccountResponse{Account: account}, nil
 }
 
 // func (s *server) IsApproved(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BoolResponse, error) {
