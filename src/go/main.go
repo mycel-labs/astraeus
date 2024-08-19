@@ -10,11 +10,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	framework "github.com/mycel-labs/transferable-account/framework"
 	pb "github.com/mycel-labs/transferable-account/pb"
 )
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
+	framework *framework.Framework
 }
 
 // func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
@@ -49,9 +51,9 @@ type server struct {
 // 	return &pb.BytesResponse{}, nil
 // }
 
-// func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
-// 	return &pb.AccountResponse{}, nil
-// }
+func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
+	return &pb.AccountResponse{Account: &pb.Account{AccountId: s.framework.KettleAddress.Hex()}}, nil
+}
 
 // func (s *server) IsApproved(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BoolResponse, error) {
 // 	return &pb.BoolResponse{}, nil
@@ -76,7 +78,7 @@ func main() {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterAccountServiceServer(s, &server{})
+	pb.RegisterAccountServiceServer(s, &server{framework: framework.New()})
 	log.Println("gRPC server started on :50052")
 	go func() {
 		if err := s.Serve(lis); err != nil {
