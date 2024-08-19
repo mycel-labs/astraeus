@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/suave/sdk"
 	framework "github.com/mycel-labs/transferable-account/framework"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -24,12 +25,14 @@ const (
 )
 
 var (
+	privKey             string
 	taStoreContractAddr string
 )
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
-	fr *framework.Framework
+	fr              *framework.Framework
+	taStoreContract *framework.Contract
 }
 
 // func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
@@ -89,16 +92,38 @@ func init() {
 	if taStoreContractAddr == "" {
 		log.Fatalf("TA_STORE_CONTRACT_ADDRESS is not set")
 	}
+	privKey = os.Getenv("PRIVATE_KEY")
+	if privKey == "" {
+		log.Fatalf("PRIVATE_KEY is not set")
+	}
 }
 
 func main() {
+	// setup framework and account
+	fr := framework.New()
+	fundedAccount := framework.NewPrivKeyFromHex(privKey)
+
+	// read artifact
+	artifact, err := framework.ReadArtifact(taStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to read artifact: %v", err)
+	}
+
+	// create sdk client
+	clt := sdk.NewClient(fr.Suave.RPC().Client(), fundedAccount.Priv, fr.KettleAddress)
+
+	// get contract
+	taStoreContractSDK := sdk.GetContract(fr.KettleAddress, artifact.Abi, clt)
+	taStoreContract := &framework.Contract{Abi: artifact.Abi, Contract: taStoreContractSDK}
+
+	// gRPC server
+	s := grpc.NewServer()
 	// Start gRPC server
 	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
-	s := grpc.NewServer()
-	pb.RegisterAccountServiceServer(s, &server{fr: framework.New()})
+	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract})
 	log.Println("gRPC server started on", grpcPort)
 	go func() {
 		if err := s.Serve(lis); err != nil {
