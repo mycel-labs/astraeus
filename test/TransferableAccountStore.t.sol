@@ -2,24 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "lib/suave-std/src/Test.sol";
-import "lib/suave-std/src/suavelib/Suave.sol";
+import "forge-std/console.sol";
+import "suave-std/Test.sol";
+import "suave-std/suavelib/Suave.sol";
+import "../src/solidity/TransferableAccountStore.sol";
+import "../src/solidity/interfaces/ITransferableAccountStore.sol";
 
-import "src/solidity/TransferableAccountStore.sol";
+contract TransferableAccountStoreTest is Test, SuaveEnabled {
+    function testCreateAccount() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        address tasAddress = address(tas);
+        bytes memory encodedData = tas.createAccount();
 
-contract TestContract is Test, SuaveEnabled {
-    TransferableAccountStore c;
-    uint256 privateKey = 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
+        bytes4 selector;
+        bytes memory accountData;
 
-    function setUp() public {
-        c = new TransferableAccountStore();
+        assembly {
+            selector := mload(add(encodedData, 32))
+        }
+
+        accountData = new bytes(encodedData.length - 4);
+        for (uint256 i = 4; i < encodedData.length; i++) {
+            accountData[i - 4] = encodedData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+        console.log("Owner:", account.owner);
+        console.log("Public Key X:", account.publicKeyX);
+        console.log("Public Key Y:", account.publicKeyY);
+
+        assertEq(account.owner, address(this), "Owner should be the test contract");
     }
 
-    function assertBytesEq(bytes memory a, bytes memory b) internal pure {
-        assertEq(a.length, b.length, "Bytes length mismatch");
-        for (uint256 i = 0; i < a.length; i++) {
-            assertEq(uint8(a[i]), uint8(b[i]), "Byte mismatch at index");
-        }
     }
 
     function testGeneratePublicKey() public view {

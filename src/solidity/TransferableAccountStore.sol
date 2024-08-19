@@ -110,11 +110,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param _address The address to approve
      * @return bytes The encoded callback data
      */
-    function approveAddress(
-        SignatureVerifier.TimedSignature calldata signature,
-        string memory accountId,
-        address _address
-    ) public view returns (bytes memory) {
+    function approveAddress(string memory accountId, address _address) public view returns (bytes memory) {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
@@ -125,11 +121,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeApproval(
-        SignatureVerifier.TimedSignature calldata signature,
-        string memory accountId,
-        address _address
-    ) public {
+    function revokeApproval(string memory accountId, address _address) public {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
         delete accountApprovals[account.accountId];
@@ -162,7 +154,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-    function createAccount(SignatureVerifier.TimedSignature calldata signature) public returns (bytes memory) {
+    function createAccount() public returns (bytes memory) {
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
         address[] memory peekers = new address[](1);
@@ -201,11 +193,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function transferAccount(address to, string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }
 
@@ -223,11 +211,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function deleteAccount(string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -247,11 +231,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function lockAccount(string memory accountId, uint256 duration) public pure returns (bytes memory) {
         return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -270,11 +250,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function unlockAccount(string memory accountId) public pure returns (bytes memory) {
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
