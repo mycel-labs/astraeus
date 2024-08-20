@@ -9,7 +9,7 @@ import "../src/solidity/TransferableAccountStore.sol";
 import "../src/solidity/interfaces/ITransferableAccountStore.sol";
 
 contract TransferableAccountStoreTest is Test, SuaveEnabled {
-    address public owner;
+    address public admin = address(this);
     address public user1 = address(0x1);
 
     function testCreateAccount() public {
@@ -76,8 +76,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testApproveAddress() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData;
-        accountData = new bytes(encodedCreateAccountData.length - 4);
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
@@ -110,8 +109,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testApproveAddressCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData;
-        accountData = new bytes(encodedCreateAccountData.length - 4);
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
@@ -140,6 +138,86 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         address approvedAddress = tas.accountApprovals(Suave.DataId.wrap(decodedAccountId));
         assertEq(approvedAddress, decodedAddress, "Approved account address should match");
+    }
+
+    function testTransferAccount() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+        bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
+        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
+        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
+            approveAddressData[i - 4] = encodedApproveAddressData[i];
+        }
+
+        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
+        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+
+        bytes memory encodedTransferAccountData = tas.transferAccount(accountId, user1);
+
+        bytes4 selector;
+        bytes memory transferAccountData;
+
+        assembly {
+            selector := mload(add(encodedTransferAccountData, 32))
+        }
+
+        transferAccountData = new bytes(encodedTransferAccountData.length - 4);
+        for (uint256 i = 4; i < encodedTransferAccountData.length; i++) {
+            transferAccountData[i - 4] = encodedTransferAccountData[i];
+        }
+
+        (string memory decodedTransferdAccountId, address decodedToAddress) =
+            abi.decode(transferAccountData, (string, address));
+        console.log(decodedTransferdAccountId);
+        console.logAddress(decodedToAddress);
+        assertEq(decodedTransferdAccountId, accountId, "Approved account ID should match");
+        assertEq(decodedToAddress, user1, "Approved account address should match");
+    }
+
+    function testTransferAccountCallback() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+        bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
+        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
+        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
+            approveAddressData[i - 4] = encodedApproveAddressData[i];
+        }
+
+        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
+        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+
+        bytes memory encodedTransferAccountData = tas.transferAccount(accountId, user1);
+        bytes memory transferAccountData = new bytes(encodedTransferAccountData.length - 4);
+        for (uint256 i = 4; i < encodedTransferAccountData.length; i++) {
+            transferAccountData[i - 4] = encodedTransferAccountData[i];
+        }
+
+        (string memory decodedTransferdAccountId, address decodedToAddress) =
+            abi.decode(transferAccountData, (string, address));
+
+        vm.prank(user1);
+        tas.transferAccountCallback(decodedTransferdAccountId, decodedToAddress);
+
+        (, address newOwner,,,) = tas.accountsStore(decodedTransferdAccountId);
+        assertEq(newOwner, user1, "Stored account owner should match");
     }
 
     function bytes16ToString(bytes16 data) public pure returns (string memory) {
