@@ -9,6 +9,9 @@ import "../src/solidity/TransferableAccountStore.sol";
 import "../src/solidity/interfaces/ITransferableAccountStore.sol";
 
 contract TransferableAccountStoreTest is Test, SuaveEnabled {
+    address public owner;
+    address public user1 = address(0x1);
+
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         address tasAddress = address(tas);
@@ -35,14 +38,46 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(account.owner, address(this), "Owner should be the test contract");
     }
 
+    function testCreateAccountCallback() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        address tasAddress = address(tas);
+        bytes memory encodedData = tas.createAccount();
+
+        bytes4 selector;
+        bytes memory accountData;
+
+        assembly {
+            selector := mload(add(encodedData, 32))
+        }
+
+        accountData = new bytes(encodedData.length - 4);
+        for (uint256 i = 4; i < encodedData.length; i++) {
+            accountData[i - 4] = encodedData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+        console.log(accountId);
     }
 
-    function testGeneratePublicKey() public view {
-        (uint256 x, uint256 y) = c.generatePublicKey(privateKey);
-        bytes memory publicKey = abi.encodePacked(x, y);
+    function bytes16ToString(bytes16 data) public pure returns (string memory) {
+        bytes memory bytesArray = new bytes(34); // 0x + 32 characters
+        bytesArray[0] = "0";
+        bytesArray[1] = "x";
+        for (uint256 i = 0; i < 16; i++) {
+            bytesArray[2 + i * 2] = _byteToHexChar(uint8(data[i]) / 16);
+            bytesArray[2 + i * 2 + 1] = _byteToHexChar(uint8(data[i]) % 16);
+        }
+        return string(bytesArray);
+    }
 
-        bytes memory expectedPublicKey =
-            hex"a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235";
-        assertBytesEq(publicKey, expectedPublicKey);
+    function _byteToHexChar(uint8 b) private pure returns (bytes1) {
+        if (b < 10) {
+            return bytes1(b + 0x30); // 0-9 -> '0'-'9'
+        } else {
+            return bytes1(b + 0x57); // 10-15 -> 'a'-'f'
+        }
     }
 }
