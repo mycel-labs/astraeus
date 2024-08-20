@@ -21,7 +21,7 @@ import (
 const (
 	grpcPort            = ":50052"
 	restPort            = ":8080"
-	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore"
+	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore.json"
 )
 
 var (
@@ -29,18 +29,33 @@ var (
 	taStoreContractAddr string
 )
 
-func init() {
+func checkEnvVars(fatal bool) {
 	taStoreContractAddr = os.Getenv("TA_STORE_CONTRACT_ADDRESS")
-	if taStoreContractAddr == "" {
-		log.Fatalf("TA_STORE_CONTRACT_ADDRESS is not set")
-	}
 	privKey = os.Getenv("PRIVATE_KEY")
+
+	if taStoreContractAddr == "" {
+		if fatal {
+			log.Fatalf("error: TA_STORE_CONTRACT_ADDRESS is not set")
+		} else {
+			log.Printf("warning: TA_STORE_CONTRACT_ADDRESS is not set")
+		}
+	}
 	if privKey == "" {
-		log.Fatalf("PRIVATE_KEY is not set")
+		if fatal {
+			log.Fatalf("error: PRIVATE_KEY is not set")
+		} else {
+			log.Printf("warning: PRIVATE_KEY is not set")
+		}
 	}
 }
 
+func init() {
+	checkEnvVars(false)
+}
+
 func main() {
+	checkEnvVars(true)
+
 	// setup framework and account
 	fr := framework.New()
 	fundedAccount := framework.NewPrivKeyFromHex(privKey)
