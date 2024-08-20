@@ -14,7 +14,6 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        address tasAddress = address(tas);
         bytes memory encodedData = tas.createAccount();
 
         bytes4 selector;
@@ -40,7 +39,6 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        address tasAddress = address(tas);
         bytes memory encodedData = tas.createAccount();
 
         bytes4 selector;
@@ -60,6 +58,20 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         string memory accountId = tas.createAccountCallback(account);
         console.log(accountId);
+        (
+            Suave.DataId storedAccountId,
+            address storedOwner,
+            uint256 storedPublicKeyX,
+            uint256 storedPublicKeyY,
+            ITransferableAccountStore.Curve storedCurve
+        ) = tas.accountsStore(accountId);
+        bytes16 storedAccountIdBytes = Suave.DataId.unwrap(storedAccountId); // accountIdをbytes16として取得
+        string memory storedAccountIdToString = bytes16ToString(storedAccountIdBytes); // bytes16をuint256に変換
+        assertEq(storedAccountIdToString, accountId, "Stored account ID should match");
+        assertEq(storedOwner, account.owner, "Stored account owner should match");
+        assertEq(storedPublicKeyX, account.publicKeyX, "Stored account public key X should match");
+        assertEq(storedPublicKeyY, account.publicKeyY, "Stored account public key Y should match");
+        assertEq(uint256(storedCurve), uint256(account.curve), "Stored account curve should match");
     }
 
     function bytes16ToString(bytes16 data) public pure returns (string memory) {
