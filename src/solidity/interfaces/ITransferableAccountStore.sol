@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "lib/suave-std/src/suavelib/Suave.sol";
+import "suave-std/suavelib/Suave.sol";
 import "../lib/SignatureVerifier.sol";
 
 interface ITransferableAccountStore {
@@ -10,7 +10,13 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        string key;
+        Curve curve;
+    }
+
+    enum Curve {
+        CURVE_UNKNOWN,
+        ECDSA,
+        EDDSA
     }
 
     struct TimeLock {
@@ -36,14 +42,30 @@ interface ITransferableAccountStore {
     function getLock(string memory accountId) external view returns (TimeLock memory);
 
     // Actions
-    function createAccount() external returns (bytes memory);
-    function transferAccount(address to, string memory accountId) external returns (bytes memory);
-    function deleteAccount(string memory accountId) external returns (bytes memory);
-    function lockAccount(string memory accountId, uint256 duration) external returns (bytes memory);
-    function unlockAccount(string memory accountId) external returns (bytes memory);
+    function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
+    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
+        external
+        returns (bytes memory);
+    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
+    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
+        external
+        returns (bytes memory);
+    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
 
-    function approveAddress(string memory accountId, address _address) external returns (bytes memory);
-    function revokeApproval(string memory accountId, address _address) external;
+    function approveAddress(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external returns (bytes memory);
+    function revokeApproval(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
 }
