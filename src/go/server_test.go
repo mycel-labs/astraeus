@@ -65,76 +65,53 @@ func TestGetAccount(t *testing.T) {
 		taStoreContract: taStoreContract,
 	}
 
-	// Test case
-	testAccountID := accountId
-
-	// Execute
-	req := &pb.AccountIdRequest{AccountId: testAccountID}
-	resp, err := s.GetAccount(context.Background(), req)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-}
-
-func TestGetAccountError(t *testing.T) {
-	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountID string
+		expectErr bool
+	}{
+		{"Valid account", accountId, false},
+		{"Non-existent account", "non_existent_account_id", true},
 	}
 
-	// Test case
-	testAccountID := "non_existent_account_id"
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.AccountIdRequest{AccountId: tc.accountID}
+			resp, err := s.GetAccount(context.Background(), req)
 
-	// Execute
-	req := &pb.AccountIdRequest{AccountId: testAccountID}
-	resp, err := s.GetAccount(context.Background(), req)
-
-	// Assert
-	assert.Error(t, err)
-	assert.Nil(t, resp)
-	assert.Contains(t, err.Error(), "account not found")
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+				assert.Contains(t, err.Error(), "account not found")
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+			}
+		})
+	}
 }
 
 func TestIsApproved(t *testing.T) {
-	// Test case
-	testAccountID := accountId
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-
-	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{&TimedSignature{}, testAccountID, testAddress}, nil)
-
-	// Execute
-	req := &pb.AccountIdToAddressRequest{
-		AccountId: testAccountID,
-		Address:   testAddress.String(),
-	}
-	resp, err := s.IsApproved(context.Background(), req)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	assert.IsType(t, &pb.BoolResponse{}, resp)
-	assert.True(t, resp.Result)
-}
-
-func TestIsApprovedError(t *testing.T) {
-	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{&TimedSignature{}, accountId, testAddress}, nil)
 
 	// Test cases
 	testCases := []struct {
 		name      string
 		accountID string
 		address   string
+		expected  bool
 	}{
-		{"Not approved address", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
-		{"Non-existent account ID", "non_existent_account_id", "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
+		{"Approved address", accountId, testAddress.String(), true},
+		{"Not approved address", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Non-existent account ID", "non_existent_account_id", "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 	}
 
 	for _, tc := range testCases {
@@ -150,7 +127,7 @@ func TestIsApprovedError(t *testing.T) {
 			assert.NoError(t, err, "IsApproved call should not return an error")
 			assert.NotNil(t, resp, "Response should not be nil")
 			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
-			assert.False(t, resp.Result, "Should not be approved")
+			assert.Equal(t, tc.expected, resp.Result, "Unexpected result for IsApproved")
 		})
 	}
 }
