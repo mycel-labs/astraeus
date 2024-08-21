@@ -77,6 +77,11 @@ message AccountIdRequest {
     string account_id = 1;
 }
 
+message AccountIdToAddressRequest {
+    string account_id = 1;
+    string address = 2;
+}
+
 // Responses
 message AccountResponse {
     Account account = 1;
@@ -148,14 +153,14 @@ service AccountService {
             get: "/v1/accounts/{account_id}"
         };
     }
-    rpc IsApproved(ApproveAddressRequest) returns (BoolResponse) {
+    rpc IsApproved(AccountIdToAddressRequest) returns (BoolResponse) {
         option (google.api.http) = {
-            get: "/v1/accounts/{base.account_id}/approved/{address}"
+            get: "/v1/accounts/{account_id}/approved/{address}"
         };
     }
-    rpc IsOwner(ApproveAddressRequest) returns (BoolResponse) {
+    rpc IsOwner(AccountIdToAddressRequest) returns (BoolResponse) {
         option (google.api.http) = {
-            get: "/v1/accounts/{base.account_id}/owner/{address}"
+            get: "/v1/accounts/{account_id}/owner/{address}"
         };
     }
     rpc IsLocked(AccountIdRequest) returns (BoolResponse) {

@@ -539,12 +539,8 @@ func local_request_AccountService_GetAccount_0(ctx context.Context, marshaler ru
 
 }
 
-var (
-	filter_AccountService_IsApproved_0 = &utilities.DoubleArray{Encoding: map[string]int{"base": 0, "account_id": 1, "address": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
-)
-
 func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -554,14 +550,14 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -572,13 +568,6 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsApproved_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.IsApproved(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -587,7 +576,7 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 }
 
 func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -597,14 +586,14 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -615,13 +604,6 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsApproved_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.IsApproved(ctx, &protoReq)
@@ -629,12 +611,8 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 
 }
 
-var (
-	filter_AccountService_IsOwner_0 = &utilities.DoubleArray{Encoding: map[string]int{"base": 0, "account_id": 1, "address": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
-)
-
 func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -644,14 +622,14 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -662,13 +640,6 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsOwner_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.IsOwner(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -677,7 +648,7 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 }
 
 func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -687,14 +658,14 @@ func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -705,13 +676,6 @@ func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runti
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsOwner_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.IsOwner(ctx, &protoReq)
@@ -1063,7 +1027,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/approved/{address}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/approved/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1088,7 +1052,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/owner/{address}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/owner/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1400,7 +1364,7 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/approved/{address}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/approved/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1422,7 +1386,7 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/owner/{address}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/owner/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1504,9 +1468,9 @@ var (
 
 	pattern_AccountService_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "accounts", "account_id"}, ""))
 
-	pattern_AccountService_IsApproved_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "base.account_id", "approved", "address"}, ""))
+	pattern_AccountService_IsApproved_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "account_id", "approved", "address"}, ""))
 
-	pattern_AccountService_IsOwner_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "base.account_id", "owner", "address"}, ""))
+	pattern_AccountService_IsOwner_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "account_id", "owner", "address"}, ""))
 
 	pattern_AccountService_IsLocked_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "account_id", "locked"}, ""))
 

@@ -49,8 +49,8 @@ type AccountServiceClient interface {
 	RevokeApproval(ctx context.Context, in *RevokeApprovalRequest, opts ...grpc.CallOption) (*BoolResponse, error)
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	GetAccount(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*AccountResponse, error)
-	IsApproved(ctx context.Context, in *ApproveAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
-	IsOwner(ctx context.Context, in *ApproveAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
+	IsApproved(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
+	IsOwner(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
 	IsLocked(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*BoolResponse, error)
 	GetLock(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*TimeLockResponse, error)
 }
@@ -153,7 +153,7 @@ func (c *accountServiceClient) GetAccount(ctx context.Context, in *AccountIdRequ
 	return out, nil
 }
 
-func (c *accountServiceClient) IsApproved(ctx context.Context, in *ApproveAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
+func (c *accountServiceClient) IsApproved(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BoolResponse)
 	err := c.cc.Invoke(ctx, AccountService_IsApproved_FullMethodName, in, out, cOpts...)
@@ -163,7 +163,7 @@ func (c *accountServiceClient) IsApproved(ctx context.Context, in *ApproveAddres
 	return out, nil
 }
 
-func (c *accountServiceClient) IsOwner(ctx context.Context, in *ApproveAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
+func (c *accountServiceClient) IsOwner(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BoolResponse)
 	err := c.cc.Invoke(ctx, AccountService_IsOwner_FullMethodName, in, out, cOpts...)
@@ -208,8 +208,8 @@ type AccountServiceServer interface {
 	RevokeApproval(context.Context, *RevokeApprovalRequest) (*BoolResponse, error)
 	Sign(context.Context, *SignRequest) (*BytesResponse, error)
 	GetAccount(context.Context, *AccountIdRequest) (*AccountResponse, error)
-	IsApproved(context.Context, *ApproveAddressRequest) (*BoolResponse, error)
-	IsOwner(context.Context, *ApproveAddressRequest) (*BoolResponse, error)
+	IsApproved(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error)
+	IsOwner(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error)
 	IsLocked(context.Context, *AccountIdRequest) (*BoolResponse, error)
 	GetLock(context.Context, *AccountIdRequest) (*TimeLockResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
@@ -249,10 +249,10 @@ func (UnimplementedAccountServiceServer) Sign(context.Context, *SignRequest) (*B
 func (UnimplementedAccountServiceServer) GetAccount(context.Context, *AccountIdRequest) (*AccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
 }
-func (UnimplementedAccountServiceServer) IsApproved(context.Context, *ApproveAddressRequest) (*BoolResponse, error) {
+func (UnimplementedAccountServiceServer) IsApproved(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsApproved not implemented")
 }
-func (UnimplementedAccountServiceServer) IsOwner(context.Context, *ApproveAddressRequest) (*BoolResponse, error) {
+func (UnimplementedAccountServiceServer) IsOwner(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsOwner not implemented")
 }
 func (UnimplementedAccountServiceServer) IsLocked(context.Context, *AccountIdRequest) (*BoolResponse, error) {
@@ -445,7 +445,7 @@ func _AccountService_GetAccount_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _AccountService_IsApproved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ApproveAddressRequest)
+	in := new(AccountIdToAddressRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -457,13 +457,13 @@ func _AccountService_IsApproved_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: AccountService_IsApproved_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).IsApproved(ctx, req.(*ApproveAddressRequest))
+		return srv.(AccountServiceServer).IsApproved(ctx, req.(*AccountIdToAddressRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AccountService_IsOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ApproveAddressRequest)
+	in := new(AccountIdToAddressRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -475,7 +475,7 @@ func _AccountService_IsOwner_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: AccountService_IsOwner_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).IsOwner(ctx, req.(*ApproveAddressRequest))
+		return srv.(AccountServiceServer).IsOwner(ctx, req.(*AccountIdToAddressRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
