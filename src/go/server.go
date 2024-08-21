@@ -58,8 +58,6 @@ type TimedSignature struct {
 
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
 	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})
-	fmt.Printf("Type of result[0]: %T\n", result[0])
-	fmt.Printf("Value of result[0]: %+v\n", result[0])
 
 	ac, ok := result[0].(struct {
 		AccountId  [16]uint8      `json:"accountId"`
