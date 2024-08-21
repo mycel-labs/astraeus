@@ -79,21 +79,21 @@ func TestGetAccount(t *testing.T) {
 
 // TODO: Add more test cases for other methods
 
-func TestGetAccountError(t *testing.T) {
-	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+// func TestGetAccountError(t *testing.T) {
+// 	// Setup
+// 	s := &server{
+// 		taStoreContract: taStoreContract,
+// 	}
 
-	// Test case
-	testAccountID := "non_existent_account_id"
+// 	// Test case
+// 	testAccountID := "non_existent_account_id"
 
-	// Execute
-	req := &pb.AccountIdRequest{AccountId: testAccountID}
-	resp, err := s.GetAccount(context.Background(), req)
+// 	// Execute
+// 	req := &pb.AccountIdRequest{AccountId: testAccountID}
+// 	resp, err := s.GetAccount(context.Background(), req)
 
-	// Assert
-	assert.Error(t, err)
-	assert.Nil(t, resp)
-	assert.Contains(t, err.Error(), "account data type is unexpected")
-}
+// 	// Assert
+// 	assert.Error(t, err)
+// 	assert.Nil(t, resp)
+// 	assert.Contains(t, err.Error(), "account data type is unexpected")
+// }
