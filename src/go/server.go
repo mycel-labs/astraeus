@@ -105,9 +105,20 @@ func (s *server) IsApproved(ctx context.Context, req *pb.AccountIdToAddressReque
 	return &pb.BoolResponse{Result: approved}, nil
 }
 
-// func (s *server) IsOwner(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BoolResponse, error) {
-// 	return &pb.BoolResponse{}, nil
-// }
+func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest) (*pb.BoolResponse, error) {
+	result := s.taStoreContract.Call("isOwner", []interface{}{req.AccountId, common.HexToAddress(req.Address)})
+
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
+	isOwner, ok := result[0].(bool)
+	if !ok {
+		return nil, fmt.Errorf("isOwner data type is unexpected")
+	}
+
+	return &pb.BoolResponse{Result: isOwner}, nil
+}
 
 // func (s *server) IsLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
 // 	return &pb.BoolResponse{}, nil

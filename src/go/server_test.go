@@ -14,9 +14,12 @@ import (
 
 var (
 	fr              *framework.Framework
+	cfg             *framework.Config
 	taStoreContract *framework.Contract
 	accountId       string
 )
+
+const fundedAddress = "0xBE69d72ca5f88aCba033a063dF5DBe43a4148De0"
 
 // TestMain is used for test setup and teardown
 func TestMain(m *testing.M) {
@@ -148,6 +151,42 @@ func TestIsApprovedError(t *testing.T) {
 			assert.NotNil(t, resp, "Response should not be nil")
 			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
 			assert.False(t, resp.Result, "Should not be approved")
+		})
+	}
+}
+
+func TestIsOwner(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountID string
+		address   string
+		expected  bool
+	}{
+		{"Is owner", accountId, fundedAddress, true},
+		{"Not owner", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Non-existent account ID", "non_existent_account_id", fundedAddress, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.AccountIdToAddressRequest{
+				AccountId: tc.accountID,
+				Address:   tc.address,
+			}
+			resp, err := s.IsOwner(context.Background(), req)
+
+			// Assert
+			assert.NoError(t, err, "IsOwner call should not return an error")
+			assert.NotNil(t, resp, "Response should not be nil")
+			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
+			assert.Equal(t, tc.expected, resp.Result, "Unexpected result for IsOwner")
 		})
 	}
 }
