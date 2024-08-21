@@ -124,35 +124,30 @@ func TestIsApprovedError(t *testing.T) {
 		taStoreContract: taStoreContract,
 	}
 
-	// Test case
-	testAccountID := accountId
-	nonExistentAccountID := "non_existent_account_id"
-	notApprovedAddress := "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-
-	// Execute
-	reqNotApproved := &pb.AccountIdToAddressRequest{
-		AccountId: testAccountID,
-		Address:   notApprovedAddress,
-	}
-	reqNotExistent := &pb.AccountIdToAddressRequest{
-		AccountId: nonExistentAccountID,
-		Address:   notApprovedAddress,
-	}
-	respNotApproved, err := s.IsApproved(context.Background(), reqNotApproved)
-	if err != nil {
-		t.Fatalf("failed to get isApproved: %v", err)
-	}
-	respNotExistent, err := s.IsApproved(context.Background(), reqNotExistent)
-	if err != nil {
-		t.Fatalf("failed to get isApproved: %v", err)
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountID string
+		address   string
+	}{
+		{"Not approved address", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
+		{"Non-existent account ID", "non_existent_account_id", "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
 	}
 
-	// Assert
-	assert.NotNil(t, respNotApproved)
-	assert.IsType(t, &pb.BoolResponse{}, respNotApproved)
-	assert.False(t, respNotApproved.Result)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.AccountIdToAddressRequest{
+				AccountId: tc.accountID,
+				Address:   tc.address,
+			}
+			resp, err := s.IsApproved(context.Background(), req)
 
-	assert.NotNil(t, respNotExistent)
-	assert.IsType(t, &pb.BoolResponse{}, respNotExistent)
-	assert.False(t, respNotExistent.Result)
+			// Assert
+			assert.NoError(t, err, "IsApproved call should not return an error")
+			assert.NotNil(t, resp, "Response should not be nil")
+			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
+			assert.False(t, resp.Result, "Should not be approved")
+		})
+	}
 }
