@@ -17,14 +17,6 @@ type server struct {
 	taStoreContract *framework.Contract
 }
 
-type Account struct {
-	AccountId  [16]uint8      `json:"accountId"`
-	Owner      common.Address `json:"owner"`
-	PublicKeyX *big.Int       `json:"publicKeyX"`
-	PublicKeyY *big.Int       `json:"publicKeyY"`
-	Curve      uint8          `json:"curve"`
-}
-
 type TimedSignature struct {
 	ValidFor    uint64
 	MessageHash [32]byte
