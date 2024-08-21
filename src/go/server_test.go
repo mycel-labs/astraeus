@@ -63,9 +63,6 @@ func TestGetAccount(t *testing.T) {
 
 	// Test case
 	testAccountID := accountId
-	// expectedAccount := &pb.Account{
-	// 	AccountId: testAccountID,
-	// }
 
 	// Execute
 	req := &pb.AccountIdRequest{AccountId: testAccountID}
@@ -74,26 +71,23 @@ func TestGetAccount(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	// assert.Equal(t, expectedAccount, resp.Account)
 }
 
-// TODO: Add more test cases for other methods
+func TestGetAccountError(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
 
-// func TestGetAccountError(t *testing.T) {
-// 	// Setup
-// 	s := &server{
-// 		taStoreContract: taStoreContract,
-// 	}
+	// Test case
+	testAccountID := "non_existent_account_id"
 
-// 	// Test case
-// 	testAccountID := "non_existent_account_id"
+	// Execute
+	req := &pb.AccountIdRequest{AccountId: testAccountID}
+	resp, err := s.GetAccount(context.Background(), req)
 
-// 	// Execute
-// 	req := &pb.AccountIdRequest{AccountId: testAccountID}
-// 	resp, err := s.GetAccount(context.Background(), req)
-
-// 	// Assert
-// 	assert.Error(t, err)
-// 	assert.Nil(t, resp)
-// 	assert.Contains(t, err.Error(), "account data type is unexpected")
-// }
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "account not found")
+}

@@ -59,6 +59,10 @@ type TimedSignature struct {
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
 	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})
 
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
 	ac, ok := result[0].(struct {
 		AccountId  [16]uint8      `json:"accountId"`
 		Owner      common.Address `json:"owner"`
@@ -70,8 +74,13 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 		return nil, fmt.Errorf("account data type is unexpected")
 	}
 
+	// check if the account exists
+	if ac.Owner == (common.Address{}) {
+		return nil, fmt.Errorf("account not found")
+	}
+
 	pbac := &pb.Account{
-		AccountId:  req.AccountId, // TODO: should be the result of the contract call
+		AccountId:  req.AccountId,
 		Owner:      ac.Owner.Hex(),
 		PublicKeyX: ac.PublicKeyX.Uint64(),
 		PublicKeyY: ac.PublicKeyY.Uint64(),
