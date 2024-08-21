@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	framework "github.com/mycel-labs/transferable-account/framework"
 
 	pb "github.com/mycel-labs/transferable-account/pb"
@@ -13,6 +14,13 @@ type server struct {
 	pb.UnimplementedAccountServiceServer
 	fr              *framework.Framework
 	taStoreContract *framework.Contract
+}
+
+type TimedSignature struct {
+	ValidFor    uint64
+	MessageHash [32]byte
+	Signature   []byte
+	Signer      common.Address
 }
 
 // func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
