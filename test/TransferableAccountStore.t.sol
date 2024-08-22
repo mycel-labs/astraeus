@@ -220,6 +220,35 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(newOwner, user1, "Stored account owner should match");
     }
 
+    function testIsApproved() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+        bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
+        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
+        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
+            approveAddressData[i - 4] = encodedApproveAddressData[i];
+        }
+
+        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
+        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+
+        bool isApproved = tas.isApproved(accountId, user1);
+        assertTrue(isApproved, "Address should be approved");
+
+        tas.revokeApproval(accountId, user1);
+        isApproved = tas.isApproved(accountId, user1);
+        assertFalse(isApproved, "Address should not be approved after revocation");
+    }
+
     function testGetAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
