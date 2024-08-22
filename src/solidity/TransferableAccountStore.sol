@@ -115,7 +115,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external returns (bytes memory) {
+    ) external view returns (bytes memory) {
+        require(_verifyTimedSignature(signature), "Invalid signature");
+
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
@@ -131,6 +133,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) public {
+        require(_verifyTimedSignature(signature), "Invalid signature");
+
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
         delete accountApprovals[account.accountId];
@@ -164,6 +168,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return bytes The encoded callback data
      */
     function createAccount(SignatureVerifier.TimedSignature calldata signature) public returns (bytes memory) {
+        require(_verifyTimedSignature(signature), "Invalid signature");
+
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
         address[] memory peekers = new address[](1);
@@ -204,9 +210,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
         public
-        pure
+        view
         returns (bytes memory)
     {
+        require(_verifyTimedSignature(signature), "Invalid signature");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }
 
@@ -226,9 +233,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         public
-        pure
+        view
         returns (bytes memory)
     {
+        require(_verifyTimedSignature(signature), "Invalid signature");
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -250,9 +258,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
         public
-        pure
+        view
         returns (bytes memory)
     {
+        require(_verifyTimedSignature(signature), "Invalid signature");
         return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -273,9 +282,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         public
-        pure
+        view
         returns (bytes memory)
     {
+        require(_verifyTimedSignature(signature), "Invalid signature");
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
