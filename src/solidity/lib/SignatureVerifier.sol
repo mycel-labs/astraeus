@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 library SignatureVerifier {
     struct TimedSignature {
-        uint256 validFor;
+        uint64 validFor;
         bytes32 messageHash;
         bytes signature;
         address signer;
@@ -16,7 +16,7 @@ library SignatureVerifier {
         return keccak256(abi.encodePacked(validFor, sender));
     }
 
-    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature, address signer)
+    function verifyTimedSignature(uint64 validFor, bytes32 messageHash, bytes memory signature, address signer)
         internal
         view
         returns (bool)
