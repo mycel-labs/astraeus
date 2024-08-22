@@ -266,6 +266,34 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
+    function testDeleteAccount() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(account);
+
+        ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
+        assertEq(retrievedAccount.owner, account.owner, "Owner should match before deletion");
+
+        bytes memory encodedDeleteAccountData = tas.deleteAccount(accountId);
+        bytes memory deleteAccountData = new bytes(encodedDeleteAccountData.length - 4);
+        for (uint256 i = 4; i < encodedDeleteAccountData.length; i++) {
+            deleteAccountData[i - 4] = encodedDeleteAccountData[i];
+        }
+
+        (string memory decodedAccountId) = abi.decode(deleteAccountData, (string));
+        tas.deleteAccountCallback(decodedAccountId);
+
+        retrievedAccount = tas.getAccount(decodedAccountId);
+        assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
+    }
+
     function bytes16ToString(bytes16 data) public pure returns (string memory) {
         bytes memory bytesArray = new bytes(34); // 0x + 32 characters
         bytesArray[0] = "0";
