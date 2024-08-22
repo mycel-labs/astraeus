@@ -243,6 +243,29 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(uint256(retrievedAccount.curve), uint256(account.curve), "Curve should match");
     }
 
+    function testRevokeApproval() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+        tas.approveAddress(accountId, user1);
+        tas.approveAddressCallback(account.accountId, user1);
+
+        bool isApproved = tas.isApproved(accountId, user1);
+        assertTrue(isApproved, "Address should be approved");
+
+        tas.revokeApproval(accountId, user1);
+        isApproved = tas.isApproved(accountId, user1);
+        assertFalse(isApproved, "Address should not be approved after revocation");
+    }
+
     function bytes16ToString(bytes16 data) public pure returns (string memory) {
         bytes memory bytesArray = new bytes(34); // 0x + 32 characters
         bytesArray[0] = "0";
