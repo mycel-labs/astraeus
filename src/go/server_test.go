@@ -59,6 +59,30 @@ func teardown() {
 	// Perform any cleanup tasks
 }
 
+func TestCreateAccount(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	// Execute
+	req := &pb.CreateAccountRequest{}
+	resp, err := s.CreateAccount(context.Background(), req)
+
+	// Assert
+	assert.NoError(t, err, "CreateAccount call should not return an error")
+	assert.NotNil(t, resp, "Response should not be nil")
+	assert.IsType(t, &pb.BytesResponse{}, resp, "Response type is incorrect")
+	assert.NotEmpty(t, resp.Data, "Account ID should not be empty")
+
+	// Verify the account was created
+	accountReq := &pb.AccountIdRequest{AccountId: string(resp.Data)}
+	accountResp, err := s.GetAccount(context.Background(), accountReq)
+	assert.NoError(t, err, "GetAccount call should not return an error")
+	assert.NotNil(t, accountResp, "Account response should not be nil")
+	assert.Equal(t, string(resp.Data), accountResp.Account.AccountId, "Account ID should match")
+}
+
 func TestGetAccount(t *testing.T) {
 	// Setup
 	s := &server{

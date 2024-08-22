@@ -24,9 +24,21 @@ type TimedSignature struct {
 	Signer      common.Address
 }
 
-// func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
+	sig := &TimedSignature{} // Create an empty TimedSignature as it's not used in the contract function
+	result := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+
+	if result == nil {
+		return nil, fmt.Errorf("failed to create account")
+	}
+	caEvent, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(result.Logs[0])
+	if err != nil {
+		panic(err)
+	}
+	accountId := caEvent["accountId"].(string)
+
+	return &pb.BytesResponse{Data: []byte(accountId)}, nil
+}
 
 // func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.BytesResponse, error) {
 // 	return &pb.BytesResponse{}, nil
