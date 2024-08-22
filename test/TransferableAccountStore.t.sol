@@ -220,6 +220,29 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(newOwner, user1, "Stored account owner should match");
     }
 
+    function testGetAccount() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+
+        ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
+        bytes16 retrievedAccountIdBytes = Suave.DataId.unwrap(retrievedAccount.accountId);
+
+        assertEq(bytes16ToString(retrievedAccountIdBytes), accountId, "Account ID should match");
+        assertEq(retrievedAccount.owner, account.owner, "Owner should match");
+        assertEq(retrievedAccount.publicKeyX, account.publicKeyX, "Public Key X should match");
+        assertEq(retrievedAccount.publicKeyY, account.publicKeyY, "Public Key Y should match");
+        assertEq(uint256(retrievedAccount.curve), uint256(account.curve), "Curve should match");
+    }
+
     function bytes16ToString(bytes16 data) public pure returns (string memory) {
         bytes memory bytesArray = new bytes(34); // 0x + 32 characters
         bytesArray[0] = "0";
