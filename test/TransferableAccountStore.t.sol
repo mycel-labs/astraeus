@@ -249,6 +249,26 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
+    function testIsOwner() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(account);
+
+        bool isOwner = tas.isOwner(accountId, address(this));
+        assertTrue(isOwner, "Address should be the owner");
+
+        isOwner = tas.isOwner(accountId, user1);
+        assertFalse(isOwner, "Address should not be the owner");
+    }
+
     function testGetAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
