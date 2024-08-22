@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setup(t *testing.T) {
+func setup(_ *testing.T) {
 	fr = framework.New()
 
 	// Deploy contract
@@ -51,34 +51,72 @@ func setup(t *testing.T) {
 }
 
 func TestAuth(t *testing.T) {
+	// Setup
 	privKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("Failed to generate private key: %v", err)
 	}
 
-	validFor := uint64(time.Now().Unix() + 86400) // 1 day later
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privKey)
-	if err != nil {
-		t.Fatalf("Failed to generate timed signature: %v", err)
-	}
-	sig := &TimedSignature{
-		ValidFor:    validFor,
-		MessageHash: messageHash,
-		Signature:   signature,
-		Signer:      crypto.PubkeyToAddress(privKey.PublicKey),
-	}
-	result := taStoreContract.Call("verifyTimedSignature", []interface{}{sig})
-	if len(result) == 0 || result[0] == nil {
-		t.Fatalf("empty result")
+	// Test cases
+	testCases := []struct {
+		name        string
+		validFor    int64
+		modifySig   func([]byte) []byte
+		expectValid bool
+	}{
+		{
+			name:        "Valid signature",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			modifySig:   func(sig []byte) []byte { return sig },
+			expectValid: true,
+		},
+		{
+			name:        "Expired signature",
+			validFor:    time.Now().Unix() - 86400, // 1 day ago
+			modifySig:   func(sig []byte) []byte { return sig },
+			expectValid: false,
+		},
+		{
+			name:     "Invalid signature",
+			validFor: time.Now().Unix() + 86400,
+			modifySig: func(sig []byte) []byte {
+				sig[0] ^= 0xFF // Flip all bits in the first byte
+				return sig
+			},
+			expectValid: false,
+		},
 	}
 
-	valid, ok := result[0].(bool)
-	if !ok {
-		t.Fatalf("valid data type is unexpected")
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			messageHash, signature, err := generateTimedSignature(tc.validFor, privKey)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
 
-	// Assert
-	assert.True(t, valid)
+			modifiedSignature := tc.modifySig(signature)
+
+			sig := &TimedSignature{
+				ValidFor:    uint64(tc.validFor),
+				MessageHash: messageHash,
+				Signature:   modifiedSignature,
+				Signer:      crypto.PubkeyToAddress(privKey.PublicKey),
+			}
+
+			result := taStoreContract.Call("verifyTimedSignature", []interface{}{sig})
+			if len(result) == 0 || result[0] == nil {
+				t.Fatalf("empty result")
+			}
+
+			valid, ok := result[0].(bool)
+			if !ok {
+				t.Fatalf("valid data type is unexpected")
+			}
+
+			// Assert
+			assert.Equal(t, tc.expectValid, valid, "Unexpected validation result")
+		})
+	}
 }
 
 /*
