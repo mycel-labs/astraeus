@@ -30,11 +30,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
-        console.log("Owner:", account.owner);
-        console.log("Public Key X:", account.publicKeyX);
-        console.log("Public Key Y:", account.publicKeyY);
 
         assertEq(account.owner, address(this), "Owner should be the test contract");
+        assertTrue(account.isLocked, "account shouold be locked");
     }
 
     function testCreateAccountCallback() public {
@@ -62,7 +60,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             address storedOwner,
             uint256 storedPublicKeyX,
             uint256 storedPublicKeyY,
-            ITransferableAccountStore.Curve storedCurve
+            ITransferableAccountStore.Curve storedCurve,
+            bool isLocked
         ) = tas.accountsStore(accountId);
         bytes16 storedAccountIdBytes = Suave.DataId.unwrap(storedAccountId);
         string memory storedAccountIdToString = bytes16ToString(storedAccountIdBytes);
@@ -71,6 +70,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(storedPublicKeyX, account.publicKeyX, "Stored account public key X should match");
         assertEq(storedPublicKeyY, account.publicKeyY, "Stored account public key Y should match");
         assertEq(uint256(storedCurve), uint256(account.curve), "Stored account curve should match");
+        assertTrue(isLocked, "Stored account shouold be locked");
     }
 
     function testApproveAddress() public {
@@ -100,8 +100,6 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveData, (bytes16, address));
-        console.logBytes16(decodedAccountId);
-        console.logAddress(decodedAddress);
         assertEq(bytes16ToString(decodedAccountId), accountId, "Approved account ID should match");
         assertEq(decodedAddress, user1, "Approved account address should match");
     }
@@ -177,8 +175,6 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (string memory decodedTransferdAccountId, address decodedToAddress) =
             abi.decode(transferAccountData, (string, address));
-        console.log(decodedTransferdAccountId);
-        console.logAddress(decodedToAddress);
         assertEq(decodedTransferdAccountId, accountId, "Approved account ID should match");
         assertEq(decodedToAddress, user1, "Approved account address should match");
     }
@@ -216,8 +212,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         vm.prank(user1);
         tas.transferAccountCallback(decodedTransferdAccountId, decodedToAddress);
 
-        (, address newOwner,,,) = tas.accountsStore(decodedTransferdAccountId);
+        (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(decodedTransferdAccountId);
         assertEq(newOwner, user1, "Stored account owner should match");
+
+        assertTrue(isAccountLocked, "Transfered account should be locked");
     }
 
     function testIsApproved() public {
@@ -315,7 +313,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
-    function testDeleteAccount() public {
+    function testDeleteAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
@@ -341,6 +339,27 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         retrievedAccount = tas.getAccount(decodedAccountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
+    }
+
+    function testUnlockAccountCallback() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        bytes memory encodedCreateAccountData = tas.createAccount();
+        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
+        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
+            accountData[i - 4] = encodedCreateAccountData[i];
+        }
+
+        (ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(account);
+
+        bool isAccountLocked = tas.isAccountLocked(accountId);
+        assertTrue(isAccountLocked, "Account should be locked immediately after creation");
+
+        tas.unlockAccountCallback(accountId);
+
+        isAccountLocked = tas.isAccountLocked(accountId);
+        assertFalse(isAccountLocked, "Account should be unlocked");
     }
 
     function bytes16ToString(bytes16 data) public pure returns (string memory) {

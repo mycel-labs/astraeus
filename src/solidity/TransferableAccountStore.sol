@@ -27,13 +27,22 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
     mapping(string => Account) public accountsStore;
     mapping(Suave.DataId => address) public accountApprovals;
-    mapping(string => TimeLock) private accountTimeLocks;
 
     /**
      * Modifiers
      */
     modifier onlyApproved(string memory accountId) {
         require(isApproved(accountId, msg.sender), "Address not approved");
+        _;
+    }
+
+    modifier onlyLocked(string memory accountId) {
+        require(isAccountLocked(accountId), "Account must be locked to perform this action");
+        _;
+    }
+
+    modifier onlyUnlocked(string memory accountId) {
+        require(!isAccountLocked(accountId), "Account must be unlocked to perform this action");
         _;
     }
 
@@ -72,18 +81,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bool Whether the account is locked
      */
-    function isLocked(string memory accountId) public view returns (bool) {
-        TimeLock memory lock = accountTimeLocks[accountId];
-        return (lock.lockUntil > block.timestamp);
-    }
-
-    /**
-     * @dev Get the lock for an account
-     * @param accountId The account ID
-     * @return TimeLock The lock
-     */
-    function getLock(string memory accountId) public view returns (TimeLock memory) {
-        return accountTimeLocks[accountId];
+    function isAccountLocked(string memory accountId) public view returns (bool) {
+        Account storage account = accountsStore[accountId];
+        return account.isLocked;
     }
 
     /**
@@ -100,7 +100,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to approve
      */
-    function approveAddressCallback(Suave.DataId accountId, address _address) public emitOffchainLogs {
+    function approveAddressCallback(Suave.DataId accountId, address _address)
+        public
+        emitOffchainLogs
+        onlyLocked(Utils.iToHex(abi.encodePacked(accountId)))
+    {
         accountApprovals[accountId] = _address;
         emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }
@@ -114,6 +118,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function approveAddress(string memory accountId, address _address)
         public
         view
+        onlyLocked(accountId)
         returns (bytes memory)
     {
         Account storage account = accountsStore[accountId];
@@ -126,7 +131,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeApproval(string memory accountId, address _address) public {
+    function revokeApproval(string memory accountId, address _address) public onlyLocked(accountId) {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
         delete accountApprovals[account.accountId];
@@ -151,6 +156,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return string The account ID
      */
     function createAccountCallback(Account memory account) public emitOffchainLogs returns (string memory) {
+        require(account.isLocked == true, "The account should be locked by default");
         string memory accountId = storeAccount(account);
         return accountId;
     }
@@ -171,8 +177,14 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address[] memory approvedAddresses = new address[](1);
         approvedAddresses[0] = msg.sender;
 
-        Account memory account =
-            Account({accountId: record.id, owner: msg.sender, publicKeyX: x, publicKeyY: y, curve: Curve.ECDSA});
+        Account memory account = Account({
+            accountId: record.id,
+            owner: msg.sender,
+            publicKeyX: x,
+            publicKeyY: y,
+            curve: Curve.ECDSA,
+            isLocked: true
+        });
 
         return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
     }
@@ -182,7 +194,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param to The address to transfer the account to
      * @param accountId The account ID
      */
-    function transferAccountCallback(address to, string memory accountId) public onlyApproved(accountId) {
+    function transferAccountCallback(string memory accountId, address to)
+        public
+        onlyApproved(accountId)
+        onlyLocked(accountId)
+    {
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -198,7 +214,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function transferAccount(string memory accountId, address to) public pure returns (bytes memory) {
+    function transferAccount(string memory accountId, address to)
+        public
+        view
+        onlyLocked(accountId)
+        returns (bytes memory)
+    {
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
     }
 
@@ -206,7 +227,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Delete an account
      * @param accountId The account ID
      */
-    function deleteAccountCallback(string memory accountId) public onlyApproved(accountId) {
+    function deleteAccountCallback(string memory accountId) public {
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
     }
@@ -221,32 +242,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     }
 
     /**
-     * @dev Lock an account
-     * @param accountId The account ID
-     * @param duration The duration to lock the account for
-     */
-    function lockAccountCallback(string memory accountId, uint256 duration) public onlyApproved(accountId) {
-        require(!isLocked(accountId), "Account is already locked");
-        accountTimeLocks[accountId] = TimeLock({lockUntil: block.timestamp + duration, lockedBy: msg.sender});
-        emit AccountLocked(accountId, duration);
-    }
-
-    /**
-     * @dev Lock an account
-     * @param accountId The account ID
-     * @return bytes The encoded callback data
-     */
-    function lockAccount(string memory accountId, uint256 duration) public pure returns (bytes memory) {
-        return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
-    }
-
-    /**
      * @dev Unlock an account
      * @param accountId The account ID
      */
-    function unlockAccountCallback(string memory accountId) public onlyApproved(accountId) {
-        require(isLocked(accountId), "Account is not locked");
-        delete accountTimeLocks[accountId];
+    function unlockAccountCallback(string memory accountId) public onlyLocked(accountId) {
+        Account storage account = accountsStore[accountId];
+        account.isLocked = false;
         emit AccountUnlocked(accountId);
     }
 
@@ -255,7 +256,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function unlockAccount(string memory accountId) public pure returns (bytes memory) {
+    function unlockAccount(string memory accountId) public view onlyLocked(accountId) returns (bytes memory) {
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -268,6 +269,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return bytes The encoded callback data
      */
     function sign(Suave.DataId accountId, bytes memory data) public returns (bytes memory) {
+        unlockAccount(Utils.iToHex(abi.encodePacked(accountId)));
         bytes memory signingKey = Suave.confidentialRetrieve(accountId, KEY_FA);
         bytes memory signature = signData(data, string(signingKey));
         string memory accountIdString = Utils.iToHex(abi.encodePacked(accountId));

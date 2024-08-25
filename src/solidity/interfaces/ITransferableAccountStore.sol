@@ -11,17 +11,13 @@ interface ITransferableAccountStore {
         uint256 publicKeyX;
         uint256 publicKeyY;
         Curve curve;
+        bool isLocked;
     }
 
     enum Curve {
         CURVE_UNKNOWN,
         ECDSA,
         EDDSA
-    }
-
-    struct TimeLock {
-        uint256 lockUntil;
-        address lockedBy;
     }
 
     // Events
@@ -38,8 +34,7 @@ interface ITransferableAccountStore {
     function getAccount(string memory accountId) external view returns (Account memory);
     function isApproved(string memory accountId, address _address) external view returns (bool);
     function isOwner(string memory accountId, address _address) external view returns (bool);
-    function isLocked(string memory accountId) external view returns (bool);
-    function getLock(string memory accountId) external view returns (TimeLock memory);
+    function isAccountLocked(string memory accountId) external view returns (bool);
 
     // Actions
     function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
