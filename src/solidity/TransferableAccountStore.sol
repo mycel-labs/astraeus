@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-<<<<<<< HEAD
-import "lib/suave-std/src/Suapp.sol";
-import "lib/suave-std/src/Context.sol";
-import "lib/suave-std/src/Transactions.sol";
-import "lib/suave-std/src/suavelib/Suave.sol";
-=======
 import "suave-std/Suapp.sol";
 import "suave-std/suavelib/Suave.sol";
 import "suave-std/Context.sol";
 import "suave-std/Transactions.sol";
 import "suave-std/suavelib/Suave.sol";
->>>>>>> main
 
 import "./interfaces/ITransferableAccountStore.sol";
 import "./lib/EllipticCurve.sol";
@@ -118,15 +111,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param _address The address to approve
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
-    function approveAddress(string memory accountId, address _address) public view returns (bytes memory) {
-=======
-    function approveAddress(
-        SignatureVerifier.TimedSignature calldata signature,
-        string memory accountId,
-        address _address
-    ) external returns (bytes memory) {
->>>>>>> main
+    function approveAddress(string memory accountId, address _address)
+        public
+        view
+        returns (bytes memory)
+    {
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
@@ -137,15 +126,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-<<<<<<< HEAD
     function revokeApproval(string memory accountId, address _address) public {
-=======
-    function revokeApproval(
-        SignatureVerifier.TimedSignature calldata signature,
-        string memory accountId,
-        address _address
-    ) public {
->>>>>>> main
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
         delete accountApprovals[account.accountId];
@@ -178,11 +159,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
     function createAccount() public returns (bytes memory) {
-=======
-    function createAccount(SignatureVerifier.TimedSignature calldata signature) public returns (bytes memory) {
->>>>>>> main
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
         address[] memory peekers = new address[](1);
@@ -195,11 +172,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         approvedAddresses[0] = msg.sender;
 
         Account memory account =
-<<<<<<< HEAD
-            Account({accountId: record.id, owner: msg.sender, publicKeyX: x, publicKeyY: y, key: keyData});
-=======
             Account({accountId: record.id, owner: msg.sender, publicKeyX: x, publicKeyY: y, curve: Curve.ECDSA});
->>>>>>> main
 
         return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
     }
@@ -225,16 +198,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
-    function transferAccount(address to, string memory accountId) public pure returns (bytes memory) {
-=======
-    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
->>>>>>> main
-        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
+    function transferAccount(string memory accountId, address to) public pure returns (bytes memory) {
+        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
     }
 
     /**
@@ -251,15 +216,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
     function deleteAccount(string memory accountId) public pure returns (bytes memory) {
-=======
-    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
->>>>>>> main
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -279,15 +236,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
     function lockAccount(string memory accountId, uint256 duration) public pure returns (bytes memory) {
-=======
-    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
-        public
-        pure
-        returns (bytes memory)
-    {
->>>>>>> main
         return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -306,15 +255,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-<<<<<<< HEAD
     function unlockAccount(string memory accountId) public pure returns (bytes memory) {
-=======
-    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        public
-        pure
-        returns (bytes memory)
-    {
->>>>>>> main
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -351,11 +292,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return uint256 The x coordinate of the public key
      * @return uint256 The y coordinate of the public key
      */
-<<<<<<< HEAD
-    function generatePublicKey(uint256 privKey) public pure returns (uint256, uint256) {
-=======
     function generatePublicKey(uint256 privKey) private pure returns (uint256, uint256) {
->>>>>>> main
         return EllipticCurve.ecMul(privKey, GX, GY, AA, PP);
     }
 }
