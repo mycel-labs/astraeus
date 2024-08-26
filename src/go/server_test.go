@@ -14,7 +14,6 @@ import (
 
 var (
 	fr              *framework.Framework
-	cfg             *framework.Config
 	taStoreContract *framework.Contract
 	accountId       string
 )
@@ -124,7 +123,10 @@ func TestIsApproved(t *testing.T) {
 		taStoreContract: taStoreContract,
 	}
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{&TimedSignature{}, accountId, testAddress}, nil)
+	sig := &TimedSignature{
+		Signer: common.HexToAddress(fundedAddress),
+	}
+	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, accountId, testAddress}, nil)
 
 	// Test cases
 	testCases := []struct {
@@ -295,6 +297,68 @@ func TestDeleteAccount(t *testing.T) {
 				_, err := s.GetAccount(context.Background(), accountReq)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "account not found")
+			}
+		})
+	}
+}
+
+func TestApproveAddress(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	// Create a new account for approval
+	createReq := &pb.CreateAccountRequest{}
+	createResp, err := s.CreateAccount(context.Background(), createReq)
+	assert.NoError(t, err, "CreateAccount call should not return an error")
+	newAccountId := string(createResp.Data)
+
+	newApprovedAddress := "0x1234567890123456789012345678901234567890"
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		address   string
+		expectErr bool
+	}{
+		{"Valid approval", newAccountId, newApprovedAddress, false},
+		{"Non-existent account", "non_existent_account_id", newApprovedAddress, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.ApproveAddressRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof: &pb.TimedSignature{
+						Signer: fundedAddress,
+					},
+				},
+				Address: tc.address,
+			}
+			resp, err := s.ApproveAddress(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.accountId, string(resp.Data))
+
+				// Verify the address was approved
+				isApprovedReq := &pb.AccountIdToAddressRequest{
+					AccountId: tc.accountId,
+					Address:   tc.address,
+				}
+				isApprovedResp, err := s.IsApproved(context.Background(), isApprovedReq)
+				assert.NoError(t, err)
+				assert.NotNil(t, isApprovedResp)
+				assert.True(t, isApprovedResp.Result)
 			}
 		})
 	}

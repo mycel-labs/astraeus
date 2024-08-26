@@ -117,7 +117,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address _address
     ) external returns (bytes memory) {
         Account storage account = accountsStore[accountId];
-        require(account.owner == msg.sender, "Only owner can approve addresses");
+        require(account.owner == signature.signer, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
     }
 

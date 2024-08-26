@@ -117,8 +117,35 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 // 	return &pb.BytesResponse{}, nil
 // }
 
-// func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
+func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
+	sig := &TimedSignature{
+		Signer: common.HexToAddress(req.Base.Proof.Signer),
+	}
+
+	var result *types.Receipt
+	var err error
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.Address)}, nil)
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("failed to approve address")
+	}
+
+	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+}
+
+// 	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
 // }
 
 // func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.BoolResponse, error) {
