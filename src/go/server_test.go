@@ -191,3 +191,57 @@ func TestIsOwner(t *testing.T) {
 		})
 	}
 }
+
+func TestTransferAccount(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	newOwner := "0x1234567890123456789012345678901234567890"
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		to        string
+		expectErr bool
+	}{
+		{"Valid transfer", accountId, newOwner, false},
+		{"Non-existent account", "non_existent_account_id", newOwner, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.TransferAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof: &pb.TimedSignature{
+						Signer: fundedAddress,
+					},
+				},
+				To: tc.to,
+			}
+			resp, err := s.TransferAccount(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				t.Logf("error: %v", err)
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.accountId, string(resp.Data))
+
+				// Verify the account was transferred
+				accountReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				accountResp, err := s.GetAccount(context.Background(), accountReq)
+				assert.NoError(t, err)
+				assert.NotNil(t, accountResp)
+				assert.Equal(t, tc.to, accountResp.Account.Owner)
+			}
+		})
+	}
+}

@@ -186,7 +186,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param to The address to transfer the account to
      * @param accountId The account ID
      */
-    function transferAccountCallback(address to, string memory accountId) public onlyApproved(accountId) {
+    function transferAccountCallback(address to, string memory accountId) public {
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -204,9 +204,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
         public
-        pure
         returns (bytes memory)
     {
+        // TODO: verify signature
+        require(isOwner(accountId, signature.signer), "Only owner can transfer accounts");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }
 
