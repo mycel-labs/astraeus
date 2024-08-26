@@ -363,3 +363,78 @@ func TestApproveAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestRevokeApproval(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	// Create a new account for approval and revocation
+	createReq := &pb.CreateAccountRequest{}
+	createResp, err := s.CreateAccount(context.Background(), createReq)
+	assert.NoError(t, err, "CreateAccount call should not return an error")
+	newAccountId := string(createResp.Data)
+
+	addressToApprove := "0x1234567890123456789012345678901234567890"
+
+	// Approve the address first
+	approveReq := &pb.ApproveAddressRequest{
+		Base: &pb.AccountOperationRequest{
+			AccountId: newAccountId,
+			Proof: &pb.TimedSignature{
+				Signer: fundedAddress,
+			},
+		},
+		Address: addressToApprove,
+	}
+	_, err = s.ApproveAddress(context.Background(), approveReq)
+	assert.NoError(t, err, "ApproveAddress call should not return an error")
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		address   string
+		expectErr bool
+	}{
+		{"Valid revocation", newAccountId, addressToApprove, false},
+		{"Non-existent account", "non_existent_account_id", addressToApprove, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.RevokeApprovalRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof: &pb.TimedSignature{
+						Signer: fundedAddress,
+					},
+				},
+				Address: tc.address,
+			}
+			resp, err := s.RevokeApproval(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.True(t, resp.Result)
+
+				// Verify the address was revoked
+				isApprovedReq := &pb.AccountIdToAddressRequest{
+					AccountId: tc.accountId,
+					Address:   tc.address,
+				}
+				isApprovedResp, err := s.IsApproved(context.Background(), isApprovedReq)
+				assert.NoError(t, err)
+				assert.NotNil(t, isApprovedResp)
+				assert.False(t, isApprovedResp.Result)
+			}
+		})
+	}
+}
