@@ -245,3 +245,57 @@ func TestTransferAccount(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteAccount(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+
+	// Create a new account for deletion
+	createReq := &pb.CreateAccountRequest{}
+	createResp, err := s.CreateAccount(context.Background(), createReq)
+	assert.NoError(t, err, "CreateAccount call should not return an error")
+	newAccountId := string(createResp.Data)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		expectErr bool
+	}{
+		{"Valid deletion", newAccountId, false},
+		{"Non-existent account", "non_existent_account_id", true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.DeleteAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof: &pb.TimedSignature{
+						Signer: fundedAddress,
+					},
+				},
+			}
+			resp, err := s.DeleteAccount(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.accountId, string(resp.Data))
+
+				// Verify the account was deleted
+				accountReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				_, err := s.GetAccount(context.Background(), accountReq)
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "account not found")
+			}
+		})
+	}
+}

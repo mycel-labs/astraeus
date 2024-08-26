@@ -75,9 +75,39 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-// func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.BytesResponse, error) {
+	sig := &TimedSignature{
+		Signer: common.HexToAddress(req.Base.Proof.Signer),
+	}
+
+	var result *types.Receipt
+	var err error
+
+	// Use an anonymous function to handle potential panics
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				// Convert panic to error
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		// Execute the confidential request
+		result = s.taStoreContract.SendConfidentialRequest("deleteAccount", []interface{}{sig, req.Base.AccountId}, nil)
+	}()
+
+	// Check if a panic occurred and was converted to an error
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the transaction was successful
+	if result == nil {
+		return nil, fmt.Errorf("failed to delete account")
+	}
+
+	// Return the account ID as a response
+	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+}
 
 // func (s *server) LockAccount(ctx context.Context, req *pb.LockAccountRequest) (*pb.BytesResponse, error) {
 // 	return &pb.BytesResponse{}, nil

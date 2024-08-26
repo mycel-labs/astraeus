@@ -204,6 +204,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
         public
+        view
         returns (bytes memory)
     {
         // TODO: verify signature
@@ -215,7 +216,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Delete an account
      * @param accountId The account ID
      */
-    function deleteAccountCallback(string memory accountId) public onlyApproved(accountId) {
+    function deleteAccountCallback(string memory accountId) public {
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
     }
@@ -227,9 +228,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         public
-        pure
+        view
         returns (bytes memory)
     {
+        require(isOwner(accountId, signature.signer), "Only owner can delete accounts");
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
