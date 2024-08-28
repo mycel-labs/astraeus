@@ -129,8 +129,8 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 	// Step 1: Create the message hash
 	// Combine validFor timestamp and signer's address, then hash with Keccak256
 	messageHash = crypto.Keccak256Hash(
-		common.BigToHash(big.NewInt(validFor)).Bytes(),
-		address.Bytes(),
+		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
+		common.LeftPadBytes(address.Bytes(), 20),
 	)
 
 	// Step 2: Apply Ethereum-specific prefix
