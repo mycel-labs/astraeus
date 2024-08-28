@@ -134,8 +134,8 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 	)
 
 	// Step 2: Apply Ethereum-specific prefix
-	// Prepend "\x19Ethereum Signed Message:\n32" and hash again
-	prefixedMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", messageHash)
+	// Prepend "\x19Mycel Signed Message:\n32" and hash again
+	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
 	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
 
 	// Step 3: Generate the signature

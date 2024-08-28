@@ -31,7 +31,7 @@ library SignatureVerifier {
         }
 
         // Verify the signature
-        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Mycel Signed Message:\n32", messageHash));
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
         address recoveredSigner = ecrecover(ethSignedMessageHash, v, r, s);
 
