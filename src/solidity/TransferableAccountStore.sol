@@ -112,11 +112,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return bytes The encoded callback data
      */
     function approveAddress(
-        SignatureVerifier.TimedSignature calldata signature,
+        SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
     ) external view returns (bytes memory) {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can approve addresses");
@@ -129,11 +129,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param _address The address to revoke
      */
     function revokeApproval(
-        SignatureVerifier.TimedSignature calldata signature,
+        SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
     ) public {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         Account storage account = accountsStore[accountId];
         require(account.owner == msg.sender, "Only owner can revoke addresses");
@@ -167,8 +167,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-    function createAccount(SignatureVerifier.TimedSignature calldata signature) public returns (bytes memory) {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
@@ -208,12 +208,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
-        public
-        view
-        returns (bytes memory)
-    {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+    function transferAccount(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        address to,
+        string memory accountId
+    ) public view returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }
 
@@ -231,12 +231,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+    function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
         public
         view
         returns (bytes memory)
     {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -256,12 +256,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
-        public
-        view
-        returns (bytes memory)
-    {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+    function lockAccount(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        uint256 duration
+    ) public view returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.lockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -280,12 +280,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+    function unlockAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
         public
         view
         returns (bytes memory)
     {
-        require(_verifyTimedSignature(signature), "Invalid signature");
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
     }
 
@@ -307,21 +307,29 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
     /**
      * @dev Verify a timed signature
-     * @param signature The signature to verify
-     * @return bool Whether the signature is valid
+     * @param timedSignature The timedSignature to verify
+     * @return bool Whether the timedSignature is valid
      */
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) public view returns (bool) {
-        return _verifyTimedSignature(signature);
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+        public
+        view
+        returns (bool)
+    {
+        return _verifyTimedSignature(timedSignature);
     }
 
     /**
      * @dev Verify a timed signature
-     * @param signature The signature to verify
-     * @return bool Whether the signature is valid
+     * @param timedSignature The timedSignature to verify
+     * @return bool Whether the timedSignature is valid
      */
-    function _verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) private view returns (bool) {
+    function _verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+        private
+        view
+        returns (bool)
+    {
         return SignatureVerifier.verifyTimedSignature(
-            signature.validFor, signature.messageHash, signature.signature, signature.signer
+            timedSignature.validFor, timedSignature.messageHash, timedSignature.signature, timedSignature.signer
         );
     }
 
