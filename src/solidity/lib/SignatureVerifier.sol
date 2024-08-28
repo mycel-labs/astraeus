@@ -26,8 +26,7 @@ library SignatureVerifier {
         }
 
         // Recalculate the message hash
-        bytes32 calculatedHash = hashMessage(validFor, signer);
-        if (messageHash != calculatedHash) {
+        if (messageHash != hashMessage(validFor, signer)) {
             return false;
         }
 
