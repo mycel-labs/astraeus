@@ -184,11 +184,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         Suave.confidentialStore(record.id, KEY_FA, abi.encodePacked(keyData));
         (uint256 x, uint256 y) = generatePublicKey(Utils.hexStringToUint256(keyData));
         address[] memory approvedAddresses = new address[](1);
-        approvedAddresses[0] = msg.sender;
+        approvedAddresses[0] = timedSignature.signer;
 
         Account memory account = Account({
             accountId: record.id,
-            owner: msg.sender,
+            owner: timedSignature.signer,
             publicKeyX: x,
             publicKeyY: y,
             curve: Curve.ECDSA,

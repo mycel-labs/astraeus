@@ -85,7 +85,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        assertEq(account.owner, address(this), "Owner should be the test contract");
+        assertEq(account.owner, sig.signer, "Owner should be alice");
         assertTrue(account.isLocked, "account shouold be locked");
     }
 
