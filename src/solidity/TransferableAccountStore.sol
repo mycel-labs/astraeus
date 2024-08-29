@@ -119,7 +119,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         Account storage account = accountsStore[accountId];
-        require(account.owner == signature.signer, "Only owner can approve addresses");
+        require(account.owner == timedSignature.signer, "Only owner can approve addresses");
         return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
     }
 
@@ -137,11 +137,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
-    ) public {
+    ) public view returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         Account storage account = accountsStore[accountId];
-        require(account.owner == signature.signer, "Only owner can revoke addresses");
+        require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
         return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(account.accountId, _address));
     }
 
@@ -240,7 +240,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         view
         returns (bytes memory)
     {
-        require(isOwner(accountId, signature.signer), "Only owner can delete accounts");
+        require(isOwner(accountId, timedSignature.signer), "Only owner can delete accounts");
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
     }
