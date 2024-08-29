@@ -217,6 +217,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address to,
         string memory accountId
     ) public view returns (bytes memory) {
+        require(isOwner(accountId, timedSignature.signer), "Only owner can transfer accounts");
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(to, accountId));
     }

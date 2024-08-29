@@ -60,12 +60,9 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.BytesResponse, error) {
-	sig := &TimedSignature{
-		Signer: common.HexToAddress(req.Base.Proof.Signer),
-	}
-
 	var result *types.Receipt
 	var err error
+	sig := populateTimedSignature(req.Base.Proof)
 
 	// Use an anonymous function to handle potential panics
 	func() {
@@ -94,12 +91,9 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.BytesResponse, error) {
-	sig := &TimedSignature{
-		Signer: common.HexToAddress(req.Base.Proof.Signer),
-	}
-
 	var result *types.Receipt
 	var err error
+	sig := populateTimedSignature(req.Base.Proof)
 
 	// Use an anonymous function to handle potential panics
 	func() {
@@ -136,12 +130,9 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 // }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
-	sig := &TimedSignature{
-		Signer: common.HexToAddress(req.Base.Proof.Signer),
-	}
-
 	var result *types.Receipt
 	var err error
+	sig := populateTimedSignature(req.Base.Proof)
 
 	func() {
 		defer func() {
@@ -164,12 +155,9 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.BoolResponse, error) {
-	sig := &TimedSignature{
-		Signer: common.HexToAddress(req.Base.Proof.Signer),
-	}
-
 	var result *types.Receipt
 	var err error
+	sig := populateTimedSignature(req.Base.Proof)
 
 	func() {
 		defer func() {

@@ -52,6 +52,11 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
+	account := createAccount(t, privateKey)
+	t.Logf("account: %v", account)
+}
+
+func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 	sig := newTimedSignature(t, privateKey)
 	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
 	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
@@ -59,7 +64,24 @@ func setup(t *testing.T) {
 		t.Fatalf("failed to parse log: %v", err)
 	}
 	accountId = ev["accountId"].(string)
-	t.Logf("accountId: %s", accountId)
+	return &pb.Account{
+		AccountId: accountId,
+		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+}
+
+func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSignature {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
+	if err != nil {
+		t.Fatalf("failed to generate timed signature: %v", err)
+	}
+	return &pb.TimedSignature{
+		ValidFor:    validFor,
+		MessageHash: messageHash[:],
+		Signature:   signature,
+		Signer:      fundedAddress,
+	}
 }
 
 func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *TimedSignature {
@@ -179,9 +201,7 @@ func TestIsApproved(t *testing.T) {
 		taStoreContract: taStoreContract,
 	}
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-	sig := &TimedSignature{
-		Signer: common.HexToAddress(fundedAddress),
-	}
+	sig := newTimedSignature(t, privateKey)
 	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, accountId, testAddress}, nil)
 
 	// Test cases
@@ -272,12 +292,11 @@ func TestTransferAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
+			sig := newPbTimedSignature(t, privateKey)
 			req := &pb.TransferAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof: &pb.TimedSignature{
-						Signer: fundedAddress,
-					},
+					Proof:     sig,
 				},
 				To: tc.to,
 			}
@@ -309,12 +328,7 @@ func TestDeleteAccount(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
-
-	// Create a new account for deletion
-	createReq := &pb.CreateAccountRequest{}
-	createResp, err := s.CreateAccount(context.Background(), createReq)
-	assert.NoError(t, err, "CreateAccount call should not return an error")
-	newAccountId := string(createResp.Data)
+	account := createAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -322,19 +336,18 @@ func TestDeleteAccount(t *testing.T) {
 		accountId string
 		expectErr bool
 	}{
-		{"Valid deletion", newAccountId, false},
+		{"Valid deletion", account.AccountId, false},
 		{"Non-existent account", "non_existent_account_id", true},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			sig := newPbTimedSignature(t, privateKey)
 			// Execute
 			req := &pb.DeleteAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof: &pb.TimedSignature{
-						Signer: fundedAddress,
-					},
+					Proof:     sig,
 				},
 			}
 			resp, err := s.DeleteAccount(context.Background(), req)
@@ -363,14 +376,9 @@ func TestApproveAddress(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
-
-	// Create a new account for approval
-	createReq := &pb.CreateAccountRequest{}
-	createResp, err := s.CreateAccount(context.Background(), createReq)
-	assert.NoError(t, err, "CreateAccount call should not return an error")
-	newAccountId := string(createResp.Data)
-
+	account := createAccount(t, privateKey)
 	newApprovedAddress := "0x1234567890123456789012345678901234567890"
+	sig := newPbTimedSignature(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -379,7 +387,7 @@ func TestApproveAddress(t *testing.T) {
 		address   string
 		expectErr bool
 	}{
-		{"Valid approval", newAccountId, newApprovedAddress, false},
+		{"Valid approval", account.AccountId, newApprovedAddress, false},
 		{"Non-existent account", "non_existent_account_id", newApprovedAddress, true},
 	}
 
@@ -389,9 +397,7 @@ func TestApproveAddress(t *testing.T) {
 			req := &pb.ApproveAddressRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof: &pb.TimedSignature{
-						Signer: fundedAddress,
-					},
+					Proof:     sig,
 				},
 				Address: tc.address,
 			}
@@ -425,26 +431,19 @@ func TestRevokeApproval(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
-
-	// Create a new account for approval and revocation
-	createReq := &pb.CreateAccountRequest{}
-	createResp, err := s.CreateAccount(context.Background(), createReq)
-	assert.NoError(t, err, "CreateAccount call should not return an error")
-	newAccountId := string(createResp.Data)
-
+	account := createAccount(t, privateKey)
 	addressToApprove := "0x1234567890123456789012345678901234567890"
+	sig := newPbTimedSignature(t, privateKey)
 
 	// Approve the address first
 	approveReq := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
-			AccountId: newAccountId,
-			Proof: &pb.TimedSignature{
-				Signer: fundedAddress,
-			},
+			AccountId: account.AccountId,
+			Proof:     sig,
 		},
 		Address: addressToApprove,
 	}
-	_, err = s.ApproveAddress(context.Background(), approveReq)
+	_, err := s.ApproveAddress(context.Background(), approveReq)
 	assert.NoError(t, err, "ApproveAddress call should not return an error")
 
 	// Test cases
@@ -454,7 +453,7 @@ func TestRevokeApproval(t *testing.T) {
 		address   string
 		expectErr bool
 	}{
-		{"Valid revocation", newAccountId, addressToApprove, false},
+		{"Valid revocation", account.AccountId, addressToApprove, false},
 		{"Non-existent account", "non_existent_account_id", addressToApprove, true},
 	}
 
@@ -464,9 +463,7 @@ func TestRevokeApproval(t *testing.T) {
 			req := &pb.RevokeApprovalRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof: &pb.TimedSignature{
-						Signer: fundedAddress,
-					},
+					Proof:     sig,
 				},
 				Address: tc.address,
 			}
