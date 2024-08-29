@@ -328,10 +328,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         string memory accountId = tas.createAccountCallback(account);
 
-        bool isOwner = tas.isOwner(accountId, address(this));
+        bool isOwner = tas.isOwner(accountId, alice);
         assertTrue(isOwner, "Address should be the owner");
 
-        isOwner = tas.isOwner(accountId, alice);
+        isOwner = tas.isOwner(accountId, bob);
         assertFalse(isOwner, "Address should not be the owner");
     }
 
