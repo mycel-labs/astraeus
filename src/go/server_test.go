@@ -52,8 +52,6 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
-	account := createAccount(t, privateKey)
-	t.Logf("account: %v", account)
 }
 
 func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
@@ -165,6 +163,7 @@ func TestGetAccount(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
+	account := createAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -172,7 +171,7 @@ func TestGetAccount(t *testing.T) {
 		accountID string
 		expectErr bool
 	}{
-		{"Valid account", accountId, false},
+		{"Valid account", account.AccountId, false},
 		{"Non-existent account", "non_existent_account_id", true},
 	}
 
