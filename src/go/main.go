@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/suave/sdk"
-	framework "github.com/mycel-labs/transferable-account/framework"
+	framework "github.com/mycel-labs/transferable-account/src/go/framework"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"

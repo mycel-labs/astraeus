@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
-	framework "github.com/mycel-labs/transferable-account/framework"
-	pb "github.com/mycel-labs/transferable-account/pb"
+	framework "github.com/mycel-labs/transferable-account/src/go/framework"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb"
 )
 
 var (
