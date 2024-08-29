@@ -61,6 +61,7 @@ interface ITransferableAccountStore {
         string memory accountId,
         address _address
     ) external returns (bytes memory);
+
     function revokeApproval(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
@@ -68,4 +69,6 @@ interface ITransferableAccountStore {
     ) external view returns (bytes memory);
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
+
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
 }

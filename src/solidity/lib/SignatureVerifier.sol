@@ -9,26 +9,29 @@ library SignatureVerifier {
         address signer;
     }
 
-    event SignatureFailed(bytes32 messageHash, address signer, uint256 validFor);
-    event SignatureVerified(bytes32 messageHash, address signer, uint256 validFor);
+    event SignatureFailed(bytes32 messageHash, address signer, uint64 validFor);
+    event SignatureVerified(bytes32 messageHash, address signer, uint64 validFor);
 
-    function hashMessage(uint256 validFor, address sender) internal pure returns (bytes32) {
+    function hashMessage(uint64 validFor, address sender) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(validFor, sender));
     }
 
-    function verifyTimedSignature(uint256 validFor, bytes32 messageHash, bytes memory signature, address signer)
+    function verifyTimedSignature(uint64 validFor, bytes32 messageHash, bytes memory signature, address signer)
         internal
         view
         returns (bool)
     {
-        require(block.timestamp <= validFor, "Signature has expired");
+        if (block.timestamp > validFor) {
+            return false;
+        }
 
         // Recalculate the message hash
-        bytes32 calculatedHash = hashMessage(validFor, signer);
-        require(messageHash == calculatedHash, "Invalid message hash");
+        if (messageHash != hashMessage(validFor, signer)) {
+            return false;
+        }
 
         // Verify the signature
-        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Mycel Signed Message:\n32", messageHash));
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
         address recoveredSigner = ecrecover(ethSignedMessageHash, v, r, s);
 
