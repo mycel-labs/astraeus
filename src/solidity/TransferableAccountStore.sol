@@ -288,8 +288,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param data The data to sign
      * @return bytes The encoded callback data
      */
-    function sign(Suave.DataId accountId, bytes memory data) public returns (bytes memory) {
-        unlockAccount(Utils.iToHex(abi.encodePacked(accountId)));
+    function sign(Suave.DataId accountId, bytes memory data)
+        public
+        onlyUnlocked(Utils.iToHex(abi.encodePacked(accountId)))
+        returns (bytes memory)
+    {
         bytes memory signingKey = Suave.confidentialRetrieve(accountId, KEY_FA);
         bytes memory signature = signData(data, string(signingKey));
         string memory accountIdString = Utils.iToHex(abi.encodePacked(accountId));
