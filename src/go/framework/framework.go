@@ -40,7 +40,7 @@ func ReadArtifact(path string) (*Artifact, error) {
 	}
 	dirname := filepath.Dir(filename)
 
-	data, err := os.ReadFile(filepath.Join(dirname, "../out", path))
+	data, err := os.ReadFile(filepath.Join(dirname, "../../../out", path))
 	if err != nil {
 		return nil, err
 	}

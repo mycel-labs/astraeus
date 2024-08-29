@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/mycel-labs/transferable-account/pb"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb"
 )
 
 type server struct {
