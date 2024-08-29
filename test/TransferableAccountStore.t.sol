@@ -12,44 +12,31 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     address public admin = address(this);
     address public user1 = address(0x1);
 
+    // Helper function to decode encoded data
+    function decodeEncodedData(bytes memory encodedData) internal pure returns (bytes memory) {
+        bytes memory decodedData = new bytes(encodedData.length - 4);
+        for (uint256 i = 4; i < encodedData.length; i++) {
+            decodedData[i - 4] = encodedData[i];
+        }
+        return decodedData;
+    }
+
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedData = tas.createAccount();
-
-        bytes4 selector;
-        bytes memory accountData;
-
-        assembly {
-            selector := mload(add(encodedData, 32))
-        }
-
-        accountData = new bytes(encodedData.length - 4);
-        for (uint256 i = 4; i < encodedData.length; i++) {
-            accountData[i - 4] = encodedData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         assertEq(account.owner, address(this), "Owner should be the test contract");
-        assertTrue(account.isLocked, "account shouold be locked");
+        assertTrue(account.isLocked, "Account should be locked");
     }
 
     function testCreateAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedData = tas.createAccount();
-
-        bytes4 selector;
-        bytes memory accountData;
-
-        assembly {
-            selector := mload(add(encodedData, 32))
-        }
-
-        accountData = new bytes(encodedData.length - 4);
-        for (uint256 i = 4; i < encodedData.length; i++) {
-            accountData[i - 4] = encodedData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -64,71 +51,43 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             bool isLocked
         ) = tas.accountsStore(accountId);
         bytes16 storedAccountIdBytes = Suave.DataId.unwrap(storedAccountId);
-        string memory storedAccountIdToString = bytes16ToString(storedAccountIdBytes);
+        string memory storedAccountIdToString = StringUtils.bytes16ToString(storedAccountIdBytes);
         assertEq(storedAccountIdToString, accountId, "Stored account ID should match");
         assertEq(storedOwner, account.owner, "Stored account owner should match");
         assertEq(storedPublicKeyX, account.publicKeyX, "Stored account public key X should match");
         assertEq(storedPublicKeyY, account.publicKeyY, "Stored account public key Y should match");
         assertEq(uint256(storedCurve), uint256(account.curve), "Stored account curve should match");
-        assertTrue(isLocked, "Stored account shouold be locked");
+        assertTrue(isLocked, "Stored account should be locked");
     }
 
     function testApproveAddress() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
         bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
-
-        bytes4 selector;
-        bytes memory approveData;
-
-        assembly {
-            selector := mload(add(encodedApproveAddressData, 32))
-        }
-
-        approveData = new bytes(encodedApproveAddressData.length - 4);
-        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveData[i - 4] = encodedApproveAddressData[i];
-        }
+        bytes memory approveData = decodeEncodedData(encodedApproveAddressData);
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveData, (bytes16, address));
-        assertEq(bytes16ToString(decodedAccountId), accountId, "Approved account ID should match");
+        assertEq(StringUtils.bytes16ToString(decodedAccountId), accountId, "Approved account ID should match");
         assertEq(decodedAddress, user1, "Approved account address should match");
     }
 
     function testApproveAddressCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
         bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
-
-        bytes4 selector;
-        bytes memory approveAddressData;
-
-        assembly {
-            selector := mload(add(encodedApproveAddressData, 32))
-        }
-
-        approveAddressData = new bytes(encodedApproveAddressData.length - 4);
-        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveAddressData[i - 4] = encodedApproveAddressData[i];
-        }
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
 
@@ -141,37 +100,20 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testTransferAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
         bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
-        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
-        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveAddressData[i - 4] = encodedApproveAddressData[i];
-        }
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
         tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         bytes memory encodedTransferAccountData = tas.transferAccount(accountId, user1);
-
-        bytes4 selector;
-        bytes memory transferAccountData;
-
-        assembly {
-            selector := mload(add(encodedTransferAccountData, 32))
-        }
-
-        transferAccountData = new bytes(encodedTransferAccountData.length - 4);
-        for (uint256 i = 4; i < encodedTransferAccountData.length; i++) {
-            transferAccountData[i - 4] = encodedTransferAccountData[i];
-        }
+        bytes memory transferAccountData = decodeEncodedData(encodedTransferAccountData);
 
         (string memory decodedTransferdAccountId, address decodedToAddress) =
             abi.decode(transferAccountData, (string, address));
@@ -182,29 +124,20 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testTransferAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
         bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
-        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
-        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveAddressData[i - 4] = encodedApproveAddressData[i];
-        }
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
         tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         bytes memory encodedTransferAccountData = tas.transferAccount(accountId, user1);
-        bytes memory transferAccountData = new bytes(encodedTransferAccountData.length - 4);
-        for (uint256 i = 4; i < encodedTransferAccountData.length; i++) {
-            transferAccountData[i - 4] = encodedTransferAccountData[i];
-        }
+        bytes memory transferAccountData = decodeEncodedData(encodedTransferAccountData);
 
         (string memory decodedTransferdAccountId, address decodedToAddress) =
             abi.decode(transferAccountData, (string, address));
@@ -221,20 +154,14 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testIsApproved() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
         bytes memory encodedApproveAddressData = tas.approveAddress(accountId, user1);
-        bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
-        for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveAddressData[i - 4] = encodedApproveAddressData[i];
-        }
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
         tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
@@ -250,10 +177,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testIsOwner() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -270,10 +194,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testGetAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -283,7 +204,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         bytes16 retrievedAccountIdBytes = Suave.DataId.unwrap(retrievedAccount.accountId);
 
-        assertEq(bytes16ToString(retrievedAccountIdBytes), accountId, "Account ID should match");
+        assertEq(StringUtils.bytes16ToString(retrievedAccountIdBytes), accountId, "Account ID should match");
         assertEq(retrievedAccount.owner, account.owner, "Owner should match");
         assertEq(retrievedAccount.publicKeyX, account.publicKeyX, "Public Key X should match");
         assertEq(retrievedAccount.publicKeyY, account.publicKeyY, "Public Key Y should match");
@@ -293,10 +214,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testRevokeApproval() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -316,10 +234,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testDeleteAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -329,10 +244,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(retrievedAccount.owner, account.owner, "Owner should match before deletion");
 
         bytes memory encodedDeleteAccountData = tas.deleteAccount(accountId);
-        bytes memory deleteAccountData = new bytes(encodedDeleteAccountData.length - 4);
-        for (uint256 i = 4; i < encodedDeleteAccountData.length; i++) {
-            deleteAccountData[i - 4] = encodedDeleteAccountData[i];
-        }
+        bytes memory deleteAccountData = decodeEncodedData(encodedDeleteAccountData);
 
         (string memory decodedAccountId) = abi.decode(deleteAccountData, (string));
         tas.deleteAccountCallback(decodedAccountId);
@@ -344,10 +256,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testUnlockAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes memory encodedCreateAccountData = tas.createAccount();
-        bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
-        for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
-            accountData[i - 4] = encodedCreateAccountData[i];
-        }
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
@@ -361,8 +270,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
     }
+}
 
-    function bytes16ToString(bytes16 data) public pure returns (string memory) {
+library StringUtils {
+    function bytes16ToString(bytes16 data) internal pure returns (string memory) {
         bytes memory bytesArray = new bytes(34); // 0x + 32 characters
         bytesArray[0] = "0";
         bytesArray[1] = "x";
