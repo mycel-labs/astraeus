@@ -38,7 +38,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         return signature;
     }
 
-    function setupTransferableAccountStore(address user, uint64 validFor, uint256 privateKey)
+    function setupTransferableAccountStore(uint64 validFor, address user, uint256 privateKey)
         internal
         returns (TransferableAccountStore, SignatureVerifier.TimedSignature memory)
     {
@@ -51,7 +51,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testVerifyTimedSignature() public {
         vm.warp(1000);
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
 
         bool isValid = tas.verifyTimedSignature(sig);
         assertTrue(isValid, "Valid signature should be accepted");
@@ -67,7 +67,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedData = tas.createAccount(sig);
 
         bytes4 selector;
@@ -91,7 +91,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccountCallback() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedData = tas.createAccount(sig);
 
         bytes4 selector;
@@ -130,7 +130,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testApproveAddress() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -162,7 +162,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testApproveAddressCallback() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -197,7 +197,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testTransferAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -239,7 +239,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testTransferAccountCallback() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -279,7 +279,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testIsApproved() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -309,7 +309,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testIsOwner() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -330,7 +330,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testGetAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -354,7 +354,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testRevokeApproval() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -378,7 +378,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testDeleteAccountCallback() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
@@ -407,7 +407,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testUnlockAccountCallback() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(alice, uint64(block.timestamp + 86400), alicePrivateKey);
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
