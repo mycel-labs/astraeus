@@ -39,7 +39,9 @@ message AccountOperationRequest {
     TimedSignature proof = 2;
 }
 
-message CreateAccountRequest {}
+message CreateAccountRequest {
+    TimedSignature proof = 1;
+}
 
 message TransferAccountRequest {
     AccountOperationRequest base = 1;

@@ -26,9 +26,27 @@ type TimedSignature struct {
 }
 
 func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
-	sig := &TimedSignature{} // Create an empty TimedSignature as it's not used in the contract function
-	result := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	var result *types.Receipt
+	var err error
+	sig := populateTimedSignature(req.Proof)
 
+	// Use an anonymous function to handle potential panics
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				// Convert panic to error
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	}()
+
+	// Check if a panic occurred and was converted to an error
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the transaction was successful
 	if result == nil {
 		return nil, fmt.Errorf("failed to create account")
 	}
@@ -248,3 +266,22 @@ func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest)
 // func (s *server) GetLock(ctx context.Context, req *pb.AccountIdRequest) (*pb.TimeLockResponse, error) {
 // 	return &pb.TimeLockResponse{}, nil
 // }
+
+/*
+** Helper functions
+ */
+
+func convertMessageHash(messageHash []byte) [32]byte {
+	var messageHashBytes [32]byte
+	copy(messageHashBytes[:], messageHash)
+	return messageHashBytes
+}
+
+func populateTimedSignature(sig *pb.TimedSignature) *TimedSignature {
+	return &TimedSignature{
+		ValidFor:    sig.ValidFor,
+		MessageHash: convertMessageHash(sig.MessageHash),
+		Signature:   sig.Signature,
+		Signer:      common.HexToAddress(sig.Signer),
+	}
+}

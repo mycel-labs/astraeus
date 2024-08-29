@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"fmt"
+	"math/big"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
@@ -16,6 +21,7 @@ var (
 	fr              *framework.Framework
 	taStoreContract *framework.Contract
 	accountId       string
+	privateKey      *ecdsa.PrivateKey
 )
 
 const fundedAddress = "0xBE69d72ca5f88aCba033a063dF5DBe43a4148De0"
@@ -29,9 +35,6 @@ func TestMain(m *testing.M) {
 	// Run tests
 	code := m.Run()
 
-	// Teardown
-	teardown()
-
 	// Exit with the test result code
 	os.Exit(code)
 }
@@ -44,7 +47,12 @@ func setup(t *testing.T) {
 	os.Setenv("TA_STORE_CONTRACT_ADDRESS", taStoreContract.Contract.Address().Hex())
 
 	// Initialize test data
-	sig := &TimedSignature{}
+	var err error
+	privateKey, err = crypto.HexToECDSA("91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12")
+	if err != nil {
+		t.Fatalf("failed to convert hex to private key: %v", err)
+	}
+	sig := newTimedSignature(t, privateKey)
 	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
 	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
 	if err != nil {
@@ -54,8 +62,48 @@ func setup(t *testing.T) {
 	t.Logf("accountId: %s", accountId)
 }
 
-func teardown() {
-	// Perform any cleanup tasks
+func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *TimedSignature {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
+	if err != nil {
+		t.Fatalf("failed to generate timed signature: %v", err)
+	}
+	sig := &TimedSignature{
+		ValidFor:    validFor,
+		MessageHash: messageHash,
+		Signature:   signature,
+		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey),
+	}
+	return sig
+}
+
+func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	// Step 1: Create the message hash
+	// Combine validFor timestamp and signer's address, then hash with Keccak256
+	messageHash = crypto.Keccak256Hash(
+		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
+		common.LeftPadBytes(address.Bytes(), 20),
+	)
+
+	// Step 2: Apply Ethereum-specific prefix
+	// Prepend "\x19Mycel Signed Message:\n32" and hash again
+	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
+	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
+
+	// Step 3: Generate the signature
+	// Sign the prefixed message hash with the private key
+	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
+	if err != nil {
+		return [32]byte{}, nil, err
+	}
+
+	// Adjust the v value of the signature (add 27)
+	// This ensures compatibility with Ethereum's signature standard
+	signature[64] += 27
+
+	return messageHash, signature, nil
 }
 
 func TestCreateAccount(t *testing.T) {
@@ -63,9 +111,17 @@ func TestCreateAccount(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
+	sig := newTimedSignature(t, privateKey)
 
 	// Execute
-	req := &pb.CreateAccountRequest{}
+	req := &pb.CreateAccountRequest{
+		Proof: &pb.TimedSignature{
+			ValidFor:    sig.ValidFor,
+			MessageHash: sig.MessageHash[:],
+			Signature:   sig.Signature,
+			Signer:      sig.Signer.Hex(),
+		},
+	}
 	resp, err := s.CreateAccount(context.Background(), req)
 
 	// Assert
