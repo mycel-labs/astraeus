@@ -7,10 +7,47 @@ import "suave-std/Test.sol";
 import "suave-std/suavelib/Suave.sol";
 import "../src/solidity/TransferableAccountStore.sol";
 import "../src/solidity/interfaces/ITransferableAccountStore.sol";
+import "../src/solidity/lib/SignatureVerifier.sol";
 
 contract TransferableAccountStoreTest is Test, SuaveEnabled {
     address public admin = address(this);
-    address public user1 = address(0x1);
+    uint256 alicePrivateKey = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+    address public alice = vm.addr(alicePrivateKey);
+    address public bob = address(0x1);
+
+    function generateTimedSignature(uint64 validFor, address signer, uint256 privateKey)
+        internal
+        pure
+        returns (SignatureVerifier.TimedSignature memory)
+    {
+        bytes32 messageHash = SignatureVerifier.hashMessage(validFor, signer);
+        bytes32 mycelSignedMessageHash = keccak256(abi.encodePacked("\x19Mycel Signed Message:\n32", messageHash));
+        bytes memory signature = signMessage(mycelSignedMessageHash, privateKey);
+
+        return SignatureVerifier.TimedSignature({
+            validFor: validFor,
+            messageHash: messageHash,
+            signature: signature,
+            signer: signer
+        });
+    }
+
+    function signMessage(bytes32 messageHash, uint256 privateKey) internal pure returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, messageHash);
+        bytes memory signature = abi.encodePacked(r, s, v);
+        return signature;
+    }
+
+    function setupTransferableAccountStore(address user, uint64 validFor, uint256 privateKey)
+        internal
+        returns (TransferableAccountStore, SignatureVerifier.TimedSignature memory)
+    {
+        vm.prank(user);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig = generateTimedSignature(validFor, user, privateKey);
+        return (tas, sig);
+    }
+
 
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
