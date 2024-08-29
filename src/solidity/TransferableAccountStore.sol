@@ -31,11 +31,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     /**
      * Modifiers
      */
-    modifier onlyApproved(string memory accountId) {
-        require(isApproved(accountId, msg.sender), "Address not approved");
-        _;
-    }
-
     modifier onlyLocked(string memory accountId) {
         require(isAccountLocked(accountId), "Account must be locked to perform this action");
         _;
@@ -203,11 +198,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param to The address to transfer the account to
      * @param accountId The account ID
      */
-    function transferAccountCallback(string memory accountId, address to)
-        public
-        onlyApproved(accountId)
-        onlyLocked(accountId)
-    {
+    function transferAccountCallback(string memory accountId, address to) public onlyLocked(accountId) {
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -229,6 +220,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address to
     ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "Address not approved");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
     }
 

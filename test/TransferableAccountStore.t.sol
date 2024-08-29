@@ -12,8 +12,10 @@ import "../src/solidity/lib/SignatureVerifier.sol";
 contract TransferableAccountStoreTest is Test, SuaveEnabled {
     address public admin = address(this);
     uint256 alicePrivateKey = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+    uint256 bobPrivateKey = 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
+
     address public alice = vm.addr(alicePrivateKey);
-    address public bob = address(0x1);
+    address public bob = vm.addr(bobPrivateKey);
 
     function generateTimedSignature(uint64 validFor, address signer, uint256 privateKey)
         internal
@@ -196,9 +198,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testTransferAccount() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory aliceSig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
             accountData[i - 4] = encodedCreateAccountData[i];
@@ -208,7 +210,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
+        bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
@@ -217,7 +219,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
         tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
-        bytes memory encodedTransferAccountData = tas.transferAccount(sig, accountId, bob);
+        SignatureVerifier.TimedSignature memory bobSig =
+            generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
+
+        bytes memory encodedTransferAccountData = tas.transferAccount(bobSig, accountId, bob);
 
         bytes4 selector;
         bytes memory transferAccountData;
@@ -238,9 +243,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testTransferAccountCallback() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory aliceSig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig);
         bytes memory accountData = new bytes(encodedCreateAccountData.length - 4);
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
             accountData[i - 4] = encodedCreateAccountData[i];
@@ -250,7 +255,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
+        bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
@@ -259,7 +264,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
         tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
-        bytes memory encodedTransferAccountData = tas.transferAccount(sig, accountId, bob);
+        SignatureVerifier.TimedSignature memory bobSig =
+            generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
+
+        bytes memory encodedTransferAccountData = tas.transferAccount(bobSig, accountId, bob);
         bytes memory transferAccountData = new bytes(encodedTransferAccountData.length - 4);
         for (uint256 i = 4; i < encodedTransferAccountData.length; i++) {
             transferAccountData[i - 4] = encodedTransferAccountData[i];
@@ -268,7 +276,6 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (string memory decodedTransferdAccountId, address decodedToAddress) =
             abi.decode(transferAccountData, (string, address));
 
-        vm.prank(bob);
         tas.transferAccountCallback(decodedTransferdAccountId, decodedToAddress);
 
         (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(decodedTransferdAccountId);
