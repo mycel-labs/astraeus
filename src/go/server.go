@@ -257,6 +257,21 @@ func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest)
 // 	return &pb.TimeLockResponse{}, nil
 // }
 
+func (s *server) IsAccountLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
+	result := s.taStoreContract.Call("isAccountLocked", []interface{}{req.AccountId})
+
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
+	isLocked, ok := result[0].(bool)
+	if !ok {
+		return nil, fmt.Errorf("isLocked data type is unexpected")
+	}
+
+	return &pb.BoolResponse{Result: isLocked}, nil
+}
+
 /*
 ** Helper functions
  */

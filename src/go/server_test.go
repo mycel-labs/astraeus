@@ -490,3 +490,43 @@ func TestRevokeApproval(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAccountLocked(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountID string
+		expectErr bool
+		expected  bool
+	}{
+		{"Existing account", account.AccountId, false, true},              // Assuming newly created accounts are locked by default
+		{"Non-existent account", "non_existent_account_id", false, false}, // Assuming non-existent accounts return false
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.AccountIdRequest{
+				AccountId: tc.accountID,
+			}
+			resp, err := s.IsAccountLocked(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.IsType(t, &pb.BoolResponse{}, resp)
+				assert.Equal(t, tc.expected, resp.Result)
+			}
+		})
+	}
+}
