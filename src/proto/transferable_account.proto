@@ -13,6 +13,7 @@ message Account {
     uint64 public_key_x = 3;
     uint64 public_key_y = 4;
     Curve curve = 5;
+    bool is_locked = 6;
 }
 
 enum Curve {
@@ -120,12 +121,6 @@ service AccountService {
             delete: "/v1/accounts/{base.account_id}"
         };
     }
-    rpc LockAccount(LockAccountRequest) returns (BytesResponse) {
-        option (google.api.http) = {
-            post: "/v1/accounts/{base.account_id}/lock"
-            body: "*"
-        };
-    }
     rpc UnlockAccount(UnlockAccountRequest) returns (BytesResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/unlock"
@@ -165,14 +160,9 @@ service AccountService {
             get: "/v1/accounts/{account_id}/owner/{address}"
         };
     }
-    rpc IsLocked(AccountIdRequest) returns (BoolResponse) {
+    rpc IsAccountLocked(AccountIdRequest) returns (BoolResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}/locked"
-        };
-    }
-    rpc GetLock(AccountIdRequest) returns (TimeLockResponse) {
-        option (google.api.http) = {
-            get: "/v1/accounts/{account_id}/lock"
         };
     }
 }

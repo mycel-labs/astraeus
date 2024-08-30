@@ -188,7 +188,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         Account memory account =
             Account({accountId: record.id, owner: msg.sender, publicKeyX: x, publicKeyY: y, curve: Curve.ECDSA});
 
-        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
+        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(timedSignature, account));
     }
 
     /**
