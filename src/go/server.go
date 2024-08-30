@@ -121,10 +121,6 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-// func (s *server) LockAccount(ctx context.Context, req *pb.LockAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
-
 // func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
 // 	return &pb.BytesResponse{}, nil
 // }
@@ -248,14 +244,6 @@ func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest)
 
 	return &pb.BoolResponse{Result: isOwner}, nil
 }
-
-// func (s *server) IsLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
-// 	return &pb.BoolResponse{}, nil
-// }
-
-// func (s *server) GetLock(ctx context.Context, req *pb.AccountIdRequest) (*pb.TimeLockResponse, error) {
-// 	return &pb.TimeLockResponse{}, nil
-// }
 
 func (s *server) IsAccountLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
 	result := s.taStoreContract.Call("isAccountLocked", []interface{}{req.AccountId})
