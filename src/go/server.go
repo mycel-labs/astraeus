@@ -73,7 +73,7 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 			}
 		}()
 		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, common.HexToAddress(req.To), req.Base.AccountId}, nil)
+		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.To)}, nil)
 	}()
 
 	// Check if a panic occurred and was converted to an error
@@ -196,6 +196,7 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 		PublicKeyX *big.Int       `json:"publicKeyX"`
 		PublicKeyY *big.Int       `json:"publicKeyY"`
 		Curve      uint8          `json:"curve"`
+		IsLocked   bool           `json:"isLocked"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("account data type is unexpected")
@@ -212,6 +213,7 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 		PublicKeyX: ac.PublicKeyX.Uint64(),
 		PublicKeyY: ac.PublicKeyY.Uint64(),
 		Curve:      pb.Curve(ac.Curve),
+		IsLocked:   ac.IsLocked,
 	}
 
 	return &pb.AccountResponse{Account: pbac}, nil

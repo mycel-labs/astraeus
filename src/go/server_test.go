@@ -274,7 +274,7 @@ func TestTransferAccount(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
-
+	account := createAccount(t, privateKey)
 	newOwner := "0x1234567890123456789012345678901234567890"
 
 	// Test cases
@@ -284,7 +284,7 @@ func TestTransferAccount(t *testing.T) {
 		to        string
 		expectErr bool
 	}{
-		{"Valid transfer", accountId, newOwner, false},
+		{"Valid transfer", account.AccountId, newOwner, false},
 		{"Non-existent account", "non_existent_account_id", newOwner, true},
 	}
 
