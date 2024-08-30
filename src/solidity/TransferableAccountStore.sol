@@ -273,7 +273,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Unlock an account
      * @param accountId The account ID
      */
-    function unlockAccountCallback(string memory accountId) public onlyLocked(accountId) {
+    function unlockAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
+        public
+        onlyLocked(accountId)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         Account storage account = accountsStore[accountId];
         account.isLocked = false;
         emit AccountUnlocked(accountId);

@@ -428,7 +428,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        tas.unlockAccountCallback(accountId);
+        tas.unlockAccountCallback(sig, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
