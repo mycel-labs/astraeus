@@ -370,6 +370,55 @@ func TestDeleteAccount(t *testing.T) {
 	}
 }
 
+func TestUnlockAccount(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		expectErr bool
+	}{
+		{"Valid unlock", account.AccountId, false},
+		{"Non-existent account", "non_existent_account_id", true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sig := newPbTimedSignature(t, privateKey)
+			// Execute
+			req := &pb.UnlockAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof:     sig,
+				},
+			}
+			resp, err := s.UnlockAccount(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.accountId, string(resp.Data))
+
+				// Verify the account was unlocked
+				isLockedReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				isLockedResp, err := s.IsAccountLocked(context.Background(), isLockedReq)
+				assert.NoError(t, err)
+				assert.NotNil(t, isLockedResp)
+				assert.False(t, isLockedResp.Result)
+			}
+		})
+	}
+}
+
 func TestApproveAddress(t *testing.T) {
 	// Setup
 	s := &server{

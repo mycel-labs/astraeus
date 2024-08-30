@@ -121,9 +121,30 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-// func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
+	var result *types.Receipt
+	var err error
+	sig := populateTimedSignature(req.Base.Proof)
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, req.Base.AccountId}, nil)
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("failed to unlock account")
+	}
+
+	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+}
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
 	var result *types.Receipt
