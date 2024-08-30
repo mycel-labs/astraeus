@@ -111,7 +111,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
         (
             Suave.DataId storedAccountId,
             address storedOwner,
@@ -142,7 +142,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
 
         bytes4 selector;
@@ -174,7 +174,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
 
         bytes4 selector;
@@ -209,7 +209,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(aliceSig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
@@ -254,7 +254,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(aliceSig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
@@ -296,7 +296,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, alice);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
@@ -326,7 +326,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
 
         bool isOwner = tas.isOwner(accountId, alice);
         assertTrue(isOwner, "Address should be the owner");
@@ -347,7 +347,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
 
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         bytes16 retrievedAccountIdBytes = Suave.DataId.unwrap(retrievedAccount.accountId);
@@ -371,7 +371,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
         tas.approveAddress(sig, accountId, bob);
         tas.approveAddressCallback(account.accountId, bob);
 
@@ -394,7 +394,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
 
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, account.owner, "Owner should match before deletion");
@@ -423,7 +423,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(account);
+        string memory accountId = tas.createAccountCallback(sig, account);
 
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");

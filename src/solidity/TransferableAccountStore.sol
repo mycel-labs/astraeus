@@ -157,7 +157,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param account The account to create
      * @return string The account ID
      */
-    function createAccountCallback(Account memory account) public emitOffchainLogs returns (string memory) {
+    function createAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, Account memory account)
+        public
+        emitOffchainLogs
+        returns (string memory)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
         require(account.isLocked == true, "The account should be locked by default");
         string memory accountId = storeAccount(account);
         return accountId;
