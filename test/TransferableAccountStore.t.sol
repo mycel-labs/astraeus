@@ -406,7 +406,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         (string memory decodedAccountId) = abi.decode(deleteAccountData, (string));
-        tas.deleteAccountCallback(decodedAccountId);
+        tas.deleteAccountCallback(sig, decodedAccountId);
 
         retrievedAccount = tas.getAccount(decodedAccountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
