@@ -95,11 +95,16 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to approve
      */
-    function approveAddressCallback(Suave.DataId accountId, address _address)
-        public
-        emitOffchainLogs
-        onlyLocked(Utils.iToHex(abi.encodePacked(accountId)))
-    {
+    function approveAddressCallback(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        Suave.DataId accountId,
+        address _address
+    ) public emitOffchainLogs onlyLocked(Utils.iToHex(abi.encodePacked(accountId))) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(
+            isOwner(Utils.iToHex(abi.encodePacked(accountId)), timedSignature.signer),
+            "The signer is not the owner of the account."
+        );
         accountApprovals[accountId] = _address;
         emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }

@@ -191,7 +191,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
 
-        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         address approvedAddress = tas.accountApprovals(Suave.DataId.wrap(decodedAccountId));
         assertEq(approvedAddress, decodedAddress, "Approved account address should match");
@@ -217,7 +217,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
-        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         SignatureVerifier.TimedSignature memory bobSig =
             generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
@@ -262,7 +262,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
-        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         SignatureVerifier.TimedSignature memory bobSig =
             generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
@@ -304,7 +304,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
-        tas.approveAddressCallback(Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         bool isApproved = tas.isApproved(accountId, alice);
         assertTrue(isApproved, "Address should be approved");
@@ -373,7 +373,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         string memory accountId = tas.createAccountCallback(sig, account);
         tas.approveAddress(sig, accountId, bob);
-        tas.approveAddressCallback(account.accountId, bob);
+        tas.approveAddressCallback(sig, account.accountId, bob);
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
