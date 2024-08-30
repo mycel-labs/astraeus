@@ -281,6 +281,34 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     }
 
     /**
+     * @dev Verify a timed signature
+     * @param timedSignature The timedSignature to verify
+     * @return bool Whether the timedSignature is valid
+     */
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+        public
+        view
+        returns (bool)
+    {
+        return _verifyTimedSignature(timedSignature);
+    }
+
+    /**
+     * @dev Verify a timed signature
+     * @param timedSignature The timedSignature to verify
+     * @return bool Whether the timedSignature is valid
+     */
+    function _verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+        private
+        view
+        returns (bool)
+    {
+        return SignatureVerifier.verifyTimedSignature(
+            timedSignature.validFor, timedSignature.messageHash, timedSignature.signature, timedSignature.signer
+        );
+    }
+
+    /**
      * @dev Sign data
      * @param data The data to sign
      * @param privateKeyString The private key to sign the data with
