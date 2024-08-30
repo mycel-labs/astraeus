@@ -57,7 +57,7 @@ interface ITransferableAccountStore {
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external;
+    ) external returns (bytes memory);
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
 

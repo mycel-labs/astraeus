@@ -53,6 +53,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function isApproved(string memory accountId, address _address) public view returns (bool) {
         Account storage account = accountsStore[accountId];
+        if (account.owner == _address) {
+            return true;
+        }
         return accountApprovals[account.accountId] == _address;
     }
 
@@ -124,7 +127,19 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
         Account storage account = accountsStore[accountId];
         require(account.owner == timedSignature.signer, "Only owner can approve addresses");
-        return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
+        return abi.encodePacked(
+            this.approveAddressCallback.selector, abi.encode(timedSignature, account.accountId, _address)
+        );
+    }
+
+    /**
+     * @dev Revoke an address for a given account
+     * @param accountId The account ID
+     * @param _address The address to revoke
+     */
+    function revokeApprovalCallback(Suave.DataId accountId, address _address) public {
+        delete accountApprovals[accountId];
+        emit ApprovalRevoked(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }
 
     /**
@@ -136,13 +151,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
-    ) public onlyLocked(accountId) {
+    ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         Account storage account = accountsStore[accountId];
         require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
-        delete accountApprovals[account.accountId];
-        emit ApprovalRevoked(accountId, _address);
+        return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(account.accountId, _address));
     }
 
     /**
@@ -238,7 +252,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
-        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
+        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(timedSignature, accountId, to));
     }
 
     /**
@@ -266,7 +280,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
-        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
+        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     /**
@@ -296,7 +310,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         returns (bytes memory)
     {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
+        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     function signCallback() public emitOffchainLogs {}
