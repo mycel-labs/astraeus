@@ -209,7 +209,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param to The address to transfer the account to
      * @param accountId The account ID
      */
-    function transferAccountCallback(string memory accountId, address to) public onlyLocked(accountId) {
+    function transferAccountCallback(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address to
+    ) public onlyLocked(accountId) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -231,7 +237,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address to
     ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        require(isApproved(accountId, timedSignature.signer), "Address not approved");
+        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
         return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
     }
 

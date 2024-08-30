@@ -276,7 +276,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         (string memory decodedTransferdAccountId, address decodedToAddress) =
             abi.decode(transferAccountData, (string, address));
 
-        tas.transferAccountCallback(decodedTransferdAccountId, decodedToAddress);
+        tas.transferAccountCallback(bobSig, decodedTransferdAccountId, decodedToAddress);
 
         (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(decodedTransferdAccountId);
         assertEq(newOwner, bob, "Stored account owner should match");
