@@ -414,8 +414,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
 
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
@@ -427,8 +427,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             deleteAccountData[i - 4] = encodedDeleteAccountData[i];
         }
 
-        (string memory decodedAccountId) = abi.decode(deleteAccountData, (string));
-        tas.deleteAccountCallback(sig, decodedAccountId);
+        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
+            abi.decode(deleteAccountData, (SignatureVerifier.TimedSignature, string));
+        tas.deleteAccountCallback(decodedTimedSignature, decodedAccountId);
 
         retrievedAccount = tas.getAccount(decodedAccountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");

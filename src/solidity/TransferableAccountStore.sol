@@ -268,7 +268,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
-        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
+        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     /**
