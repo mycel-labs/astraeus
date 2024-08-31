@@ -444,14 +444,22 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
 
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        tas.unlockAccountCallback(sig, accountId);
+        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
+        bytes memory unlockAccountData = new bytes(encodedUnlockAccountData.length - 4);
+        for (uint256 i = 4; i < encodedUnlockAccountData.length; i++) {
+            unlockAccountData[i - 4] = encodedUnlockAccountData[i];
+        }
+
+        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
+            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
+        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");

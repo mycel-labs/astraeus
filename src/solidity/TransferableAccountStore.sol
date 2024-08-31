@@ -298,7 +298,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         returns (bytes memory)
     {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
+        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     function signCallback() public emitOffchainLogs {}
