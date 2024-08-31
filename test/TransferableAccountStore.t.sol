@@ -219,8 +219,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(aliceSig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
@@ -229,7 +229,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
         }
 
-        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
+        (, bytes16 decodedAccountId, address decodedAddress) =
+            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
         tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         SignatureVerifier.TimedSignature memory bobSig =
@@ -249,8 +250,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             transferAccountData[i - 4] = encodedTransferAccountData[i];
         }
 
-        (string memory decodedTransferdAccountId, address decodedToAddress) =
-            abi.decode(transferAccountData, (string, address));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            string memory decodedTransferdAccountId,
+            address decodedToAddress
+        ) = abi.decode(transferAccountData, (SignatureVerifier.TimedSignature, string, address));
+        assertEq(decodedTimedSignature.signature, bobSig.signature, "Signature should be same");
         assertEq(decodedTransferdAccountId, accountId, "Approved account ID should match");
         assertEq(decodedToAddress, bob, "Approved account address should match");
     }
@@ -264,8 +269,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(aliceSig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
@@ -274,7 +279,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
         }
 
-        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
+        (, bytes16 decodedAccountId, address decodedAddress) =
+            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
         tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         SignatureVerifier.TimedSignature memory bobSig =
@@ -286,10 +292,13 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             transferAccountData[i - 4] = encodedTransferAccountData[i];
         }
 
-        (string memory decodedTransferdAccountId, address decodedToAddress) =
-            abi.decode(transferAccountData, (string, address));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            string memory decodedTransferdAccountId,
+            address decodedToAddress
+        ) = abi.decode(transferAccountData, (SignatureVerifier.TimedSignature, string, address));
 
-        tas.transferAccountCallback(bobSig, decodedTransferdAccountId, decodedToAddress);
+        tas.transferAccountCallback(decodedTimedSignature, decodedTransferdAccountId, decodedToAddress);
 
         (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(decodedTransferdAccountId);
         assertEq(newOwner, bob, "Stored account owner should match");

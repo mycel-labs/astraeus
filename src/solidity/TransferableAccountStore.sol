@@ -240,7 +240,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
-        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
+        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(timedSignature, accountId, to));
     }
 
     /**
