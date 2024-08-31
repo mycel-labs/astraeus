@@ -201,7 +201,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
             isLocked: true
         });
 
-        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
+        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(timedSignature, account));
     }
 
     /**

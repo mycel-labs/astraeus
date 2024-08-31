@@ -84,11 +84,14 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
-        assertEq(account.owner, sig.signer, "Owner should be alice");
-        assertTrue(account.isLocked, "account shouold be locked");
+        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
+        assertEq(decodedAccount.owner, sig.signer, "Owner should be alice");
+        assertTrue(decodedAccount.isLocked, "Account should be locked");
     }
 
     function testCreateAccountCallback() public {
@@ -108,10 +111,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(sig, account);
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
         (
             Suave.DataId storedAccountId,
             address storedOwner,
@@ -123,10 +128,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bytes16 storedAccountIdBytes = Suave.DataId.unwrap(storedAccountId);
         string memory storedAccountIdToString = bytes16ToString(storedAccountIdBytes);
         assertEq(storedAccountIdToString, accountId, "Stored account ID should match");
-        assertEq(storedOwner, account.owner, "Stored account owner should match");
-        assertEq(storedPublicKeyX, account.publicKeyX, "Stored account public key X should match");
-        assertEq(storedPublicKeyY, account.publicKeyY, "Stored account public key Y should match");
-        assertEq(uint256(storedCurve), uint256(account.curve), "Stored account curve should match");
+        assertEq(storedOwner, decodedAccount.owner, "Stored account owner should match");
+        assertEq(storedPublicKeyX, decodedAccount.publicKeyX, "Stored account public key X should match");
+        assertEq(storedPublicKeyY, decodedAccount.publicKeyY, "Stored account public key Y should match");
+        assertEq(uint256(storedCurve), uint256(decodedAccount.curve), "Stored account curve should match");
         assertTrue(isLocked, "Stored account shouold be locked");
     }
 
