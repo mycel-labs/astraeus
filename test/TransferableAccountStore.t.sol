@@ -315,9 +315,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
-
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, alice);
         bytes memory approveAddressData = new bytes(encodedApproveAddressData.length - 4);
@@ -325,8 +324,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
         }
 
-        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
-        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            bytes16 decodedAccountId,
+            address decodedAddress
+        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
+        tas.approveAddressCallback(decodedTimedSignature, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         bool isApproved = tas.isApproved(accountId, alice);
         assertTrue(isApproved, "Address should be approved");
@@ -345,9 +348,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
-
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
 
         bool isOwner = tas.isOwner(accountId, alice);
@@ -366,9 +368,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
-
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
 
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
@@ -389,11 +390,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         for (uint256 i = 4; i < encodedCreateAccountData.length; i++) {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
-
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
-
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(sig, account);
+
         tas.approveAddress(sig, accountId, bob);
         tas.approveAddressCallback(sig, account.accountId, bob);
 
