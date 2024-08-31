@@ -144,25 +144,30 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory decodedAccount) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
-        string memory accountId = tas.createAccountCallback(sig, account);
+        string memory accountId = tas.createAccountCallback(sig, decodedAccount);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
 
         bytes4 selector;
-        bytes memory approveData;
+        bytes memory approveAddressData;
 
         assembly {
             selector := mload(add(encodedApproveAddressData, 32))
         }
 
-        approveData = new bytes(encodedApproveAddressData.length - 4);
+        approveAddressData = new bytes(encodedApproveAddressData.length - 4);
         for (uint256 i = 4; i < encodedApproveAddressData.length; i++) {
-            approveData[i - 4] = encodedApproveAddressData[i];
+            approveAddressData[i - 4] = encodedApproveAddressData[i];
         }
 
-        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveData, (bytes16, address));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            bytes16 decodedAccountId,
+            address decodedAddress
+        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
+        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
         assertEq(bytes16ToString(decodedAccountId), accountId, "Approved account ID should match");
         assertEq(decodedAddress, bob, "Approved account address should match");
     }
@@ -176,8 +181,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             accountData[i - 4] = encodedCreateAccountData[i];
         }
 
-        (ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (ITransferableAccountStore.Account));
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(sig, account);
         bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
@@ -194,9 +199,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             approveAddressData[i - 4] = encodedApproveAddressData[i];
         }
 
-        (bytes16 decodedAccountId, address decodedAddress) = abi.decode(approveAddressData, (bytes16, address));
-
-        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            bytes16 decodedAccountId,
+            address decodedAddress
+        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
+        tas.approveAddressCallback(decodedTimedSignature, Suave.DataId.wrap(decodedAccountId), decodedAddress);
 
         address approvedAddress = tas.accountApprovals(Suave.DataId.wrap(decodedAccountId));
         assertEq(approvedAddress, decodedAddress, "Approved account address should match");
