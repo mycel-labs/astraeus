@@ -196,9 +196,35 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 	return &pb.BoolResponse{Result: true}, nil
 }
 
-// func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
+	var result []interface{}
+	var err error
+	sig := populateTimedSignature(req.Base.Proof)
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.Call("sign", []interface{}{sig, req.Base.AccountId, req.Data})
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("failed to sign message")
+	}
+
+	signature, ok := result[0].([]byte)
+	if !ok {
+		return nil, fmt.Errorf("signature data type is unexpected")
+	}
+
+	return &pb.BytesResponse{Data: signature}, nil
+}
 
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
 	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})

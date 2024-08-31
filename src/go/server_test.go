@@ -579,3 +579,59 @@ func TestIsAccountLocked(t *testing.T) {
 		})
 	}
 }
+
+func TestSign(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+	sig := newTimedSignature(t, privateKey)
+
+	taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
+
+	message := []byte("Test message to sign")
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		data      []byte
+		expectErr bool
+	}{
+		{"Valid signing", account.AccountId, message, false},
+		{"Non-existent account", "non_existent_account_id", message, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sig := newPbTimedSignature(t, privateKey)
+			// Execute
+			req := &pb.SignRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof:     sig,
+				},
+				Data: tc.data,
+			}
+			resp, err := s.Sign(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.NotEmpty(t, resp.Data)
+
+				// Verify the signature
+				pubKey := crypto.FromECDSAPub(&privateKey.PublicKey)
+				hash := crypto.Keccak256(tc.data)
+				sigPublicKey, err := crypto.Ecrecover(hash, resp.Data)
+				assert.NoError(t, err)
+				assert.Equal(t, pubKey, sigPublicKey, "Recovered public key should match the original")
+			}
+		})
+	}
+}
