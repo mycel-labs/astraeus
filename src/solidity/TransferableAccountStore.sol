@@ -326,13 +326,19 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         onlyUnlocked(accountId)
         returns (bytes memory)
     {
-        Account storage account = accountsStore[accountId];
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
+        require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
+
+        Account storage account = accountsStore[accountId];
+        require(account.owner != address(0), "Account does not exist");
+
         bytes memory signingKey = Suave.confidentialRetrieve(account.accountId, KEY_FA);
-        bytes memory signature = signData(data, string(signingKey));
+        require(signingKey.length > 0, "Signing key not found");
+
+        bytes memory signature = Suave.signMessage(data, Suave.CryptoSignature.SECP256, string(signingKey));
         string memory accountIdString = Utils.iToHex(abi.encodePacked(accountId));
         emit Signature(accountIdString, signature);
+
         return abi.encodePacked(this.signCallback.selector);
     }
 
