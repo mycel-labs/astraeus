@@ -58,7 +58,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isValid = tas.verifyTimedSignature(sig);
         assertTrue(isValid, "Valid signature should be accepted");
 
-        sig.validFor = uint64(block.timestamp - 100);
+        vm.warp(uint64(block.timestamp + 86401));
         isValid = tas.verifyTimedSignature(sig);
         assertFalse(isValid, "Expired signature should be rejected");
 
