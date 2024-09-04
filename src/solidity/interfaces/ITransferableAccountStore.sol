@@ -52,12 +52,11 @@ interface ITransferableAccountStore {
         string memory accountId,
         address _address
     ) external returns (bytes memory);
-
     function revokeApproval(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external;
+    ) external returns (bytes memory);
 
     function sign(SignatureVerifier.TimedSignature calldata signature, string memory accountId, bytes memory data)
         external

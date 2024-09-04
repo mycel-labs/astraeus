@@ -317,15 +317,60 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         (, ITransferableAccountStore.Account memory account) =
             abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(sig, account);
 
-        tas.approveAddress(sig, accountId, bob);
-        tas.approveAddressCallback(sig, account.accountId, bob);
+        string memory accountId = tas.createAccountCallback(sig, account);
+        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
+
+        (, bytes16 decodedAccountId, address decodedAddress) =
+            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
+        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+
+        bytes memory encodedRevokeApprovalData = tas.revokeApproval(sig, accountId, bob);
+        bytes memory revokeApprovalData = decodeEncodedData(encodedRevokeApprovalData);
+
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            string memory decodedRevokeAccountId,
+            address decodedRevokeAddress
+        ) = abi.decode(revokeApprovalData, (SignatureVerifier.TimedSignature, string, address));
+
+        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
+        assertEq(decodedRevokeAccountId, accountId, "Approved account ID should match");
+        assertEq(decodedRevokeAddress, bob, "Approved account address should match");
+    }
+
+    function testRevokeApprovalCallback() public {
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
+
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+
+        string memory accountId = tas.createAccountCallback(sig, account);
+        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
+        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
+
+        (, bytes16 decodedAccountId, address decodedAddress) =
+            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
+        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+
+        bytes memory encodedRevokeApprovalData = tas.revokeApproval(sig, accountId, bob);
+        bytes memory revokeApprovalData = decodeEncodedData(encodedRevokeApprovalData);
+
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            string memory decodedRevokeAccountId,
+            address decodedRevokeAddress
+        ) = abi.decode(revokeApprovalData, (SignatureVerifier.TimedSignature, string, address));
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        tas.revokeApproval(sig, accountId, bob);
+        tas.revokeApprovalCallback(decodedTimedSignature, decodedRevokeAccountId, decodedRevokeAddress);
+
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
