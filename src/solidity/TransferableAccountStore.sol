@@ -53,6 +53,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function isApproved(string memory accountId, address _address) public view returns (bool) {
         Account storage account = accountsStore[accountId];
+        if (account.owner == _address) {
+            return true;
+        }
         return accountApprovals[account.accountId] == _address;
     }
 

@@ -267,7 +267,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        tas.revokeApproval(sig, accountId, bob);
+        tas.revokeApprovalCallback(sig, accountId, bob);
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
