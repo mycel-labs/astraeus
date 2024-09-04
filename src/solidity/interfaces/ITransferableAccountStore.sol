@@ -37,12 +37,27 @@ interface ITransferableAccountStore {
     function isAccountLocked(string memory accountId) external view returns (bool);
 
     // Actions
-    function createAccount() external returns (bytes memory);
-    function transferAccount(string memory accountId, address to) external returns (bytes memory);
-    function deleteAccount(string memory accountId) external returns (bytes memory);
-    function unlockAccount(string memory accountId) external returns (bytes memory);
-    function approveAddress(string memory accountId, address _address) external returns (bytes memory);
-    function revokeApproval(string memory accountId, address _address) external;
+    function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
+    function transferAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, address to)
+        external
+        returns (bytes memory);
+    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
+    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
+        external
+        returns (bytes memory);
+    function approveAddress(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external returns (bytes memory);
+
+    function revokeApproval(
+        SignatureVerifier.TimedSignature calldata signature,
+        string memory accountId,
+        address _address
+    ) external;
 
     function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
 

@@ -31,11 +31,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     /**
      * Modifiers
      */
-    modifier onlyApproved(string memory accountId) {
-        require(isApproved(accountId, msg.sender), "Address not approved");
-        _;
-    }
-
     modifier onlyLocked(string memory accountId) {
         require(isAccountLocked(accountId), "Account must be locked to perform this action");
         _;
@@ -100,11 +95,16 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to approve
      */
-    function approveAddressCallback(Suave.DataId accountId, address _address)
-        public
-        emitOffchainLogs
-        onlyLocked(Utils.iToHex(abi.encodePacked(accountId)))
-    {
+    function approveAddressCallback(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        Suave.DataId accountId,
+        address _address
+    ) public emitOffchainLogs onlyLocked(Utils.iToHex(abi.encodePacked(accountId))) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(
+            isOwner(Utils.iToHex(abi.encodePacked(accountId)), timedSignature.signer),
+            "The signer is not the owner of the account."
+        );
         accountApprovals[accountId] = _address;
         emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }
@@ -115,15 +115,18 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param _address The address to approve
      * @return bytes The encoded callback data
      */
-    function approveAddress(string memory accountId, address _address)
-        public
-        view
-        onlyLocked(accountId)
-        returns (bytes memory)
-    {
+    function approveAddress(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address _address
+    ) external view onlyLocked(accountId) returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+
         Account storage account = accountsStore[accountId];
-        require(account.owner == msg.sender, "Only owner can approve addresses");
-        return abi.encodePacked(this.approveAddressCallback.selector, abi.encode(account.accountId, _address));
+        require(account.owner == timedSignature.signer, "Only owner can approve addresses");
+        return abi.encodePacked(
+            this.approveAddressCallback.selector, abi.encode(timedSignature, account.accountId, _address)
+        );
     }
 
     /**
@@ -131,9 +134,15 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeApproval(string memory accountId, address _address) public onlyLocked(accountId) {
+    function revokeApproval(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address _address
+    ) public onlyLocked(accountId) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+
         Account storage account = accountsStore[accountId];
-        require(account.owner == msg.sender, "Only owner can revoke addresses");
+        require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
         delete accountApprovals[account.accountId];
         emit ApprovalRevoked(accountId, _address);
     }
@@ -155,7 +164,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param account The account to create
      * @return string The account ID
      */
-    function createAccountCallback(Account memory account) public emitOffchainLogs returns (string memory) {
+    function createAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, Account memory account)
+        public
+        emitOffchainLogs
+        returns (string memory)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
         require(account.isLocked == true, "The account should be locked by default");
         string memory accountId = storeAccount(account);
         return accountId;
@@ -165,7 +180,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-    function createAccount() public returns (bytes memory) {
+    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
         address[] memory peekers = new address[](1);
@@ -175,18 +192,18 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         Suave.confidentialStore(record.id, KEY_FA, abi.encodePacked(keyData));
         (uint256 x, uint256 y) = generatePublicKey(Utils.hexStringToUint256(keyData));
         address[] memory approvedAddresses = new address[](1);
-        approvedAddresses[0] = msg.sender;
+        approvedAddresses[0] = timedSignature.signer;
 
         Account memory account = Account({
             accountId: record.id,
-            owner: msg.sender,
+            owner: timedSignature.signer,
             publicKeyX: x,
             publicKeyY: y,
             curve: Curve.ECDSA,
             isLocked: true
         });
 
-        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(account));
+        return abi.encodePacked(this.createAccountCallback.selector, abi.encode(timedSignature, account));
     }
 
     /**
@@ -194,11 +211,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param to The address to transfer the account to
      * @param accountId The account ID
      */
-    function transferAccountCallback(string memory accountId, address to)
-        public
-        onlyApproved(accountId)
-        onlyLocked(accountId)
-    {
+    function transferAccountCallback(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address to
+    ) public onlyLocked(accountId) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -214,20 +233,25 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function transferAccount(string memory accountId, address to)
-        public
-        view
-        onlyLocked(accountId)
-        returns (bytes memory)
-    {
-        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(accountId, to));
+    function transferAccount(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address to
+    ) public view onlyLocked(accountId) returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
+        return abi.encodePacked(this.transferAccountCallback.selector, abi.encode(timedSignature, accountId, to));
     }
 
     /**
      * @dev Delete an account
      * @param accountId The account ID
      */
-    function deleteAccountCallback(string memory accountId) public {
+    function deleteAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
+        public
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
     }
@@ -237,15 +261,26 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function deleteAccount(string memory accountId) public pure returns (bytes memory) {
-        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(accountId));
+    function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
+        public
+        view
+        returns (bytes memory)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
+        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     /**
      * @dev Unlock an account
      * @param accountId The account ID
      */
-    function unlockAccountCallback(string memory accountId) public onlyLocked(accountId) {
+    function unlockAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
+        public
+        onlyLocked(accountId)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         Account storage account = accountsStore[accountId];
         account.isLocked = false;
         emit AccountUnlocked(accountId);
@@ -256,8 +291,14 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @return bytes The encoded callback data
      */
-    function unlockAccount(string memory accountId) public view onlyLocked(accountId) returns (bytes memory) {
-        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(accountId));
+    function unlockAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
+        public
+        view
+        onlyLocked(accountId)
+        returns (bytes memory)
+    {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        return abi.encodePacked(this.unlockAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     function signCallback() public emitOffchainLogs {}
