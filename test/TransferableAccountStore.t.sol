@@ -422,6 +422,42 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
     }
+
+    function testSign() public {
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(sig, account);
+
+        bool isAccountLocked = tas.isAccountLocked(accountId);
+        assertTrue(isAccountLocked, "Account should be locked immediately after creation");
+
+        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
+        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
+
+        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
+            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
+        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+
+        isAccountLocked = tas.isAccountLocked(accountId);
+
+        bytes memory dummyData = abi.encodePacked("dummy data");
+        bytes32 hashedDummyData = keccak256(dummyData);
+
+        require(!isAccountLocked, "Account is still locked");
+
+        bytes memory encodedSignData = tas.sign(sig, accountId, abi.encodePacked(hashedDummyData));
+        bytes4 selector;
+        assembly {
+            selector := mload(add(encodedSignData, 32))
+        }
+
+        assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
+    }
 }
 
 library StringUtils {
