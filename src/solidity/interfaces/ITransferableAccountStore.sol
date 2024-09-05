@@ -11,17 +11,13 @@ interface ITransferableAccountStore {
         uint256 publicKeyX;
         uint256 publicKeyY;
         Curve curve;
+        bool isLocked;
     }
 
     enum Curve {
         CURVE_UNKNOWN,
         ECDSA,
         EDDSA
-    }
-
-    struct TimeLock {
-        uint256 lockUntil;
-        address lockedBy;
     }
 
     // Events
@@ -38,24 +34,19 @@ interface ITransferableAccountStore {
     function getAccount(string memory accountId) external view returns (Account memory);
     function isApproved(string memory accountId, address _address) external view returns (bool);
     function isOwner(string memory accountId, address _address) external view returns (bool);
-    function isLocked(string memory accountId) external view returns (bool);
-    function getLock(string memory accountId) external view returns (TimeLock memory);
+    function isAccountLocked(string memory accountId) external view returns (bool);
 
     // Actions
     function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
-    function transferAccount(SignatureVerifier.TimedSignature calldata signature, address to, string memory accountId)
+    function transferAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, address to)
         external
         returns (bytes memory);
     function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         external
         returns (bytes memory);
-    function lockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, uint256 duration)
-        external
-        returns (bytes memory);
     function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         external
         returns (bytes memory);
-
     function approveAddress(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
@@ -66,9 +57,11 @@ interface ITransferableAccountStore {
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external;
+    ) external returns (bytes memory);
 
-    function sign(Suave.DataId accountId, bytes memory data) external returns (bytes memory);
+    function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
+        external
+        returns (bytes memory);
 
     function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
 }
