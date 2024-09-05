@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Solidity
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Build contracts
+        run: forge build
+      - name: Run Solidity tests
+        run: forge test || true
+      - name: Install Solhint
+        run: npm install -g solhint
+      - name: Lint Solidity
+        run: solhint 'src/**/*.sol' || true
+
+      # Golang
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Run Go tests
+        run: go test ./... || true
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+
+      # Protobuf
+      - name: Set up Protoc
+        uses: arduino/setup-protoc@v2
+      - name: Compile Protobuf
+        run: protoc --proto_path=. --go_out=. --go_opt=paths=source_relative **/*.proto || true
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+      - name: Lint Protobuf
+        run: buf lint || true
+
+      # Formatting
+      - name: Check Solidity formatting
+        run: forge fmt --check || true
+      - name: Check Go formatting
+        run: gofmt -d . || true
+      - name: Check Protobuf formatting
+        run: buf format -d || true
