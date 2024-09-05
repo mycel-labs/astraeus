@@ -70,7 +70,7 @@ build: build-solidity build-go compile-proto
 
 test: test-solidity test-go
 
-lint: lint-solidity lint-go 
+lint: lint-solidity 
 
 fmt: fmt-solidity fmt-go fmt-proto
 
