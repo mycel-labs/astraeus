@@ -197,7 +197,7 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 }
 
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
-	var result []interface{}
+	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
 
@@ -207,21 +207,22 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesRespon
 				err = fmt.Errorf("error occurred during transaction execution: %v", r)
 			}
 		}()
-		result = s.taStoreContract.Call("sign", []interface{}{sig, req.Base.AccountId, req.Data})
+		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, req.Data}, nil)
 	}()
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(result) == 0 || result[0] == nil {
-		return nil, fmt.Errorf("failed to sign message")
+	if result == nil {
+		return nil, fmt.Errorf("failed to sign")
 	}
 
-	signature, ok := result[0].([]byte)
-	if !ok {
-		return nil, fmt.Errorf("signature data type is unexpected")
+	caEvent, err := s.taStoreContract.Abi.Events["Signature"].ParseLog(result.Logs[0])
+	if err != nil {
+		panic(err)
 	}
+	signature := caEvent["signature"].([]byte)
 
 	return &pb.BytesResponse{Data: signature}, nil
 }
@@ -253,8 +254,8 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 	pbac := &pb.Account{
 		AccountId:  req.AccountId,
 		Owner:      ac.Owner.Hex(),
-		PublicKeyX: ac.PublicKeyX.Uint64(),
-		PublicKeyY: ac.PublicKeyY.Uint64(),
+		PublicKeyX: fmt.Sprintf("%064x", ac.PublicKeyX),
+		PublicKeyY: fmt.Sprintf("%064x", ac.PublicKeyY),
 		Curve:      pb.Curve(ac.Curve),
 		IsLocked:   ac.IsLocked,
 	}

@@ -62,6 +62,7 @@ func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 		t.Fatalf("failed to parse log: %v", err)
 	}
 	accountId = ev["accountId"].(string)
+
 	return &pb.Account{
 		AccountId: accountId,
 		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
@@ -591,6 +592,7 @@ func TestSign(t *testing.T) {
 	taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
 
 	message := []byte("Test message to sign")
+	messageHash := crypto.Keccak256(message)
 
 	// Test cases
 	testCases := []struct {
@@ -599,8 +601,8 @@ func TestSign(t *testing.T) {
 		data      []byte
 		expectErr bool
 	}{
-		{"Valid signing", account.AccountId, message, false},
-		{"Non-existent account", "non_existent_account_id", message, true},
+		{"Valid signing", account.AccountId, messageHash, false},
+		{"Non-existent account", "non_existent_account_id", messageHash, true},
 	}
 
 	for _, tc := range testCases {
@@ -625,12 +627,45 @@ func TestSign(t *testing.T) {
 				assert.NotNil(t, resp)
 				assert.NotEmpty(t, resp.Data)
 
-				// Verify the signature
-				pubKey := crypto.FromECDSAPub(&privateKey.PublicKey)
-				hash := crypto.Keccak256(tc.data)
-				sigPublicKey, err := crypto.Ecrecover(hash, resp.Data)
+				// Recover the public key from the account
+				accountResp, err := s.GetAccount(context.Background(), &pb.AccountIdRequest{AccountId: tc.accountId})
 				assert.NoError(t, err)
-				assert.Equal(t, pubKey, sigPublicKey, "Recovered public key should match the original")
+
+				t.Logf("Original pubKeyX: %v", accountResp.Account.PublicKeyX)
+				t.Logf("Original pubKeyY: %v", accountResp.Account.PublicKeyY)
+
+				pubKeyX, ok := new(big.Int).SetString(accountResp.Account.PublicKeyX, 16)
+				assert.True(t, ok, "Failed to parse pubKeyX")
+				t.Logf("Parsed pubKeyX: %v", pubKeyX)
+
+				pubKeyY, ok := new(big.Int).SetString(accountResp.Account.PublicKeyY, 16)
+				assert.True(t, ok, "Failed to parse pubKeyY")
+				t.Logf("Parsed pubKeyY: %v", pubKeyY)
+
+				pubKey := ecdsa.PublicKey{
+					Curve: crypto.S256(),
+					X:     pubKeyX,
+					Y:     pubKeyY,
+				}
+
+				t.Logf("Final pubKey: %+v", pubKey)
+
+				// Verify the signature
+				signature := resp.Data[:64]
+				recoveryID := resp.Data[64]
+				messageHash := tc.data
+
+				sigPublicKey, err := crypto.Ecrecover(messageHash, append(signature, recoveryID))
+				assert.NoError(t, err)
+
+				recoveredPubKey, err := crypto.UnmarshalPubkey(sigPublicKey)
+				assert.NoError(t, err)
+				t.Logf("Recovered pubKey: %+v", recoveredPubKey)
+
+				assert.Equal(t, pubKey, *recoveredPubKey, "Recovered public key does not match the account's public key")
+
+				isValid := crypto.VerifySignature(sigPublicKey, messageHash, signature)
+				assert.True(t, isValid, "Signature verification failed")
 			}
 		})
 	}
