@@ -7,23 +7,21 @@ devnet-up:
 devnet-down:
 	@docker compose --file ./compose.yaml down
 
-
-
 # Solidity
 build-solidity:
 	forge build
 
 test-solidity:
-	forge test --ffi
+	forge test --ffi test/**/*.t.sol
 
 lint-solidity:
 	solhint 'src/**/*.sol'
 
 fmt-solidity:
-	forge fmt
+	forge fmt src/solidit
 
 check-fmt-solidity:
-	forge fmt --check
+	forge fmt --check src/solidity
 
 # Golang
 .PHONY: run-go
@@ -43,7 +41,7 @@ fmt-go:
 	go fmt ./src/go/... ./test/...
 
 check-fmt-go:
-	gofmt -d .
+	gofmt -d ./src/go/... ./test/...
 
 # Protobuf
 .PHONY: run-proto
@@ -61,10 +59,10 @@ compile-proto:
 # 	buf lint
 
 fmt-proto:
-	buf format
+	buf format src/proto
 
 check-fmt-proto:
-	buf format -d
+	buf format -d src/proto
 
 # General
 .PHONY: build test lint fmt check-fmt
