@@ -31,16 +31,16 @@ run-go:
 	@cd src/go && go run main.go && cd ../../
 
 build-go:
-	go build ./...
+	go build ./src/go
 
 test-go:
-	go test ./...
+	go test ./src/go/... ./test/...
 
 lint-go:
 	golangci-lint run
 
 fmt-go:
-	go fmt ./...
+	go fmt ./src/go/... ./test/...
 
 check-fmt-go:
 	gofmt -d .
