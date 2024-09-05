@@ -200,7 +200,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bytes memory) {
+    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature)
+        public
+        confidential
+        returns (bytes memory)
+    {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
@@ -331,6 +335,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         public
+        confidential
         onlyUnlocked(Utils.iToHex(abi.encodePacked(accountId)))
         returns (bytes memory)
     {
