@@ -10,8 +10,8 @@ option go_package = "../go/pb";
 message Account {
     string account_id = 1;
     string owner = 2;
-    uint64 public_key_x = 3;
-    uint64 public_key_y = 4;
+    string public_key_x = 3;
+    string public_key_y = 4;
     Curve curve = 5;
     bool is_locked = 6;
 }
