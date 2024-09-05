@@ -73,7 +73,7 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 			}
 		}()
 		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, common.HexToAddress(req.To), req.Base.AccountId}, nil)
+		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.To)}, nil)
 	}()
 
 	// Check if a panic occurred and was converted to an error
@@ -121,13 +121,30 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-// func (s *server) LockAccount(ctx context.Context, req *pb.LockAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
+	var result *types.Receipt
+	var err error
+	sig := populateTimedSignature(req.Base.Proof)
 
-// func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, req.Base.AccountId}, nil)
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("failed to unlock account")
+	}
+
+	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+}
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
 	var result *types.Receipt
@@ -179,9 +196,36 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 	return &pb.BoolResponse{Result: true}, nil
 }
 
-// func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
-// 	return &pb.BytesResponse{}, nil
-// }
+func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
+	var result *types.Receipt
+	var err error
+	sig := populateTimedSignature(req.Base.Proof)
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("error occurred during transaction execution: %v", r)
+			}
+		}()
+		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, req.Data}, nil)
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("failed to sign")
+	}
+
+	caEvent, err := s.taStoreContract.Abi.Events["Signature"].ParseLog(result.Logs[0])
+	if err != nil {
+		panic(err)
+	}
+	signature := caEvent["signature"].([]byte)
+
+	return &pb.BytesResponse{Data: signature}, nil
+}
 
 func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
 	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})
@@ -196,6 +240,7 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 		PublicKeyX *big.Int       `json:"publicKeyX"`
 		PublicKeyY *big.Int       `json:"publicKeyY"`
 		Curve      uint8          `json:"curve"`
+		IsLocked   bool           `json:"isLocked"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("account data type is unexpected")
@@ -209,9 +254,10 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 	pbac := &pb.Account{
 		AccountId:  req.AccountId,
 		Owner:      ac.Owner.Hex(),
-		PublicKeyX: ac.PublicKeyX.Uint64(),
-		PublicKeyY: ac.PublicKeyY.Uint64(),
+		PublicKeyX: ac.PublicKeyX.Text(16),
+		PublicKeyY: ac.PublicKeyY.Text(16),
 		Curve:      pb.Curve(ac.Curve),
+		IsLocked:   ac.IsLocked,
 	}
 
 	return &pb.AccountResponse{Account: pbac}, nil
@@ -247,13 +293,20 @@ func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest)
 	return &pb.BoolResponse{Result: isOwner}, nil
 }
 
-// func (s *server) IsLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
-// 	return &pb.BoolResponse{}, nil
-// }
+func (s *server) IsAccountLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
+	result := s.taStoreContract.Call("isAccountLocked", []interface{}{req.AccountId})
 
-// func (s *server) GetLock(ctx context.Context, req *pb.AccountIdRequest) (*pb.TimeLockResponse, error) {
-// 	return &pb.TimeLockResponse{}, nil
-// }
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
+	isLocked, ok := result[0].(bool)
+	if !ok {
+		return nil, fmt.Errorf("isLocked data type is unexpected")
+	}
+
+	return &pb.BoolResponse{Result: isLocked}, nil
+}
 
 /*
 ** Helper functions

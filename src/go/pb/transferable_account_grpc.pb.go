@@ -22,7 +22,6 @@ const (
 	AccountService_CreateAccount_FullMethodName   = "/account.AccountService/CreateAccount"
 	AccountService_TransferAccount_FullMethodName = "/account.AccountService/TransferAccount"
 	AccountService_DeleteAccount_FullMethodName   = "/account.AccountService/DeleteAccount"
-	AccountService_LockAccount_FullMethodName     = "/account.AccountService/LockAccount"
 	AccountService_UnlockAccount_FullMethodName   = "/account.AccountService/UnlockAccount"
 	AccountService_ApproveAddress_FullMethodName  = "/account.AccountService/ApproveAddress"
 	AccountService_RevokeApproval_FullMethodName  = "/account.AccountService/RevokeApproval"
@@ -30,8 +29,7 @@ const (
 	AccountService_GetAccount_FullMethodName      = "/account.AccountService/GetAccount"
 	AccountService_IsApproved_FullMethodName      = "/account.AccountService/IsApproved"
 	AccountService_IsOwner_FullMethodName         = "/account.AccountService/IsOwner"
-	AccountService_IsLocked_FullMethodName        = "/account.AccountService/IsLocked"
-	AccountService_GetLock_FullMethodName         = "/account.AccountService/GetLock"
+	AccountService_IsAccountLocked_FullMethodName = "/account.AccountService/IsAccountLocked"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -43,7 +41,6 @@ type AccountServiceClient interface {
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	TransferAccount(ctx context.Context, in *TransferAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error)
-	LockAccount(ctx context.Context, in *LockAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	UnlockAccount(ctx context.Context, in *UnlockAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	ApproveAddress(ctx context.Context, in *ApproveAddressRequest, opts ...grpc.CallOption) (*BytesResponse, error)
 	RevokeApproval(ctx context.Context, in *RevokeApprovalRequest, opts ...grpc.CallOption) (*BoolResponse, error)
@@ -51,8 +48,7 @@ type AccountServiceClient interface {
 	GetAccount(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*AccountResponse, error)
 	IsApproved(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
 	IsOwner(ctx context.Context, in *AccountIdToAddressRequest, opts ...grpc.CallOption) (*BoolResponse, error)
-	IsLocked(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*BoolResponse, error)
-	GetLock(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*TimeLockResponse, error)
+	IsAccountLocked(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*BoolResponse, error)
 }
 
 type accountServiceClient struct {
@@ -87,16 +83,6 @@ func (c *accountServiceClient) DeleteAccount(ctx context.Context, in *DeleteAcco
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BytesResponse)
 	err := c.cc.Invoke(ctx, AccountService_DeleteAccount_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *accountServiceClient) LockAccount(ctx context.Context, in *LockAccountRequest, opts ...grpc.CallOption) (*BytesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BytesResponse)
-	err := c.cc.Invoke(ctx, AccountService_LockAccount_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,20 +159,10 @@ func (c *accountServiceClient) IsOwner(ctx context.Context, in *AccountIdToAddre
 	return out, nil
 }
 
-func (c *accountServiceClient) IsLocked(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
+func (c *accountServiceClient) IsAccountLocked(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*BoolResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BoolResponse)
-	err := c.cc.Invoke(ctx, AccountService_IsLocked_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *accountServiceClient) GetLock(ctx context.Context, in *AccountIdRequest, opts ...grpc.CallOption) (*TimeLockResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TimeLockResponse)
-	err := c.cc.Invoke(ctx, AccountService_GetLock_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AccountService_IsAccountLocked_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +178,6 @@ type AccountServiceServer interface {
 	CreateAccount(context.Context, *CreateAccountRequest) (*BytesResponse, error)
 	TransferAccount(context.Context, *TransferAccountRequest) (*BytesResponse, error)
 	DeleteAccount(context.Context, *DeleteAccountRequest) (*BytesResponse, error)
-	LockAccount(context.Context, *LockAccountRequest) (*BytesResponse, error)
 	UnlockAccount(context.Context, *UnlockAccountRequest) (*BytesResponse, error)
 	ApproveAddress(context.Context, *ApproveAddressRequest) (*BytesResponse, error)
 	RevokeApproval(context.Context, *RevokeApprovalRequest) (*BoolResponse, error)
@@ -210,8 +185,7 @@ type AccountServiceServer interface {
 	GetAccount(context.Context, *AccountIdRequest) (*AccountResponse, error)
 	IsApproved(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error)
 	IsOwner(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error)
-	IsLocked(context.Context, *AccountIdRequest) (*BoolResponse, error)
-	GetLock(context.Context, *AccountIdRequest) (*TimeLockResponse, error)
+	IsAccountLocked(context.Context, *AccountIdRequest) (*BoolResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -230,9 +204,6 @@ func (UnimplementedAccountServiceServer) TransferAccount(context.Context, *Trans
 }
 func (UnimplementedAccountServiceServer) DeleteAccount(context.Context, *DeleteAccountRequest) (*BytesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAccount not implemented")
-}
-func (UnimplementedAccountServiceServer) LockAccount(context.Context, *LockAccountRequest) (*BytesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LockAccount not implemented")
 }
 func (UnimplementedAccountServiceServer) UnlockAccount(context.Context, *UnlockAccountRequest) (*BytesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnlockAccount not implemented")
@@ -255,11 +226,8 @@ func (UnimplementedAccountServiceServer) IsApproved(context.Context, *AccountIdT
 func (UnimplementedAccountServiceServer) IsOwner(context.Context, *AccountIdToAddressRequest) (*BoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsOwner not implemented")
 }
-func (UnimplementedAccountServiceServer) IsLocked(context.Context, *AccountIdRequest) (*BoolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsLocked not implemented")
-}
-func (UnimplementedAccountServiceServer) GetLock(context.Context, *AccountIdRequest) (*TimeLockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLock not implemented")
+func (UnimplementedAccountServiceServer) IsAccountLocked(context.Context, *AccountIdRequest) (*BoolResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsAccountLocked not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -332,24 +300,6 @@ func _AccountService_DeleteAccount_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountServiceServer).DeleteAccount(ctx, req.(*DeleteAccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AccountService_LockAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LockAccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountServiceServer).LockAccount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AccountService_LockAccount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).LockAccount(ctx, req.(*LockAccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -480,38 +430,20 @@ func _AccountService_IsOwner_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_IsLocked_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_IsAccountLocked_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AccountIdRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).IsLocked(ctx, in)
+		return srv.(AccountServiceServer).IsAccountLocked(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AccountService_IsLocked_FullMethodName,
+		FullMethod: AccountService_IsAccountLocked_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).IsLocked(ctx, req.(*AccountIdRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AccountService_GetLock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AccountIdRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountServiceServer).GetLock(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AccountService_GetLock_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetLock(ctx, req.(*AccountIdRequest))
+		return srv.(AccountServiceServer).IsAccountLocked(ctx, req.(*AccountIdRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -534,10 +466,6 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAccount",
 			Handler:    _AccountService_DeleteAccount_Handler,
-		},
-		{
-			MethodName: "LockAccount",
-			Handler:    _AccountService_LockAccount_Handler,
 		},
 		{
 			MethodName: "UnlockAccount",
@@ -568,12 +496,8 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AccountService_IsOwner_Handler,
 		},
 		{
-			MethodName: "IsLocked",
-			Handler:    _AccountService_IsLocked_Handler,
-		},
-		{
-			MethodName: "GetLock",
-			Handler:    _AccountService_GetLock_Handler,
+			MethodName: "IsAccountLocked",
+			Handler:    _AccountService_IsAccountLocked_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

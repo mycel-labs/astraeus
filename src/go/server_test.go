@@ -62,6 +62,7 @@ func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 		t.Fatalf("failed to parse log: %v", err)
 	}
 	accountId = ev["accountId"].(string)
+
 	return &pb.Account{
 		AccountId: accountId,
 		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
@@ -274,7 +275,7 @@ func TestTransferAccount(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
-
+	account := createAccount(t, privateKey)
 	newOwner := "0x1234567890123456789012345678901234567890"
 
 	// Test cases
@@ -284,7 +285,7 @@ func TestTransferAccount(t *testing.T) {
 		to        string
 		expectErr bool
 	}{
-		{"Valid transfer", accountId, newOwner, false},
+		{"Valid transfer", account.AccountId, newOwner, false},
 		{"Non-existent account", "non_existent_account_id", newOwner, true},
 	}
 
@@ -365,6 +366,55 @@ func TestDeleteAccount(t *testing.T) {
 				_, err := s.GetAccount(context.Background(), accountReq)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "account not found")
+			}
+		})
+	}
+}
+
+func TestUnlockAccount(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		expectErr bool
+	}{
+		{"Valid unlock", account.AccountId, false},
+		{"Non-existent account", "non_existent_account_id", true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sig := newPbTimedSignature(t, privateKey)
+			// Execute
+			req := &pb.UnlockAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof:     sig,
+				},
+			}
+			resp, err := s.UnlockAccount(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.accountId, string(resp.Data))
+
+				// Verify the account was unlocked
+				isLockedReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				isLockedResp, err := s.IsAccountLocked(context.Background(), isLockedReq)
+				assert.NoError(t, err)
+				assert.NotNil(t, isLockedResp)
+				assert.False(t, isLockedResp.Result)
 			}
 		})
 	}
@@ -486,6 +536,136 @@ func TestRevokeApproval(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, isApprovedResp)
 				assert.False(t, isApprovedResp.Result)
+			}
+		})
+	}
+}
+
+func TestIsAccountLocked(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountID string
+		expectErr bool
+		expected  bool
+	}{
+		{"Existing account", account.AccountId, false, true},              // Assuming newly created accounts are locked by default
+		{"Non-existent account", "non_existent_account_id", false, false}, // Assuming non-existent accounts return false
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.AccountIdRequest{
+				AccountId: tc.accountID,
+			}
+			resp, err := s.IsAccountLocked(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.IsType(t, &pb.BoolResponse{}, resp)
+				assert.Equal(t, tc.expected, resp.Result)
+			}
+		})
+	}
+}
+
+func TestSign(t *testing.T) {
+	// Setup
+	s := &server{
+		taStoreContract: taStoreContract,
+	}
+	account := createAccount(t, privateKey)
+	sig := newTimedSignature(t, privateKey)
+
+	taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
+
+	message := []byte("Test message to sign")
+	messageHash := crypto.Keccak256(message)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		accountId string
+		data      []byte
+		expectErr bool
+	}{
+		{"Valid signing", account.AccountId, messageHash, false},
+		{"Non-existent account", "non_existent_account_id", messageHash, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sig := newPbTimedSignature(t, privateKey)
+			// Execute
+			req := &pb.SignRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: tc.accountId,
+					Proof:     sig,
+				},
+				Data: tc.data,
+			}
+			resp, err := s.Sign(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.NotEmpty(t, resp.Data)
+
+				// Recover the public key from the account
+				accountResp, err := s.GetAccount(context.Background(), &pb.AccountIdRequest{AccountId: tc.accountId})
+				assert.NoError(t, err)
+
+				t.Logf("Original pubKeyX: %v", accountResp.Account.PublicKeyX)
+				t.Logf("Original pubKeyY: %v", accountResp.Account.PublicKeyY)
+
+				pubKeyX, ok := new(big.Int).SetString(accountResp.Account.PublicKeyX, 16)
+				assert.True(t, ok, "Failed to parse pubKeyX")
+				t.Logf("Parsed pubKeyX: %v", pubKeyX)
+
+				pubKeyY, ok := new(big.Int).SetString(accountResp.Account.PublicKeyY, 16)
+				assert.True(t, ok, "Failed to parse pubKeyY")
+				t.Logf("Parsed pubKeyY: %v", pubKeyY)
+
+				pubKey := ecdsa.PublicKey{
+					Curve: crypto.S256(),
+					X:     pubKeyX,
+					Y:     pubKeyY,
+				}
+
+				t.Logf("Final pubKey: %+v", pubKey)
+
+				// Verify the signature
+				signature := resp.Data[:64]
+				recoveryID := resp.Data[64]
+				messageHash := tc.data
+
+				sigPublicKey, err := crypto.Ecrecover(messageHash, append(signature, recoveryID))
+				assert.NoError(t, err)
+
+				recoveredPubKey, err := crypto.UnmarshalPubkey(sigPublicKey)
+				assert.NoError(t, err)
+				t.Logf("Recovered pubKey: %+v", recoveredPubKey)
+
+				assert.Equal(t, pubKey, *recoveredPubKey, "Recovered public key does not match the account's public key")
+
+				isValid := crypto.VerifySignature(sigPublicKey, messageHash, signature)
+				assert.True(t, isValid, "Signature verification failed")
 			}
 		})
 	}
