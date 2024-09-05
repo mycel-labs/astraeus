@@ -133,7 +133,7 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 		common.LeftPadBytes(address.Bytes(), 20),
 	)
 
-	// Step 2: Apply Ethereum-specific prefix
+	// Step 2: Apply Mycel-specific prefix
 	// Prepend "\x19Mycel Signed Message:\n32" and hash again
 	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
 	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
@@ -146,7 +146,7 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 	}
 
 	// Adjust the v value of the signature (add 27)
-	// This ensures compatibility with Ethereum's signature standard
+	// This ensures compatibility with Mycel's signature standard
 	signature[64] += 27
 
 	return messageHash, signature, nil

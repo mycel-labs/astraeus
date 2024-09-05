@@ -137,17 +137,26 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
+    function revokeApprovalCallback(Suave.DataId accountId, address _address) public {
+        delete accountApprovals[accountId];
+        emit ApprovalRevoked(Utils.iToHex(abi.encodePacked(accountId)), _address);
+    }
+
+    /**
+     * @dev Revoke an address for a given account
+     * @param accountId The account ID
+     * @param _address The address to revoke
+     */
     function revokeApprovalCallback(
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
-    ) public {
+    ) public view onlyLocked(accountId) returns (bytes memory) {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         Account storage account = accountsStore[accountId];
-
-        delete accountApprovals[account.accountId];
-        emit ApprovalRevoked(accountId, _address);
+        require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
+        return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(account.accountId, _address));
     }
 
     /**
