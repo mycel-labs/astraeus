@@ -254,8 +254,8 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 	pbac := &pb.Account{
 		AccountId:  req.AccountId,
 		Owner:      ac.Owner.Hex(),
-		PublicKeyX: fmt.Sprintf("%064x", ac.PublicKeyX),
-		PublicKeyY: fmt.Sprintf("%064x", ac.PublicKeyY),
+		PublicKeyX: ac.PublicKeyX.Text(16),
+		PublicKeyY: ac.PublicKeyY.Text(16),
 		Curve:      pb.Curve(ac.Curve),
 		IsLocked:   ac.IsLocked,
 	}
