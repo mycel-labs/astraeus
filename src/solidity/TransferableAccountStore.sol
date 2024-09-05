@@ -326,6 +326,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         onlyUnlocked(accountId)
         returns (bytes memory)
     {
+        require(Suave.isConfidential());
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
 
