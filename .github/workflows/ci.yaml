@@ -52,10 +52,21 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-deps-${{ hashFiles('**/foundry.toml', '**/go.sum') }}
 
-      - name: Run suave-geth and CI
-        run: |
-          make devnet-up
-          make ci
-          exit_code=$?
-          make devnet-down
-          exit $exit_code
+      - name: Start suave-geth
+        run: make devnet-up
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Format check
+        run: make check-fmt
+
+      - name: Lint
+        run: make lint
+
+      - name: Stop suave-geth
+        if: always()
+        run: make devnet-down
