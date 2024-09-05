@@ -41,7 +41,7 @@ fmt-go:
 	go fmt ./src/go/... ./test/...
 
 check-fmt-go:
-	gofmt -d ./src/go/... ./test/...
+	gofmt -d ./src/go ./test
 
 # Protobuf
 .PHONY: run-proto
