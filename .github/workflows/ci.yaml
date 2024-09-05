@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.foundry
             ~/go/pkg/mod
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/foundry.toml', '**/go.sum') }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/foundry.toml') }}-${{ hashFiles('**/go.sum') }}
 
       - name: Start suave-geth
         run: make devnet-up
