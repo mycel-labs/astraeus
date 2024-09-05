@@ -12,42 +12,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Solidity
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-      - name: Build contracts
-        run: forge build
-      - name: Run Solidity tests
-        run: forge test || true
-      - name: Install Solhint
-        run: npm install -g solhint
-      - name: Lint Solidity
-        run: solhint 'src/**/*.sol' || true
 
-      # Golang
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-      - name: Run Go tests
-        run: go test ./... || true
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+      
+      - name: Install protoc-gen-go
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-      # Protobuf
+      - name: Install protoc-gen-grpc-gateway
+        run: |
+          go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+
       - name: Set up Protoc
-        uses: arduino/setup-protoc@v2
-      - name: Compile Protobuf
-        run: protoc --proto_path=. --go_out=. --go_opt=paths=source_relative **/*.proto || true
+        uses: arduino/setup-protoc@v3
+
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
-      - name: Lint Protobuf
-        run: buf lint || true
 
-      # Formatting
-      - name: Check Solidity formatting
-        run: forge fmt --check || true
-      - name: Check Go formatting
-        run: gofmt -d . || true
-      - name: Check Protobuf formatting
-        run: buf format -d || true
+      - name: Install Solhint
+        run: npm install -g solhint
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.foundry
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/foundry.toml', '**/go.sum') }}
+
+      - name: Run suave-geth and CI
+        run: |
+          make devnet-up
+          make ci
+          exit_code=$?
+          make devnet-down
+          exit $exit_code
