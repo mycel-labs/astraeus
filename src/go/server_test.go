@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
-	pb "github.com/mycel-labs/transferable-account/src/go/pb"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 )
 
 var (
@@ -148,11 +148,11 @@ func TestCreateAccount(t *testing.T) {
 	// Assert
 	assert.NoError(t, err, "CreateAccount call should not return an error")
 	assert.NotNil(t, resp, "Response should not be nil")
-	assert.IsType(t, &pb.BytesResponse{}, resp, "Response type is incorrect")
+	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
 	assert.NotEmpty(t, resp.Data, "Account ID should not be empty")
 
 	// Verify the account was created
-	accountReq := &pb.AccountIdRequest{AccountId: string(resp.Data)}
+	accountReq := &pb.GetAccountRequest{AccountId: string(resp.Data)}
 	accountResp, err := s.GetAccount(context.Background(), accountReq)
 	assert.NoError(t, err, "GetAccount call should not return an error")
 	assert.NotNil(t, accountResp, "Account response should not be nil")
@@ -179,7 +179,7 @@ func TestGetAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.AccountIdRequest{AccountId: tc.accountID}
+			req := &pb.GetAccountRequest{AccountId: tc.accountID}
 			resp, err := s.GetAccount(context.Background(), req)
 
 			// Assert
@@ -219,7 +219,7 @@ func TestIsApproved(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.AccountIdToAddressRequest{
+			req := &pb.IsApprovedRequest{
 				AccountId: tc.accountID,
 				Address:   tc.address,
 			}
@@ -228,7 +228,7 @@ func TestIsApproved(t *testing.T) {
 			// Assert
 			assert.NoError(t, err, "IsApproved call should not return an error")
 			assert.NotNil(t, resp, "Response should not be nil")
-			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
+			assert.IsType(t, &pb.IsApprovedResponse{}, resp, "Response type is incorrect")
 			assert.Equal(t, tc.expected, resp.Result, "Unexpected result for IsApproved")
 		})
 	}
@@ -255,7 +255,7 @@ func TestIsOwner(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.AccountIdToAddressRequest{
+			req := &pb.IsOwnerRequest{
 				AccountId: tc.accountID,
 				Address:   tc.address,
 			}
@@ -264,7 +264,7 @@ func TestIsOwner(t *testing.T) {
 			// Assert
 			assert.NoError(t, err, "IsOwner call should not return an error")
 			assert.NotNil(t, resp, "Response should not be nil")
-			assert.IsType(t, &pb.BoolResponse{}, resp, "Response type is incorrect")
+			assert.IsType(t, &pb.IsOwnerResponse{}, resp, "Response type is incorrect")
 			assert.Equal(t, tc.expected, resp.Result, "Unexpected result for IsOwner")
 		})
 	}
@@ -313,7 +313,7 @@ func TestTransferAccount(t *testing.T) {
 				assert.Equal(t, tc.accountId, string(resp.Data))
 
 				// Verify the account was transferred
-				accountReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
 				accountResp, err := s.GetAccount(context.Background(), accountReq)
 				assert.NoError(t, err)
 				assert.NotNil(t, accountResp)
@@ -362,7 +362,7 @@ func TestDeleteAccount(t *testing.T) {
 				assert.Equal(t, tc.accountId, string(resp.Data))
 
 				// Verify the account was deleted
-				accountReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
 				_, err := s.GetAccount(context.Background(), accountReq)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "account not found")
@@ -410,7 +410,7 @@ func TestUnlockAccount(t *testing.T) {
 				assert.Equal(t, tc.accountId, string(resp.Data))
 
 				// Verify the account was unlocked
-				isLockedReq := &pb.AccountIdRequest{AccountId: tc.accountId}
+				isLockedReq := &pb.IsAccountLockedRequest{AccountId: tc.accountId}
 				isLockedResp, err := s.IsAccountLocked(context.Background(), isLockedReq)
 				assert.NoError(t, err)
 				assert.NotNil(t, isLockedResp)
@@ -462,7 +462,7 @@ func TestApproveAddress(t *testing.T) {
 				assert.Equal(t, tc.accountId, string(resp.Data))
 
 				// Verify the address was approved
-				isApprovedReq := &pb.AccountIdToAddressRequest{
+				isApprovedReq := &pb.IsApprovedRequest{
 					AccountId: tc.accountId,
 					Address:   tc.address,
 				}
@@ -528,7 +528,7 @@ func TestRevokeApproval(t *testing.T) {
 				assert.True(t, resp.Result)
 
 				// Verify the address was revoked
-				isApprovedReq := &pb.AccountIdToAddressRequest{
+				isApprovedReq := &pb.IsApprovedRequest{
 					AccountId: tc.accountId,
 					Address:   tc.address,
 				}
@@ -562,7 +562,7 @@ func TestIsAccountLocked(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.AccountIdRequest{
+			req := &pb.IsAccountLockedRequest{
 				AccountId: tc.accountID,
 			}
 			resp, err := s.IsAccountLocked(context.Background(), req)
@@ -574,7 +574,7 @@ func TestIsAccountLocked(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.IsType(t, &pb.BoolResponse{}, resp)
+				assert.IsType(t, &pb.IsAccountLockedResponse{}, resp)
 				assert.Equal(t, tc.expected, resp.Result)
 			}
 		})
@@ -628,7 +628,7 @@ func TestSign(t *testing.T) {
 				assert.NotEmpty(t, resp.Data)
 
 				// Recover the public key from the account
-				accountResp, err := s.GetAccount(context.Background(), &pb.AccountIdRequest{AccountId: tc.accountId})
+				accountResp, err := s.GetAccount(context.Background(), &pb.GetAccountRequest{AccountId: tc.accountId})
 				assert.NoError(t, err)
 
 				t.Logf("Original pubKeyX: %v", accountResp.Account.PublicKeyX)

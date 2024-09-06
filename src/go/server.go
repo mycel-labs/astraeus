@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
-	pb "github.com/mycel-labs/transferable-account/src/go/pb"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 )
 
 type server struct {
@@ -25,7 +25,7 @@ type TimedSignature struct {
 	Signer      common.Address
 }
 
-func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.BytesResponse, error) {
+func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Proof)
@@ -56,10 +56,10 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	accountId := caEvent["accountId"].(string)
 
-	return &pb.BytesResponse{Data: []byte(accountId)}, nil
+	return &pb.CreateAccountResponse{Data: []byte(accountId)}, nil
 }
 
-func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.BytesResponse, error) {
+func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -87,10 +87,10 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 	}
 
 	// Return the account ID as a response
-	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.TransferAccountResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.BytesResponse, error) {
+func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -118,10 +118,10 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 	}
 
 	// Return the account ID as a response
-	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.DeleteAccountResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.BytesResponse, error) {
+func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -143,10 +143,10 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 		return nil, fmt.Errorf("failed to unlock account")
 	}
 
-	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.UnlockAccountResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.BytesResponse, error) {
+func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -168,10 +168,10 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 		return nil, fmt.Errorf("failed to approve address")
 	}
 
-	return &pb.BytesResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.ApproveAddressResponse{Data: []byte(req.Base.AccountId)}, nil
 }
 
-func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.BoolResponse, error) {
+func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -193,10 +193,10 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 		return nil, fmt.Errorf("failed to revoke approval")
 	}
 
-	return &pb.BoolResponse{Result: true}, nil
+	return &pb.RevokeApprovalResponse{Result: true}, nil
 }
 
-func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesResponse, error) {
+func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
 	var result *types.Receipt
 	var err error
 	sig := populateTimedSignature(req.Base.Proof)
@@ -224,10 +224,10 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.BytesRespon
 	}
 	signature := caEvent["signature"].([]byte)
 
-	return &pb.BytesResponse{Data: signature}, nil
+	return &pb.SignResponse{Data: signature}, nil
 }
 
-func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.AccountResponse, error) {
+func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.GetAccountResponse, error) {
 	result := s.taStoreContract.Call("getAccount", []interface{}{req.AccountId})
 
 	if len(result) == 0 || result[0] == nil {
@@ -260,10 +260,10 @@ func (s *server) GetAccount(ctx context.Context, req *pb.AccountIdRequest) (*pb.
 		IsLocked:   ac.IsLocked,
 	}
 
-	return &pb.AccountResponse{Account: pbac}, nil
+	return &pb.GetAccountResponse{Account: pbac}, nil
 }
 
-func (s *server) IsApproved(ctx context.Context, req *pb.AccountIdToAddressRequest) (*pb.BoolResponse, error) {
+func (s *server) IsApproved(ctx context.Context, req *pb.IsApprovedRequest) (*pb.IsApprovedResponse, error) {
 	result := s.taStoreContract.Call("isApproved", []interface{}{req.AccountId, common.HexToAddress(req.Address)})
 
 	if len(result) == 0 || result[0] == nil {
@@ -275,10 +275,10 @@ func (s *server) IsApproved(ctx context.Context, req *pb.AccountIdToAddressReque
 		return nil, fmt.Errorf("approved data type is unexpected")
 	}
 
-	return &pb.BoolResponse{Result: approved}, nil
+	return &pb.IsApprovedResponse{Result: approved}, nil
 }
 
-func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest) (*pb.BoolResponse, error) {
+func (s *server) IsOwner(ctx context.Context, req *pb.IsOwnerRequest) (*pb.IsOwnerResponse, error) {
 	result := s.taStoreContract.Call("isOwner", []interface{}{req.AccountId, common.HexToAddress(req.Address)})
 
 	if len(result) == 0 || result[0] == nil {
@@ -290,10 +290,10 @@ func (s *server) IsOwner(ctx context.Context, req *pb.AccountIdToAddressRequest)
 		return nil, fmt.Errorf("isOwner data type is unexpected")
 	}
 
-	return &pb.BoolResponse{Result: isOwner}, nil
+	return &pb.IsOwnerResponse{Result: isOwner}, nil
 }
 
-func (s *server) IsAccountLocked(ctx context.Context, req *pb.AccountIdRequest) (*pb.BoolResponse, error) {
+func (s *server) IsAccountLocked(ctx context.Context, req *pb.IsAccountLockedRequest) (*pb.IsAccountLockedResponse, error) {
 	result := s.taStoreContract.Call("isAccountLocked", []interface{}{req.AccountId})
 
 	if len(result) == 0 || result[0] == nil {
@@ -305,7 +305,7 @@ func (s *server) IsAccountLocked(ctx context.Context, req *pb.AccountIdRequest) 
 		return nil, fmt.Errorf("isLocked data type is unexpected")
 	}
 
-	return &pb.BoolResponse{Result: isLocked}, nil
+	return &pb.IsAccountLockedResponse{Result: isLocked}, nil
 }
 
 /*

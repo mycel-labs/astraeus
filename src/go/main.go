@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 )
 
 const (
