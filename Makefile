@@ -9,7 +9,7 @@ devnet-down:
 
 # Solidity
 build-solidity:
-	forge build
+	forge build --via-ir
 
 test-solidity:
 	forge test --ffi test/**/*.t.sol
