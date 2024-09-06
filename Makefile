@@ -55,8 +55,8 @@ run-proto:
 compile-proto:
 	@make run-proto
 
-# lint-proto:
-# 	buf lint
+lint-proto:
+	buf lint
 
 fmt-proto:
 	buf format src/proto
