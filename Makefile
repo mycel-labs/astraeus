@@ -12,7 +12,7 @@ build-solidity:
 	forge build --via-ir
 
 test-solidity:
-	forge test --ffi test/**/*.t.sol
+	forge test --ffi --via-ir test/**/*.t.sol
 
 lint-solidity:
 	solhint 'src/**/*.sol'
