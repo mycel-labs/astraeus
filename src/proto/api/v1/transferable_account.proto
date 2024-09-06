@@ -1,24 +1,25 @@
 syntax = "proto3";
 
-package account;
+package api.v1;
 
 import "google/api/annotations.proto";
 
-option go_package = "../go/pb";
+option go_package = "../../../go/pb";
 
 // Structs
 message Account {
     string account_id = 1;
     string owner = 2;
-    uint64 public_key_x = 3;
-    uint64 public_key_y = 4;
+    string public_key_x = 3;
+    string public_key_y = 4;
     Curve curve = 5;
+    bool is_locked = 6;
 }
 
 enum Curve {
-  CURVE_UNKNOWN=0;
-  ECDSA = 1;
-  EDDSA = 2;
+  CURVE_UNSPECIFIED = 0;
+  CURVE_ECDSA = 1;
+  CURVE_EDDSA = 2;
 }
 
 message TimeLock {
@@ -39,7 +40,9 @@ message AccountOperationRequest {
     TimedSignature proof = 2;
 }
 
-message CreateAccountRequest {}
+message CreateAccountRequest {
+    TimedSignature proof = 1;
+}
 
 message TransferAccountRequest {
     AccountOperationRequest base = 1;
@@ -73,21 +76,67 @@ message SignRequest {
     bytes data = 2;
 }
 
-message AccountIdRequest {
+message GetAccountRequest {
+    string account_id = 1;
+}
+
+message IsApprovedRequest {
+    string account_id = 1;
+    string address = 2;
+}
+
+message IsOwnerRequest {
+    string account_id = 1;
+    string address = 2;
+}
+
+message IsAccountLockedRequest {
     string account_id = 1;
 }
 
 // Responses
-message AccountResponse {
-    Account account = 1;
+message CreateAccountResponse {
+    bytes data = 1;
 }
 
-message BoolResponse {
+message TransferAccountResponse {
+    bytes data = 1;
+}
+
+message DeleteAccountResponse {
+    bytes data = 1;
+}
+
+message UnlockAccountResponse {
+    bytes data = 1;
+}
+
+message ApproveAddressResponse {
+    bytes data = 1;
+}
+
+message RevokeApprovalResponse {
     bool result = 1;
 }
 
-message BytesResponse {
+message SignResponse {
     bytes data = 1;
+}
+
+message GetAccountResponse {
+    Account account = 1;
+}
+
+message IsApprovedResponse {
+    bool result = 1;
+}
+
+message IsOwnerResponse {
+    bool result = 1;
+}
+
+message IsAccountLockedResponse {
+    bool result = 1;
 }
 
 message TimeLockResponse {
@@ -96,76 +145,65 @@ message TimeLockResponse {
 
 // Service
 service AccountService {
-    rpc CreateAccount(CreateAccountRequest) returns (BytesResponse) {
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {
         option (google.api.http) = {
             post: "/v1/accounts"
             body: "*"
         };
     }
-    rpc TransferAccount(TransferAccountRequest) returns (BytesResponse) {
+    rpc TransferAccount(TransferAccountRequest) returns (TransferAccountResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/transfer"
             body: "*"
         };
     }
-    rpc DeleteAccount(DeleteAccountRequest) returns (BytesResponse) {
+    rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse) {
         option (google.api.http) = {
             delete: "/v1/accounts/{base.account_id}"
         };
     }
-    rpc LockAccount(LockAccountRequest) returns (BytesResponse) {
-        option (google.api.http) = {
-            post: "/v1/accounts/{base.account_id}/lock"
-            body: "*"
-        };
-    }
-    rpc UnlockAccount(UnlockAccountRequest) returns (BytesResponse) {
+    rpc UnlockAccount(UnlockAccountRequest) returns (UnlockAccountResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/unlock"
             body: "*"
         };
     }
-    rpc ApproveAddress(ApproveAddressRequest) returns (BytesResponse) {
+    rpc ApproveAddress(ApproveAddressRequest) returns (ApproveAddressResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/approve"
             body: "*"
         };
     }
-    rpc RevokeApproval(RevokeApprovalRequest) returns (BoolResponse) {
+    rpc RevokeApproval(RevokeApprovalRequest) returns (RevokeApprovalResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/revoke"
             body: "*"
         };
     }
-    rpc Sign(SignRequest) returns (BytesResponse) {
+    rpc Sign(SignRequest) returns (SignResponse) {
         option (google.api.http) = {
             post: "/v1/accounts/{base.account_id}/sign"
             body: "*"
         };
     }
-    rpc GetAccount(AccountIdRequest) returns (AccountResponse) {
+    rpc GetAccount(GetAccountRequest) returns (GetAccountResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}"
         };
     }
-    rpc IsApproved(ApproveAddressRequest) returns (BoolResponse) {
+    rpc IsApproved(IsApprovedRequest) returns (IsApprovedResponse) {
         option (google.api.http) = {
-            get: "/v1/accounts/{base.account_id}/approved/{address}"
+            get: "/v1/accounts/{account_id}/approved/{address}"
         };
     }
-    rpc IsOwner(ApproveAddressRequest) returns (BoolResponse) {
+    rpc IsOwner(IsOwnerRequest) returns (IsOwnerResponse) {
         option (google.api.http) = {
-            get: "/v1/accounts/{base.account_id}/owner/{address}"
+            get: "/v1/accounts/{account_id}/owner/{address}"
         };
     }
-    rpc IsLocked(AccountIdRequest) returns (BoolResponse) {
+    rpc IsAccountLocked(IsAccountLockedRequest) returns (IsAccountLockedResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}/locked"
-        };
-    }
-    rpc GetLock(AccountIdRequest) returns (TimeLockResponse) {
-        option (google.api.http) = {
-            get: "/v1/accounts/{account_id}/lock"
         };
     }
 }

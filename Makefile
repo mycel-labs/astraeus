@@ -9,10 +9,10 @@ devnet-down:
 
 # Solidity
 build-solidity:
-	forge build
+	forge build --via-ir
 
 test-solidity:
-	forge test --ffi test/**/*.t.sol
+	forge test --ffi --via-ir test/**/*.t.sol
 
 lint-solidity:
 	solhint 'src/**/*.sol'
@@ -50,13 +50,13 @@ run-proto:
   --go_out=src/go/pb --go_opt=paths=source_relative \
   --go-grpc_out=src/go/pb --go-grpc_opt=paths=source_relative \
   --grpc-gateway_out=src/go/pb --grpc-gateway_opt=paths=source_relative \
-  src/proto/transferable_account.proto
+  src/proto/api/v1/transferable_account.proto
 
 compile-proto:
 	@make run-proto
 
-# lint-proto:
-# 	buf lint
+lint-proto:
+	buf lint
 
 fmt-proto:
 	buf format src/proto
