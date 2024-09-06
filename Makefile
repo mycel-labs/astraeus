@@ -64,6 +64,9 @@ fmt-proto:
 check-fmt-proto:
 	buf format -d src/proto
 
+docs-proto:
+	@protoc -I ./src/proto --doc_out=./docs --doc_opt=markdown,api.md ./src/proto/api/v1/*.proto
+
 # General
 .PHONY: build test lint fmt check-fmt
 build: build-solidity build-go compile-proto
