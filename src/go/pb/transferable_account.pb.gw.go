@@ -187,66 +187,6 @@ func local_request_AccountService_DeleteAccount_0(ctx context.Context, marshaler
 
 }
 
-func request_AccountService_LockAccount_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LockAccountRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["base.account_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
-	}
-
-	msg, err := client.LockAccount(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_AccountService_LockAccount_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LockAccountRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["base.account_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
-	}
-
-	msg, err := server.LockAccount(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
 func request_AccountService_UnlockAccount_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UnlockAccountRequest
 	var metadata runtime.ServerMetadata
@@ -539,12 +479,8 @@ func local_request_AccountService_GetAccount_0(ctx context.Context, marshaler ru
 
 }
 
-var (
-	filter_AccountService_IsApproved_0 = &utilities.DoubleArray{Encoding: map[string]int{"base": 0, "account_id": 1, "address": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
-)
-
 func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -554,14 +490,14 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -572,13 +508,6 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsApproved_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.IsApproved(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -587,7 +516,7 @@ func request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.
 }
 
 func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -597,14 +526,14 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -615,13 +544,6 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsApproved_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.IsApproved(ctx, &protoReq)
@@ -629,12 +551,8 @@ func local_request_AccountService_IsApproved_0(ctx context.Context, marshaler ru
 
 }
 
-var (
-	filter_AccountService_IsOwner_0 = &utilities.DoubleArray{Encoding: map[string]int{"base": 0, "account_id": 1, "address": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
-)
-
 func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -644,14 +562,14 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -662,13 +580,6 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 	protoReq.Address, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsOwner_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.IsOwner(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -677,7 +588,7 @@ func request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Mar
 }
 
 func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveAddressRequest
+	var protoReq AccountIdToAddressRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -687,14 +598,14 @@ func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["base.account_id"]
+	val, ok = pathParams["account_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "base.account_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "base.account_id", val)
+	protoReq.AccountId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "base.account_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
 	val, ok = pathParams["address"]
@@ -707,19 +618,12 @@ func local_request_AccountService_IsOwner_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_AccountService_IsOwner_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
 	msg, err := server.IsOwner(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_AccountService_IsLocked_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_AccountService_IsAccountLocked_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq AccountIdRequest
 	var metadata runtime.ServerMetadata
 
@@ -740,12 +644,12 @@ func request_AccountService_IsLocked_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
-	msg, err := client.IsLocked(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.IsAccountLocked(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_AccountService_IsLocked_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_AccountService_IsAccountLocked_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq AccountIdRequest
 	var metadata runtime.ServerMetadata
 
@@ -766,59 +670,7 @@ func local_request_AccountService_IsLocked_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
 	}
 
-	msg, err := server.IsLocked(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_AccountService_GetLock_0(ctx context.Context, marshaler runtime.Marshaler, client AccountServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AccountIdRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["account_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
-	}
-
-	protoReq.AccountId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
-	}
-
-	msg, err := client.GetLock(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_AccountService_GetLock_0(ctx context.Context, marshaler runtime.Marshaler, server AccountServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AccountIdRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["account_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "account_id")
-	}
-
-	protoReq.AccountId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "account_id", err)
-	}
-
-	msg, err := server.GetLock(ctx, &protoReq)
+	msg, err := server.IsAccountLocked(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -902,31 +754,6 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		}
 
 		forward_AccountService_DeleteAccount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_AccountService_LockAccount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/LockAccount", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/lock"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_AccountService_LockAccount_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_AccountService_LockAccount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1063,7 +890,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/approved/{address}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/approved/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1088,7 +915,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/owner/{address}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/owner/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1105,7 +932,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 
 	})
 
-	mux.Handle("GET", pattern_AccountService_IsLocked_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_AccountService_IsAccountLocked_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1113,12 +940,12 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsLocked", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/locked"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/IsAccountLocked", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/locked"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_AccountService_IsLocked_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_AccountService_IsAccountLocked_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -1126,32 +953,7 @@ func RegisterAccountServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_AccountService_IsLocked_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_AccountService_GetLock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/account.AccountService/GetLock", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/lock"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_AccountService_GetLock_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_AccountService_GetLock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AccountService_IsAccountLocked_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1259,28 +1061,6 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		}
 
 		forward_AccountService_DeleteAccount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_AccountService_LockAccount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/LockAccount", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/lock"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_AccountService_LockAccount_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_AccountService_LockAccount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1400,7 +1180,7 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/approved/{address}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsApproved", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/approved/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1422,7 +1202,7 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{base.account_id}/owner/{address}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsOwner", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/owner/{address}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1438,47 +1218,25 @@ func RegisterAccountServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 
 	})
 
-	mux.Handle("GET", pattern_AccountService_IsLocked_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_AccountService_IsAccountLocked_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsLocked", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/locked"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/IsAccountLocked", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/locked"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_AccountService_IsLocked_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_AccountService_IsAccountLocked_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_AccountService_IsLocked_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_AccountService_GetLock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/account.AccountService/GetLock", runtime.WithHTTPPathPattern("/v1/accounts/{account_id}/lock"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_AccountService_GetLock_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_AccountService_GetLock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AccountService_IsAccountLocked_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1492,8 +1250,6 @@ var (
 
 	pattern_AccountService_DeleteAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "accounts", "base.account_id"}, ""))
 
-	pattern_AccountService_LockAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "base.account_id", "lock"}, ""))
-
 	pattern_AccountService_UnlockAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "base.account_id", "unlock"}, ""))
 
 	pattern_AccountService_ApproveAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "base.account_id", "approve"}, ""))
@@ -1504,13 +1260,11 @@ var (
 
 	pattern_AccountService_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "accounts", "account_id"}, ""))
 
-	pattern_AccountService_IsApproved_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "base.account_id", "approved", "address"}, ""))
+	pattern_AccountService_IsApproved_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "account_id", "approved", "address"}, ""))
 
-	pattern_AccountService_IsOwner_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "base.account_id", "owner", "address"}, ""))
+	pattern_AccountService_IsOwner_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "accounts", "account_id", "owner", "address"}, ""))
 
-	pattern_AccountService_IsLocked_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "account_id", "locked"}, ""))
-
-	pattern_AccountService_GetLock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "account_id", "lock"}, ""))
+	pattern_AccountService_IsAccountLocked_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "accounts", "account_id", "locked"}, ""))
 )
 
 var (
@@ -1519,8 +1273,6 @@ var (
 	forward_AccountService_TransferAccount_0 = runtime.ForwardResponseMessage
 
 	forward_AccountService_DeleteAccount_0 = runtime.ForwardResponseMessage
-
-	forward_AccountService_LockAccount_0 = runtime.ForwardResponseMessage
 
 	forward_AccountService_UnlockAccount_0 = runtime.ForwardResponseMessage
 
@@ -1536,7 +1288,5 @@ var (
 
 	forward_AccountService_IsOwner_0 = runtime.ForwardResponseMessage
 
-	forward_AccountService_IsLocked_0 = runtime.ForwardResponseMessage
-
-	forward_AccountService_GetLock_0 = runtime.ForwardResponseMessage
+	forward_AccountService_IsAccountLocked_0 = runtime.ForwardResponseMessage
 )
