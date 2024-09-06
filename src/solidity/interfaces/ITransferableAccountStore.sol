@@ -52,7 +52,6 @@ interface ITransferableAccountStore {
         string memory accountId,
         address _address
     ) external returns (bytes memory);
-
     function revokeApproval(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,

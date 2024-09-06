@@ -137,9 +137,17 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeApprovalCallback(Suave.DataId accountId, address _address) public {
-        delete accountApprovals[accountId];
-        emit ApprovalRevoked(Utils.iToHex(abi.encodePacked(accountId)), _address);
+    function revokeApprovalCallback(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        address _address
+    ) public onlyLocked(accountId) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
+        Account storage account = accountsStore[accountId];
+
+        delete accountApprovals[account.accountId];
+        emit ApprovalRevoked(accountId, _address);
     }
 
     /**
@@ -156,7 +164,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
         Account storage account = accountsStore[accountId];
         require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
-        return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(account.accountId, _address));
+        return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(timedSignature, accountId, _address));
     }
 
     /**
@@ -192,7 +200,11 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Create an account
      * @return bytes The encoded callback data
      */
-    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bytes memory) {
+    function createAccount(SignatureVerifier.TimedSignature calldata timedSignature)
+        public
+        confidential
+        returns (bytes memory)
+    {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
 
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
@@ -323,10 +335,10 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         public
-        onlyUnlocked(accountId)
+        confidential
+        onlyUnlocked(Utils.iToHex(abi.encodePacked(accountId)))
         returns (bytes memory)
     {
-        require(Suave.isConfidential());
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
         require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
 
