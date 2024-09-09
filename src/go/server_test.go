@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -77,8 +78,8 @@ func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSi
 	}
 	return &pb.TimedSignature{
 		ValidFor:    validFor,
-		MessageHash: messageHash[:],
-		Signature:   signature,
+		MessageHash: hex.EncodeToString(messageHash[:]),
+		Signature:   hex.EncodeToString(signature),
 		Signer:      fundedAddress,
 	}
 }
@@ -138,8 +139,8 @@ func TestCreateAccount(t *testing.T) {
 	req := &pb.CreateAccountRequest{
 		Proof: &pb.TimedSignature{
 			ValidFor:    sig.ValidFor,
-			MessageHash: sig.MessageHash[:],
-			Signature:   sig.Signature,
+			MessageHash: hex.EncodeToString(sig.MessageHash[:]),
+			Signature:   hex.EncodeToString(sig.Signature),
 			Signer:      sig.Signer.Hex(),
 		},
 	}

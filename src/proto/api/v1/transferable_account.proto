@@ -29,10 +29,10 @@ message TimeLock {
 
 // Requests
 message TimedSignature {
-    uint64 valid_for = 1;
-    bytes message_hash = 2;
-    bytes signature = 3;
-    string signer = 4;
+    uint64 valid_for = 1; // unix timestamp
+    string message_hash = 2; // hex encoded
+    string signature = 3; // hex encoded
+    string signer = 4; // address
 }
 
 message AccountOperationRequest {
