@@ -96,31 +96,33 @@ message IsAccountLockedRequest {
 
 // Responses
 message CreateAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
+    string account_id = 2;
 }
 
 message TransferAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message DeleteAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message UnlockAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message ApproveAddressResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message RevokeApprovalResponse {
-    bool result = 1;
+    string tx_hash = 1;
 }
 
 message SignResponse {
-    bytes data = 1;
+    string tx_hash = 1;
+    bytes signature = 2;
 }
 
 message GetAccountResponse {

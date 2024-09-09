@@ -150,14 +150,15 @@ func TestCreateAccount(t *testing.T) {
 	assert.NoError(t, err, "CreateAccount call should not return an error")
 	assert.NotNil(t, resp, "Response should not be nil")
 	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
-	assert.NotEmpty(t, resp.Data, "Account ID should not be empty")
+	assert.NotEmpty(t, resp.TxHash, "TxHash should not be empty")
+	assert.NotEmpty(t, resp.AccountId, "Account ID should not be empty")
 
 	// Verify the account was created
-	accountReq := &pb.GetAccountRequest{AccountId: string(resp.Data)}
+	accountReq := &pb.GetAccountRequest{AccountId: resp.AccountId}
 	accountResp, err := s.GetAccount(context.Background(), accountReq)
 	assert.NoError(t, err, "GetAccount call should not return an error")
 	assert.NotNil(t, accountResp, "Account response should not be nil")
-	assert.Equal(t, string(resp.Data), accountResp.Account.AccountId, "Account ID should match")
+	assert.Equal(t, resp.AccountId, accountResp.Account.AccountId, "Account ID should match")
 }
 
 func TestGetAccount(t *testing.T) {
@@ -311,7 +312,7 @@ func TestTransferAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was transferred
 				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
@@ -360,7 +361,7 @@ func TestDeleteAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was deleted
 				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
@@ -408,7 +409,7 @@ func TestUnlockAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was unlocked
 				isLockedReq := &pb.IsAccountLockedRequest{AccountId: tc.accountId}
@@ -460,7 +461,7 @@ func TestApproveAddress(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the address was approved
 				isApprovedReq := &pb.IsApprovedRequest{
@@ -526,7 +527,7 @@ func TestRevokeApproval(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.True(t, resp.Result)
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the address was revoked
 				isApprovedReq := &pb.IsApprovedRequest{
@@ -626,7 +627,7 @@ func TestSign(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.NotEmpty(t, resp.Data)
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Recover the public key from the account
 				accountResp, err := s.GetAccount(context.Background(), &pb.GetAccountRequest{AccountId: tc.accountId})
@@ -652,8 +653,8 @@ func TestSign(t *testing.T) {
 				t.Logf("Final pubKey: %+v", pubKey)
 
 				// Verify the signature
-				signature := resp.Data[:64]
-				recoveryID := resp.Data[64]
+				signature := resp.Signature[:64]
+				recoveryID := resp.Signature[64]
 				messageHash := tc.data
 
 				sigPublicKey, err := crypto.Ecrecover(messageHash, append(signature, recoveryID))

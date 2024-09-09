@@ -60,7 +60,7 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	accountId := caEvent["accountId"].(string)
 
-	return &pb.CreateAccountResponse{Data: []byte(accountId)}, nil
+	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId}, nil
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
@@ -93,8 +93,7 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 		return nil, fmt.Errorf("failed to transfer account")
 	}
 
-	// Return the account ID as a response
-	return &pb.TransferAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.TransferAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
@@ -127,8 +126,7 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 		return nil, fmt.Errorf("failed to delete account")
 	}
 
-	// Return the account ID as a response
-	return &pb.DeleteAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.DeleteAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
@@ -156,7 +154,7 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 		return nil, fmt.Errorf("failed to unlock account")
 	}
 
-	return &pb.UnlockAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.UnlockAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
@@ -184,7 +182,7 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 		return nil, fmt.Errorf("failed to approve address")
 	}
 
-	return &pb.ApproveAddressResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.ApproveAddressResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
@@ -212,7 +210,7 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 		return nil, fmt.Errorf("failed to revoke approval")
 	}
 
-	return &pb.RevokeApprovalResponse{Result: true}, nil
+	return &pb.RevokeApprovalResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
@@ -246,7 +244,7 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespons
 	}
 	signature := caEvent["signature"].([]byte)
 
-	return &pb.SignResponse{Data: signature}, nil
+	return &pb.SignResponse{TxHash: result.TxHash.Hex(), Signature: signature}, nil
 }
 
 func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.GetAccountResponse, error) {
