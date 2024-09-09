@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/suave/sdk"
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
 
@@ -70,7 +71,7 @@ func main() {
 	clt := sdk.NewClient(fr.Suave.RPC().Client(), fundedAccount.Priv, fr.KettleAddress)
 
 	// get contract
-	taStoreContractSDK := sdk.GetContract(fr.KettleAddress, artifact.Abi, clt)
+	taStoreContractSDK := sdk.GetContract(common.HexToAddress(taStoreContractAddr), artifact.Abi, clt)
 	taStoreContract := &framework.Contract{Abi: artifact.Abi, Contract: taStoreContractSDK}
 
 	// gRPC server
