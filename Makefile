@@ -26,7 +26,7 @@ check-fmt-solidity:
 # Golang
 .PHONY: run-go
 run-go:
-	@cd src/go && go run main.go && cd ../../
+	@go run ./src/go/...
 
 build-go:
 	go build ./src/go
