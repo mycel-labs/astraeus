@@ -94,8 +94,7 @@ func TestCreateAccountE2E(t *testing.T) {
 			request := &pb.CreateAccountRequest{
 				Proof: timedSignature,
 			}
-			createAccountResponse, StatusCode, err := testutil.CreateAccount(request)
-			fmt.Println("createAccountResponse", createAccountResponse)
+			_, StatusCode, err := testutil.CreateAccount(request)
 			valid := StatusCode == 200
 
 			assert.Equal(t, tc.expectValid, valid)
@@ -134,7 +133,7 @@ func TestTransferAccountE2E(t *testing.T) {
 			creator:     alicePrivKey,
 			sender:      bobPrivKey,
 			to:          bobPrivKey.PublicKey.X.String(),
-      expectValid: false,
+			expectValid: false,
 		},
 	}
 	for _, tc := range testCases {
@@ -150,18 +149,434 @@ func TestTransferAccountE2E(t *testing.T) {
 			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
 			assert.Equal(t, 200, statusCode)
 
-      // Transfer account
-      transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			// Transfer account
+			transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
 			request := &pb.TransferAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: createAccountResponse.AccountId,
 					Proof:     transferSig,
-        },
+				},
 				To: tc.to,
 			}
 			_, statusCode, err = testutil.TransferAccount(request)
-			valid := statusCode == 200
-			assert.Equal(t, tc.expectValid, valid)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
+		})
+	}
+}
+
+func TestDeleteAccountE2E(t *testing.T) {
+	// Setup keys for Alice (account creator)
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	// Define test cases for deletion
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		expectValid bool
+	}{
+		{
+			name:        "Valid deletion",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400,
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 2: Unlock the account
+			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			unlockAccountRequest := &pb.UnlockAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     unlockSig,
+				},
+			}
+			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 3: Delete the account
+			deleteSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+
+			deleteAccountRequest := &pb.DeleteAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     deleteSig,
+				},
+			}
+
+			_, statusCode, err = testutil.DeleteAccount(deleteAccountRequest)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
+		})
+	}
+}
+
+func TestUnlockAccountE2E(t *testing.T) {
+	// Setup keys for Alice (account creator)
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	// Define test cases for deletion
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		expectValid bool
+	}{
+		{
+			name:        "Valid unlocking",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400,
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 2: Unlock the account
+			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			unlockAccountRequest := &pb.UnlockAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     unlockSig,
+				},
+			}
+			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
+		})
+	}
+}
+
+func TestApproveAddressE2E(t *testing.T) {
+	// Setup keys for Alice (account creator)
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	// Define test cases for deletion
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		to          *ecdsa.PrivateKey
+		expectValid bool
+	}{
+		{
+			name:        "Valid approval",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			to:          bobPrivKey,
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400,
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			to:          bobPrivKey,
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 2: Approve the account
+			approveSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			approveAddressRequest := &pb.ApproveAddressRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     approveSig,
+				},
+				Address: tc.to.PublicKey.X.String(),
+			}
+			_, statusCode, err = testutil.ApproveAddress(approveAddressRequest)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
+
+			// Step 3: Check if the address is approved
+			if tc.expectValid {
+				transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				transferRequest := &pb.TransferAccountRequest{
+					Base: &pb.AccountOperationRequest{
+						AccountId: createAccountResponse.AccountId,
+						Proof:     transferSig,
+					},
+					To: tc.to.PublicKey.X.String(),
+				}
+				_, statusCode, err = testutil.TransferAccount(transferRequest)
+				assert.Equal(t, true, statusCode == 200)
+			}
+		})
+	}
+}
+
+func TestRevokeApprovalE2E(t *testing.T) {
+	// Setup keys for Alice (account creator)
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	// Define test cases for deletion
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		to          *ecdsa.PrivateKey
+		expectValid bool
+	}{
+		{
+			name:        "Valid revocation",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			to:          bobPrivKey,
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400,
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			to:          bobPrivKey,
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 2: Approve the account
+			approveSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			approveAddressRequest := &pb.ApproveAddressRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     approveSig,
+				},
+				Address: tc.to.PublicKey.X.String(),
+			}
+			_, statusCode, err = testutil.ApproveAddress(approveAddressRequest)
+			assert.Equal(t, true, statusCode == 200)
+
+			// Step 3: Revoke the approval
+			revokeSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+			revokeApprovalRequest := &pb.RevokeApprovalRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     revokeSig,
+				},
+				Address: tc.to.PublicKey.X.String(),
+			}
+			_, statusCode, err = testutil.RevokeApproval(revokeApprovalRequest)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
+
+			// Step 4: Check if the address is revoked
+			if tc.expectValid {
+				transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.to)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				transferRequest := &pb.TransferAccountRequest{
+					Base: &pb.AccountOperationRequest{
+						AccountId: createAccountResponse.AccountId,
+						Proof:     transferSig,
+					},
+					To: tc.to.PublicKey.X.String(),
+				}
+				_, statusCode, err = testutil.TransferAccount(transferRequest)
+				assert.Equal(t, false, statusCode == 200)
+			}
+		})
+	}
+}
+
+func TestSignE2E(t *testing.T) {
+	// Setup keys for Alice (account creator)
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	// Define test cases for deletion
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		fn          func()
+		expectValid bool
+	}{
+		{
+			name:        "Valid signing",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400,
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
+
+			// Step 2: Unlock the account
+			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			unlockAccountRequest := &pb.UnlockAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     unlockSig,
+				},
+			}
+			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, true, statusCode == 200)
+
+			// Step 3: Sign the message
+			signSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+
+			signRequest := &pb.SignRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     signSig,
+				},
+				Data: "Hello, World!",
+			}
+			_, statusCode, err = testutil.Sign(signRequest)
+			assert.Equal(t, tc.expectValid, statusCode == 200)
 		})
 	}
 }
