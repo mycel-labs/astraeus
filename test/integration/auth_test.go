@@ -8,15 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mycel-labs/transferable-account/src/go/framework"
 	"github.com/mycel-labs/transferable-account/testutil"
-  "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
 	fr              *framework.Framework
 	taStoreContract *framework.Contract
 )
-
-
 
 func TestMain(m *testing.M) {
 	// Setup
