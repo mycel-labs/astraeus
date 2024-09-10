@@ -113,26 +113,81 @@ func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) (*pb.Tra
 	return transferAccountResponse, statusCode, nil
 }
 
-// func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
-// }
-//
-// func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
-// }
-//
-// func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/approve", HostURL, approveAddressRequest.Base.AccountId)
-// }
-//
-// func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/revoke", HostURL, revokeApprovalRequest.Base.AccountId)
-// }
-//
-// func Sign(SignRequest *pb.SignRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/sign", HostURL, SignRequest.Base.AccountId)
-// }
-//
+func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, int, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
+
+	// Create the Protobuf response message
+	deleteAccountResponse := &pb.DeleteAccountResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, deleteAccountRequest, deleteAccountResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process DeleteAccount request: %w", err)
+	}
+
+	return deleteAccountResponse, statusCode, nil
+}
+
+
+func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, int, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
+
+	// Create the Protobuf response message
+	unlockAccountResponse := &pb.UnlockAccountResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, unlockAccountRequest, unlockAccountResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process UnlockAccount request: %w", err)
+	}
+
+	return unlockAccountResponse, statusCode, nil
+}
+
+func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, int, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/approve", HostURL, approveAddressRequest.Base.AccountId)
+
+	// Create the Protobuf response message
+	approveAddressResponse := &pb.ApproveAddressResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, approveAddressRequest, approveAddressResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process ApproveAddress request: %w", err)
+	}
+
+	return approveAddressResponse, statusCode, nil
+}
+
+func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, int, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/revoke", HostURL, revokeApprovalRequest.Base.AccountId)
+
+	// Create the Protobuf response message
+	revokeApprovalResponse := &pb.RevokeApprovalResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, revokeApprovalRequest, revokeApprovalResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process RevokeApproval request: %w", err)
+	}
+
+	return revokeApprovalResponse, statusCode, nil
+}
+
+func Sign(signRequest *pb.SignRequest) (*pb.SignResponse, int, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/sign", HostURL, signRequest.Base.AccountId)
+
+	// Create the Protobuf response message
+	signResponse := &pb.SignResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, signRequest, signResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process Sign request: %w", err)
+	}
+
+	return signResponse, statusCode, nil
+}
 // func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
 // url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
 // }
