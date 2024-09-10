@@ -35,10 +35,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile-astraeus-api
-    environment:
-      - TA_STORE_CONTRACT_ADDRESS=${TA_STORE_CONTRACT_ADDRESS}
-      - PRIVATE_KEY=${PRIVATE_KEY}
+      args:
+        TA_STORE_CONTRACT_ADDRESS: ${TA_STORE_CONTRACT_ADDRESS}
+        PRIVATE_KEY: ${PRIVATE_KEY}
     networks:
       - suave-net
+    env_file:
+      - .env
 networks:
   suave-net:
