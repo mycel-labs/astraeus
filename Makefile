@@ -80,3 +80,9 @@ check-fmt: check-fmt-solidity check-fmt-go check-fmt-proto
 
 # CI
 ci: build test lint check-fmt
+
+# e2e tests
+
+api-node-build-local:
+	@echo "----- Building astraeus API Node -----"
+	@docker buildx build --build-arg TA_STORE_CONTRACT_ADDRESS=$(TA_STORE_CONTRACT_ADDRESS) --build-arg PRIVATE_KEY=$(PRIVATE_KEY) -t astraeus-api-node -f docker/Dockerfile-astraeus-api .
