@@ -84,16 +84,9 @@ func TestCreateAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup
-			messageHash, signature, err := testutil.GenerateTimedSignature(tc.validFor, privKey)
+      timedSignature , err := testutil.GenerateTimedSignature(tc.validFor, privKey)
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
-			}
-
-			timedSignature := testutil.TimedSignature{
-				ValidFor:    uint64(tc.validFor),
-				MessageHash: messageHash,
-				Signature:   signature,
-				Signer:      crypto.PubkeyToAddress(privKey.PublicKey),
 			}
 
 			response := testutil.CreateAccount(timedSignature)

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 	"github.com/mycel-labs/transferable-account/src/go/server"
 )
 
@@ -48,14 +49,14 @@ func SendRequest(url string, data map[string]interface{}) *http.Response {
 	return resp
 }
 
-func CreateAccount(timedSignature TimedSignature) *http.Response {
+func CreateAccount(timedSignature *pb.TimedSignature) *http.Response {
 	url := fmt.Sprintf("%s/v1/accounts", HostURL)
 	data := map[string]interface{}{
 		"proof": map[string]interface{}{
 			"validFor":    timedSignature.ValidFor,
-			"messageHash": fmt.Sprintf("%x", timedSignature.MessageHash), // Convert to hex string
-			"signature":   fmt.Sprintf("%x", timedSignature.Signature),   // Convert to hex string
-			"signer":      timedSignature.Signer.Hex(),
+			"messageHash": timedSignature.MessageHash,// Convert to hex string
+			"signature":   timedSignature.Signature,   // Convert to hex string
+			"signer":      timedSignature.Signer,
 		},
 	}
 	return SendRequest(url, data)

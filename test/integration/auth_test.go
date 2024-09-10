@@ -74,7 +74,7 @@ func TestAuth(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			messageHash, signature, err := testutil.GenerateTimedSignature(tc.validFor, privKey)
+      messageHash, signature, err := testutil.SignTimedSignatureMessage(tc.validFor, privKey)
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}

@@ -7,9 +7,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 )
 
-func GenerateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
+func SignTimedSignatureMessage(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	// Step 1: Create the message hash
@@ -36,4 +38,19 @@ func GenerateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 	signature[64] += 27
 
 	return messageHash, signature, nil
+}
+
+func GenerateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (timedSignature *pb.TimedSignature, err error) {
+  messageHash, signature, err := SignTimedSignatureMessage(validFor, privateKey)
+	if err != nil {
+		return nil, err
+	}
+  
+	timedSignature = &pb.TimedSignature{
+		ValidFor:    uint64(validFor),
+		MessageHash: fmt.Sprintf("%x", messageHash),
+		Signature:   fmt.Sprintf("%x", signature),
+		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+	return timedSignature, nil
 }
