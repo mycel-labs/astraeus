@@ -1,3 +1,6 @@
+PROTOBUF_DOCKER_IMAGE := custom-protobuf-image
+PROTOBUF_DOCKERFILE := docker/protobuf.Dockerfile
+
 # suave-geth
 .PHONY: devnet-up devnet-down 
 devnet-up:
@@ -46,11 +49,10 @@ check-fmt-go:
 # Protobuf
 .PHONY: run-proto
 run-proto:
-	@protoc -I./src/proto \
-  --go_out=src/go/pb --go_opt=paths=source_relative \
-  --go-grpc_out=src/go/pb --go-grpc_opt=paths=source_relative \
-  --grpc-gateway_out=src/go/pb --grpc-gateway_opt=paths=source_relative \
-  src/proto/api/v1/transferable_account.proto
+	@docker build -t $(PROTOBUF_DOCKER_IMAGE) -f $(PROTOBUF_DOCKERFILE) .
+	@docker run --rm -v $(PWD):/workspace \
+		$(PROTOBUF_DOCKER_IMAGE) \
+		generate
 
 compile-proto:
 	@make run-proto
