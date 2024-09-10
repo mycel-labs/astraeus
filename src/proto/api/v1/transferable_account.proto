@@ -29,10 +29,10 @@ message TimeLock {
 
 // Requests
 message TimedSignature {
-    uint64 valid_for = 1;
-    bytes message_hash = 2;
-    bytes signature = 3;
-    string signer = 4;
+    uint64 valid_for = 1; // unix timestamp
+    string message_hash = 2; // hex encoded
+    string signature = 3; // hex encoded
+    string signer = 4; // address
 }
 
 message AccountOperationRequest {
@@ -73,7 +73,7 @@ message RevokeApprovalRequest {
 
 message SignRequest {
     AccountOperationRequest base = 1;
-    bytes data = 2;
+    string data = 2; // hex encoded
 }
 
 message GetAccountRequest {
@@ -96,31 +96,33 @@ message IsAccountLockedRequest {
 
 // Responses
 message CreateAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
+    string account_id = 2;
 }
 
 message TransferAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message DeleteAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message UnlockAccountResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message ApproveAddressResponse {
-    bytes data = 1;
+    string tx_hash = 1;
 }
 
 message RevokeApprovalResponse {
-    bool result = 1;
+    string tx_hash = 1;
 }
 
 message SignResponse {
-    bytes data = 1;
+    string tx_hash = 1;
+    string signature = 2; // hex encoded
 }
 
 message GetAccountResponse {

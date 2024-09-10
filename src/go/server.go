@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -28,7 +29,10 @@ type TimedSignature struct {
 func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Proof)
+	sig, err := populateTimedSignature(req.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	// Use an anonymous function to handle potential panics
 	func() {
@@ -56,13 +60,16 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	accountId := caEvent["accountId"].(string)
 
-	return &pb.CreateAccountResponse{Data: []byte(accountId)}, nil
+	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId}, nil
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	// Use an anonymous function to handle potential panics
 	func() {
@@ -86,14 +93,16 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 		return nil, fmt.Errorf("failed to transfer account")
 	}
 
-	// Return the account ID as a response
-	return &pb.TransferAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.TransferAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	// Use an anonymous function to handle potential panics
 	func() {
@@ -117,14 +126,16 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 		return nil, fmt.Errorf("failed to delete account")
 	}
 
-	// Return the account ID as a response
-	return &pb.DeleteAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.DeleteAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	func() {
 		defer func() {
@@ -143,13 +154,16 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 		return nil, fmt.Errorf("failed to unlock account")
 	}
 
-	return &pb.UnlockAccountResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.UnlockAccountResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	func() {
 		defer func() {
@@ -168,13 +182,16 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 		return nil, fmt.Errorf("failed to approve address")
 	}
 
-	return &pb.ApproveAddressResponse{Data: []byte(req.Base.AccountId)}, nil
+	return &pb.ApproveAddressResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
 
 	func() {
 		defer func() {
@@ -193,13 +210,21 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 		return nil, fmt.Errorf("failed to revoke approval")
 	}
 
-	return &pb.RevokeApprovalResponse{Result: true}, nil
+	return &pb.RevokeApprovalResponse{TxHash: result.TxHash.Hex()}, nil
 }
 
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := hex.DecodeString(req.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode data: %v", err)
+	}
 
 	func() {
 		defer func() {
@@ -207,7 +232,7 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespons
 				err = fmt.Errorf("error occurred during transaction execution: %v", r)
 			}
 		}()
-		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, req.Data}, nil)
+		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, data}, nil)
 	}()
 
 	if err != nil {
@@ -224,7 +249,10 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespons
 	}
 	signature := caEvent["signature"].([]byte)
 
-	return &pb.SignResponse{Data: signature}, nil
+	return &pb.SignResponse{
+		TxHash:    result.TxHash.Hex(),
+		Signature: hex.EncodeToString(signature),
+	}, nil
 }
 
 func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.GetAccountResponse, error) {
@@ -312,17 +340,35 @@ func (s *server) IsAccountLocked(ctx context.Context, req *pb.IsAccountLockedReq
 ** Helper functions
  */
 
-func convertMessageHash(messageHash []byte) [32]byte {
+func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	var messageHashBytes [32]byte
+	if len(messageHash) != 32 {
+		return messageHashBytes, fmt.Errorf("invalid message hash length: expected 32, got %d", len(messageHash))
+	}
 	copy(messageHashBytes[:], messageHash)
-	return messageHashBytes
+	return messageHashBytes, nil
 }
 
-func populateTimedSignature(sig *pb.TimedSignature) *TimedSignature {
+func populateTimedSignature(sig *pb.TimedSignature) (*TimedSignature, error) {
+	messageHash, err := hex.DecodeString(sig.MessageHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode message hash: %v", err)
+	}
+
+	signature, err := hex.DecodeString(sig.Signature)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode signature: %v", err)
+	}
+
+	messageHashBytes, err := convertMessageHash(messageHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert message hash: %v", err)
+	}
+
 	return &TimedSignature{
 		ValidFor:    sig.ValidFor,
-		MessageHash: convertMessageHash(sig.MessageHash),
-		Signature:   sig.Signature,
+		MessageHash: messageHashBytes,
+		Signature:   signature,
 		Signer:      common.HexToAddress(sig.Signer),
-	}
+	}, nil
 }

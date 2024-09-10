@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -77,8 +78,8 @@ func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSi
 	}
 	return &pb.TimedSignature{
 		ValidFor:    validFor,
-		MessageHash: messageHash[:],
-		Signature:   signature,
+		MessageHash: hex.EncodeToString(messageHash[:]),
+		Signature:   hex.EncodeToString(signature),
 		Signer:      fundedAddress,
 	}
 }
@@ -138,8 +139,8 @@ func TestCreateAccount(t *testing.T) {
 	req := &pb.CreateAccountRequest{
 		Proof: &pb.TimedSignature{
 			ValidFor:    sig.ValidFor,
-			MessageHash: sig.MessageHash[:],
-			Signature:   sig.Signature,
+			MessageHash: hex.EncodeToString(sig.MessageHash[:]),
+			Signature:   hex.EncodeToString(sig.Signature),
 			Signer:      sig.Signer.Hex(),
 		},
 	}
@@ -149,14 +150,15 @@ func TestCreateAccount(t *testing.T) {
 	assert.NoError(t, err, "CreateAccount call should not return an error")
 	assert.NotNil(t, resp, "Response should not be nil")
 	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
-	assert.NotEmpty(t, resp.Data, "Account ID should not be empty")
+	assert.NotEmpty(t, resp.TxHash, "TxHash should not be empty")
+	assert.NotEmpty(t, resp.AccountId, "Account ID should not be empty")
 
 	// Verify the account was created
-	accountReq := &pb.GetAccountRequest{AccountId: string(resp.Data)}
+	accountReq := &pb.GetAccountRequest{AccountId: resp.AccountId}
 	accountResp, err := s.GetAccount(context.Background(), accountReq)
 	assert.NoError(t, err, "GetAccount call should not return an error")
 	assert.NotNil(t, accountResp, "Account response should not be nil")
-	assert.Equal(t, string(resp.Data), accountResp.Account.AccountId, "Account ID should match")
+	assert.Equal(t, resp.AccountId, accountResp.Account.AccountId, "Account ID should match")
 }
 
 func TestGetAccount(t *testing.T) {
@@ -310,7 +312,7 @@ func TestTransferAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was transferred
 				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
@@ -359,7 +361,7 @@ func TestDeleteAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was deleted
 				accountReq := &pb.GetAccountRequest{AccountId: tc.accountId}
@@ -407,7 +409,7 @@ func TestUnlockAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the account was unlocked
 				isLockedReq := &pb.IsAccountLockedRequest{AccountId: tc.accountId}
@@ -459,7 +461,7 @@ func TestApproveAddress(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.Equal(t, tc.accountId, string(resp.Data))
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the address was approved
 				isApprovedReq := &pb.IsApprovedRequest{
@@ -525,7 +527,7 @@ func TestRevokeApproval(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.True(t, resp.Result)
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Verify the address was revoked
 				isApprovedReq := &pb.IsApprovedRequest{
@@ -593,16 +595,17 @@ func TestSign(t *testing.T) {
 
 	message := []byte("Test message to sign")
 	messageHash := crypto.Keccak256(message)
+	messageHashHex := hex.EncodeToString(messageHash)
 
 	// Test cases
 	testCases := []struct {
 		name      string
 		accountId string
-		data      []byte
+		data      string
 		expectErr bool
 	}{
-		{"Valid signing", account.AccountId, messageHash, false},
-		{"Non-existent account", "non_existent_account_id", messageHash, true},
+		{"Valid signing", account.AccountId, messageHashHex, false},
+		{"Non-existent account", "non_existent_account_id", messageHashHex, true},
 	}
 
 	for _, tc := range testCases {
@@ -625,7 +628,7 @@ func TestSign(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, resp)
-				assert.NotEmpty(t, resp.Data)
+				assert.NotEmpty(t, resp.TxHash)
 
 				// Recover the public key from the account
 				accountResp, err := s.GetAccount(context.Background(), &pb.GetAccountRequest{AccountId: tc.accountId})
@@ -650,10 +653,20 @@ func TestSign(t *testing.T) {
 
 				t.Logf("Final pubKey: %+v", pubKey)
 
-				// Verify the signature
-				signature := resp.Data[:64]
-				recoveryID := resp.Data[64]
-				messageHash := tc.data
+				signatureBytes, err := hex.DecodeString(resp.Signature)
+				assert.NoError(t, err)
+				t.Logf("Signature: %x", signatureBytes)
+
+				if len(signatureBytes) != 65 {
+					t.Fatalf("Invalid signature length: expected 65, got %d", len(signatureBytes))
+				}
+
+				signature := signatureBytes[:64]
+				recoveryID := signatureBytes[64]
+
+				messageHash, err := hex.DecodeString(tc.data)
+				assert.NoError(t, err)
+				t.Logf("Message hash: %x", messageHash)
 
 				sigPublicKey, err := crypto.Ecrecover(messageHash, append(signature, recoveryID))
 				assert.NoError(t, err)

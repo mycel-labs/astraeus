@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ethereum/go-ethereum/suave/sdk"
+	"github.com/ethereum/go-ethereum/common"
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -58,20 +58,24 @@ func main() {
 
 	// setup framework and account
 	fr := framework.New()
-	fundedAccount := framework.NewPrivKeyFromHex(privKey)
+	// fundedAccount := framework.NewPrivKeyFromHex(privKey)
 
-	// read artifact
-	artifact, err := framework.ReadArtifact(taStoreContractPath)
-	if err != nil {
-		log.Fatalf("Failed to read artifact: %v", err)
-	}
+	// // read artifact
+	// artifact, err := framework.ReadArtifact(taStoreContractPath)
+	// if err != nil {
+	// 	log.Fatalf("Failed to read artifact: %v", err)
+	// }
 
-	// create sdk client
-	clt := sdk.NewClient(fr.Suave.RPC().Client(), fundedAccount.Priv, fr.KettleAddress)
+	// // create sdk client
+	// clt := sdk.NewClient(fr.Suave.RPC().Client(), fundedAccount.Priv, fr.KettleAddress)
 
 	// get contract
-	taStoreContractSDK := sdk.GetContract(fr.KettleAddress, artifact.Abi, clt)
-	taStoreContract := &framework.Contract{Abi: artifact.Abi, Contract: taStoreContractSDK}
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to bind to existing contract: %v", err)
+	}
+	// taStoreContractSDK := sdk.GetContract(common.HexToAddress(taStoreContractAddr), artifact.Abi, clt)
+	// taStoreContract := &framework.Contract{Abi: artifact.Abi, Contract: taStoreContractSDK}
 
 	// gRPC server
 	s := grpc.NewServer()
