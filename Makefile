@@ -50,6 +50,7 @@ check-fmt-go:
 .PHONY: run-proto
 run-proto:
 	@docker build -t $(PROTOBUF_DOCKER_IMAGE) -f $(PROTOBUF_DOCKERFILE) .
+	@rm -f docs/api.md
 	@docker run --rm -v $(PWD):/workspace \
 		$(PROTOBUF_DOCKER_IMAGE) \
 		generate
@@ -65,9 +66,6 @@ fmt-proto:
 
 check-fmt-proto:
 	buf format -d src/proto
-
-docs-proto:
-	@protoc -I ./src/proto --doc_out=./docs --doc_opt=markdown,api.md ./src/proto/api/v1/*.proto
 
 # General
 .PHONY: build test lint fmt check-fmt

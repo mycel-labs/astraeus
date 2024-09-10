@@ -9,3 +9,6 @@ plugins:
   - name: grpc-gateway
     out: src/go/pb
     opt: paths=source_relative
+  - name: doc
+    out: docs
+    opt: markdown,api.md
