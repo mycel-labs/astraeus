@@ -7,7 +7,26 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
+	"time"
+
+	"github.com/mycel-labs/transferable-account/src/go/server"
 )
+
+func StartAstraeusServer() {
+	log.Println("Starting Astraeus server...")
+
+	// Create a WaitGroup to manage server lifecycle
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// Start the Astraeus server in a separate goroutine
+	go server.StartServer(&wg)
+
+	// Wait for a short time to allow the server to start
+	time.Sleep(5 * time.Second)
+	log.Println("Astraeus server is up and running.")
+}
 
 func SendRequest(url string, data map[string]interface{}) *http.Response {
 	jsonData, err := json.Marshal(data)

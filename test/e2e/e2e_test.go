@@ -2,10 +2,7 @@ package e2e_test
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
-	"sync"
 	"testing"
 	"time"
 
@@ -13,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mycel-labs/transferable-account/src/go/framework"
-	"github.com/mycel-labs/transferable-account/src/go/server"
 	"github.com/mycel-labs/transferable-account/testutil"
 )
 
@@ -34,39 +30,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func startSUAVEServer() error {
-	cmd := exec.Command("make", "devnet-up")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Dir = "../../"
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start SUAVE server: %w", err)
-	}
-	log.Println("SUAVE server started, waiting for it to be ready...")
-	time.Sleep(5 * time.Second)
-
-	return nil
-}
-
-func startAstraeusServer() {
-	log.Println("Starting Astraeus server...")
-
-	// Create a WaitGroup to manage server lifecycle
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	// Start the Astraeus server in a separate goroutine
-	go server.StartServer(&wg)
-
-	// Wait for a short time to allow the server to start
-	time.Sleep(5 * time.Second)
-	log.Println("Astraeus server is up and running.")
-}
-
 func setup(t *testing.T) {
 	// Start SUAVE server
-	if err := startSUAVEServer(); err != nil {
+	if err := testutil.StartSUAVEServer(); err != nil {
 		t.Fatalf("Failed to start SUAVE server: %v", err)
 	}
 	// Deploy contract
@@ -88,7 +54,8 @@ func setup(t *testing.T) {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
-	startAstraeusServer()
+  // Start Astraeus server
+	testutil.StartAstraeusServer()
 }
 
 func TestCreateAccountE2E(t *testing.T) {
