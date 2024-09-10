@@ -85,4 +85,9 @@ ci: build test lint check-fmt
 
 api-node-build-local:
 	@echo "----- Building astraeus API Node -----"
-	@docker buildx build --build-arg TA_STORE_CONTRACT_ADDRESS=$(TA_STORE_CONTRACT_ADDRESS) --build-arg PRIVATE_KEY=$(PRIVATE_KEY) -t astraeus-api-node -f docker/Dockerfile-astraeus-api .
+	@docker buildx build \
+		--build-arg TA_STORE_CONTRACT_ADDRESS=$(TA_STORE_CONTRACT_ADDRESS) \
+		--build-arg PRIVATE_KEY=$(PRIVATE_KEY) \
+		--build-arg RPC_URL=$(RPC_URL) \
+		-t astraeus-api-node \
+		-f docker/Dockerfile-astraeus-api .

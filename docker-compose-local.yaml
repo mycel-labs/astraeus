@@ -12,6 +12,7 @@ services:
       - 8545:8545
     networks:
       - suave-net
+
   suave-enabled-chain:
     image: flashbots/suave-execution-geth:latest
     command:
@@ -31,6 +32,7 @@ services:
       - 8555:8545
     networks:
       - suave-net
+
   astraeus-api-node:
     build:
       context: .
@@ -38,9 +40,11 @@ services:
       args:
         TA_STORE_CONTRACT_ADDRESS: ${TA_STORE_CONTRACT_ADDRESS}
         PRIVATE_KEY: ${PRIVATE_KEY}
+        RPC_URL: ${RPC_URL:-http://host.docker.internal:8545}
     networks:
       - suave-net
     env_file:
       - .env
+
 networks:
   suave-net:

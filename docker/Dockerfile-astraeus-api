@@ -7,6 +7,7 @@ ENV CGO_ENABLED=1
 # Set build arguments
 ARG TA_STORE_CONTRACT_ADDRESS
 ARG PRIVATE_KEY
+ARG RPC_URL
 
 # Install make and gcc
 RUN apk add --no-cache make gcc musl-dev
@@ -20,5 +21,6 @@ COPY . .
 # Set environment variables from build arguments
 ENV TA_STORE_CONTRACT_ADDRESS=${TA_STORE_CONTRACT_ADDRESS}
 ENV PRIVATE_KEY=${PRIVATE_KEY}
+ENV RPC_URL=${RPC_URL}
 
 RUN make run-go

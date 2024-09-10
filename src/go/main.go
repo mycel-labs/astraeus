@@ -57,7 +57,7 @@ func main() {
 	checkEnvVars(true)
 
 	// setup framework and account
-	fr := framework.New()
+	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
 	// fundedAccount := framework.NewPrivKeyFromHex(privKey)
 
 	// // read artifact
