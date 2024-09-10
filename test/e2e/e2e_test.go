@@ -94,10 +94,8 @@ func TestCreateAccountE2E(t *testing.T) {
 			request := &pb.CreateAccountRequest{
 				Proof: timedSignature,
 			}
-			_, StatusCode, err := testutil.CreateAccount(request)
-			valid := StatusCode == 200
-
-			assert.Equal(t, tc.expectValid, valid)
+			_, resp, err := testutil.CreateAccount(request)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
 }
@@ -146,8 +144,8 @@ func TestTransferAccountE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Transfer account
 			transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
@@ -158,8 +156,8 @@ func TestTransferAccountE2E(t *testing.T) {
 				},
 				To: tc.to,
 			}
-			_, statusCode, err = testutil.TransferAccount(request)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.TransferAccount(request)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
 }
@@ -209,8 +207,8 @@ func TestDeleteAccountE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 2: Unlock the account
 			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
@@ -224,8 +222,8 @@ func TestDeleteAccountE2E(t *testing.T) {
 					Proof:     unlockSig,
 				},
 			}
-			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			_, resp, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 3: Delete the account
 			deleteSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
@@ -237,8 +235,8 @@ func TestDeleteAccountE2E(t *testing.T) {
 				},
 			}
 
-			_, statusCode, err = testutil.DeleteAccount(deleteAccountRequest)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.DeleteAccount(deleteAccountRequest)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
 }
@@ -288,8 +286,8 @@ func TestUnlockAccountE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 2: Unlock the account
 			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
@@ -303,8 +301,8 @@ func TestUnlockAccountE2E(t *testing.T) {
 					Proof:     unlockSig,
 				},
 			}
-			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
 }
@@ -357,8 +355,8 @@ func TestApproveAddressE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 2: Approve the account
 			approveSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
@@ -373,8 +371,8 @@ func TestApproveAddressE2E(t *testing.T) {
 				},
 				Address: tc.to.PublicKey.X.String(),
 			}
-			_, statusCode, err = testutil.ApproveAddress(approveAddressRequest)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.ApproveAddress(approveAddressRequest)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 
 			// Step 3: Check if the address is approved
 			if tc.expectValid {
@@ -389,8 +387,8 @@ func TestApproveAddressE2E(t *testing.T) {
 					},
 					To: tc.to.PublicKey.X.String(),
 				}
-				_, statusCode, err = testutil.TransferAccount(transferRequest)
-				assert.Equal(t, true, statusCode == 200)
+				_, resp, err = testutil.TransferAccount(transferRequest)
+				assert.Equal(t, true, resp.StatusCode == 200)
 			}
 		})
 	}
@@ -444,8 +442,8 @@ func TestRevokeApprovalE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 2: Approve the account
 			approveSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
@@ -460,8 +458,8 @@ func TestRevokeApprovalE2E(t *testing.T) {
 				},
 				Address: tc.to.PublicKey.X.String(),
 			}
-			_, statusCode, err = testutil.ApproveAddress(approveAddressRequest)
-			assert.Equal(t, true, statusCode == 200)
+			_, resp, err = testutil.ApproveAddress(approveAddressRequest)
+			assert.Equal(t, true, resp.StatusCode == 200)
 
 			// Step 3: Revoke the approval
 			revokeSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
@@ -475,8 +473,8 @@ func TestRevokeApprovalE2E(t *testing.T) {
 				},
 				Address: tc.to.PublicKey.X.String(),
 			}
-			_, statusCode, err = testutil.RevokeApproval(revokeApprovalRequest)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.RevokeApproval(revokeApprovalRequest)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 
 			// Step 4: Check if the address is revoked
 			if tc.expectValid {
@@ -491,8 +489,8 @@ func TestRevokeApprovalE2E(t *testing.T) {
 					},
 					To: tc.to.PublicKey.X.String(),
 				}
-				_, statusCode, err = testutil.TransferAccount(transferRequest)
-				assert.Equal(t, false, statusCode == 200)
+				_, resp, err = testutil.TransferAccount(transferRequest)
+				assert.Equal(t, false, resp.StatusCode == 200)
 			}
 		})
 	}
@@ -544,8 +542,8 @@ func TestSignE2E(t *testing.T) {
 			createAccountRequest := &pb.CreateAccountRequest{
 				Proof: createSig,
 			}
-			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
-			assert.Equal(t, 200, statusCode)
+			createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 2: Unlock the account
 			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
@@ -559,8 +557,8 @@ func TestSignE2E(t *testing.T) {
 					Proof:     unlockSig,
 				},
 			}
-			_, statusCode, err = testutil.UnlockAccount(unlockAccountRequest)
-			assert.Equal(t, true, statusCode == 200)
+			_, resp, err = testutil.UnlockAccount(unlockAccountRequest)
+			assert.Equal(t, true, resp.StatusCode == 200)
 
 			// Step 3: Sign the message
 			signSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
@@ -575,8 +573,8 @@ func TestSignE2E(t *testing.T) {
 				},
 				Data: "Hello, World!",
 			}
-			_, statusCode, err = testutil.Sign(signRequest)
-			assert.Equal(t, tc.expectValid, statusCode == 200)
+			_, resp, err = testutil.Sign(signRequest)
+			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
 }

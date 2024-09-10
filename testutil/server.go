@@ -31,34 +31,34 @@ func StartAstraeusServer() {
 	log.Println("Astraeus server is up and running.")
 }
 
-func PostServer(url string, request proto.Message, response proto.Message) (int, error) {
+func PostServer(url string, request proto.Message, response proto.Message) (*http.Response, error) {
 	// Marshal the Protobuf request to JSON
 	jsonData, err := protojson.Marshal(request)
 	if err != nil {
-		return 0, fmt.Errorf("failed to marshal JSON: %w", err)
+		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
 	// Send the HTTP POST request
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return 0, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("failed to read response body: %w", err)
+		return resp, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	// Unmarshal the response into the Protobuf response message
 	err = protojson.Unmarshal(body, response)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("failed to unmarshal response: %w", err)
+		return resp, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
 	// Return status code and no error
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 func GetServer(url string, responseMessage proto.Message) *http.Response {
@@ -84,109 +84,109 @@ func GetServer(url string, responseMessage proto.Message) *http.Response {
 	return resp
 }
 
-func CreateAccount(createAccountRequest *pb.CreateAccountRequest) (*pb.CreateAccountResponse, int, error) {
+func CreateAccount(createAccountRequest *pb.CreateAccountRequest) (*pb.CreateAccountResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts", HostURL)
 
 	// Create the Protobuf response message
 	createAccountResponse := &pb.CreateAccountResponse{}
 
-	statusCode, err := PostServer(url, createAccountRequest, createAccountResponse)
+	resp, err := PostServer(url, createAccountRequest, createAccountResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process CreateAccount request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process CreateAccount request: %w", err)
 	}
 
-	return createAccountResponse, statusCode, nil
+	return createAccountResponse, resp, nil
 }
 
-func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) (*pb.TransferAccountResponse, int, error) {
+func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) (*pb.TransferAccountResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/transfer", HostURL, transferAccountRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	transferAccountResponse := &pb.TransferAccountResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, transferAccountRequest, transferAccountResponse)
+	resp, err := PostServer(url, transferAccountRequest, transferAccountResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process TransferAccount request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process TransferAccount request: %w", err)
 	}
 
-	return transferAccountResponse, statusCode, nil
+	return transferAccountResponse, resp, nil
 }
 
-func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, int, error) {
+func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	deleteAccountResponse := &pb.DeleteAccountResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, deleteAccountRequest, deleteAccountResponse)
+	resp, err := PostServer(url, deleteAccountRequest, deleteAccountResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process DeleteAccount request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process DeleteAccount request: %w", err)
 	}
 
-	return deleteAccountResponse, statusCode, nil
+	return deleteAccountResponse, resp, nil
 }
 
 
-func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, int, error) {
+func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	unlockAccountResponse := &pb.UnlockAccountResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, unlockAccountRequest, unlockAccountResponse)
+	resp, err := PostServer(url, unlockAccountRequest, unlockAccountResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process UnlockAccount request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process UnlockAccount request: %w", err)
 	}
 
-	return unlockAccountResponse, statusCode, nil
+	return unlockAccountResponse, resp, nil
 }
 
-func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, int, error) {
+func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/approve", HostURL, approveAddressRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	approveAddressResponse := &pb.ApproveAddressResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, approveAddressRequest, approveAddressResponse)
+	resp, err := PostServer(url, approveAddressRequest, approveAddressResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process ApproveAddress request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process ApproveAddress request: %w", err)
 	}
 
-	return approveAddressResponse, statusCode, nil
+	return approveAddressResponse, resp, nil
 }
 
-func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, int, error) {
+func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/revoke", HostURL, revokeApprovalRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	revokeApprovalResponse := &pb.RevokeApprovalResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, revokeApprovalRequest, revokeApprovalResponse)
+	resp, err := PostServer(url, revokeApprovalRequest, revokeApprovalResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process RevokeApproval request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process RevokeApproval request: %w", err)
 	}
 
-	return revokeApprovalResponse, statusCode, nil
+	return revokeApprovalResponse, resp, nil
 }
 
-func Sign(signRequest *pb.SignRequest) (*pb.SignResponse, int, error) {
+func Sign(signRequest *pb.SignRequest) (*pb.SignResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/sign", HostURL, signRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	signResponse := &pb.SignResponse{}
 
 	// Use the generalized function to send the request and receive the response
-	statusCode, err := PostServer(url, signRequest, signResponse)
+	resp, err := PostServer(url, signRequest, signResponse)
 	if err != nil {
-		return nil, statusCode, fmt.Errorf("failed to process Sign request: %w", err)
+		return nil, resp, fmt.Errorf("failed to process Sign request: %w", err)
 	}
 
-	return signResponse, statusCode, nil
+	return signResponse, resp, nil
 }
 // func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
 // url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
