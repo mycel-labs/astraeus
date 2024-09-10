@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"os"
 	"testing"
@@ -93,11 +94,74 @@ func TestCreateAccountE2E(t *testing.T) {
 			request := &pb.CreateAccountRequest{
 				Proof: timedSignature,
 			}
-			response := testutil.CreateAccount(request)
-			valid := response.StatusCode == 200
+			createAccountResponse, StatusCode, err := testutil.CreateAccount(request)
+			fmt.Println("createAccountResponse", createAccountResponse)
+			valid := StatusCode == 200
 
 			assert.Equal(t, tc.expectValid, valid)
 		})
 	}
+}
+func TestTransferAccountE2E(t *testing.T) {
+	// setup
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	testCases := []struct {
+		name        string
+		validFor    int64
+		creator     *ecdsa.PrivateKey
+		sender      *ecdsa.PrivateKey
+		to          string
+		expectValid bool
+	}{
+		{
+			name:        "Valid transfer",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      alicePrivKey,
+			to:          bobPrivKey.PublicKey.X.String(),
+			expectValid: true,
+		},
+		{
+			name:        "Invalid sender",
+			validFor:    time.Now().Unix() + 86400, // 1 day later
+			creator:     alicePrivKey,
+			sender:      bobPrivKey,
+			to:          bobPrivKey.PublicKey.X.String(),
+      expectValid: false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create account
+			createSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
+			createAccountRequest := &pb.CreateAccountRequest{
+				Proof: createSig,
+			}
+			createAccountResponse, statusCode, err := testutil.CreateAccount(createAccountRequest)
+			assert.Equal(t, 200, statusCode)
 
+      // Transfer account
+      transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			request := &pb.TransferAccountRequest{
+				Base: &pb.AccountOperationRequest{
+					AccountId: createAccountResponse.AccountId,
+					Proof:     transferSig,
+        },
+				To: tc.to,
+			}
+			_, statusCode, err = testutil.TransferAccount(request)
+			valid := statusCode == 200
+			assert.Equal(t, tc.expectValid, valid)
+		})
+	}
 }

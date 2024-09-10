@@ -31,24 +31,34 @@ func StartAstraeusServer() {
 	log.Println("Astraeus server is up and running.")
 }
 
-func PostServer(url string, message proto.Message) *http.Response {
-	jsonData, err := protojson.Marshal(message)
+func PostServer(url string, request proto.Message, response proto.Message) (int, error) {
+	// Marshal the Protobuf request to JSON
+	jsonData, err := protojson.Marshal(request)
 	if err != nil {
-		log.Fatal("Failed to marshal JSON:", err)
+		return 0, fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
+	// Send the HTTP POST request
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		log.Fatal("Failed to send request:", err)
+		return 0, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	_, err = io.ReadAll(resp.Body)
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Failed to read response:", err)
+		return resp.StatusCode, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return resp
+	// Unmarshal the response into the Protobuf response message
+	err = protojson.Unmarshal(body, response)
+	if err != nil {
+		return resp.StatusCode, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	// Return status code and no error
+	return resp.StatusCode, nil
 }
 
 func GetServer(url string, responseMessage proto.Message) *http.Response {
@@ -74,57 +84,67 @@ func GetServer(url string, responseMessage proto.Message) *http.Response {
 	return resp
 }
 
-func CreateAccount(createAccountRequest *pb.CreateAccountRequest) *http.Response {
+func CreateAccount(createAccountRequest *pb.CreateAccountRequest) (*pb.CreateAccountResponse, int, error) {
 	url := fmt.Sprintf("%s/v1/accounts", HostURL)
-	return PostServer(url, createAccountRequest)
+
+	// Create the Protobuf response message
+	createAccountResponse := &pb.CreateAccountResponse{}
+
+	statusCode, err := PostServer(url, createAccountRequest, createAccountResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process CreateAccount request: %w", err)
+	}
+
+	return createAccountResponse, statusCode, nil
 }
 
-func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) *http.Response {
+func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) (*pb.TransferAccountResponse, int, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/transfer", HostURL, transferAccountRequest.Base.AccountId)
-	return PostServer(url, transferAccountRequest)
+
+	// Create the Protobuf response message
+	transferAccountResponse := &pb.TransferAccountResponse{}
+
+	// Use the generalized function to send the request and receive the response
+	statusCode, err := PostServer(url, transferAccountRequest, transferAccountResponse)
+	if err != nil {
+		return nil, statusCode, fmt.Errorf("failed to process TransferAccount request: %w", err)
+	}
+
+	return transferAccountResponse, statusCode, nil
 }
 
-func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
-  return PostServer(url, deleteAccountRequest)
-}
-
-func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
-  return PostServer(url, unlockAccountRequest)
-}
-
-func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/approve", HostURL, approveAddressRequest.Base.AccountId)
-  return PostServer(url, approveAddressRequest)
-}
-
-func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/revoke", HostURL, revokeApprovalRequest.Base.AccountId)
-  return PostServer(url, revokeApprovalRequest)
-}
-
-func Sign(SignRequest *pb.SignRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/sign", HostURL, SignRequest.Base.AccountId)
-  return PostServer(url, SignRequest)
-}
-
-func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
-  return GetServer(url, getAccountRequest)
-}
-
-func IsApproved(isApprovedRequest *pb.IsApprovedRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
-  return GetServer(url, isApprovedRequest)
-}
-
-func IsOwner(isOwnerRequest *pb.IsOwnerRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
-  return GetServer(url, isOwnerRequest)
-}
-
-func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) *http.Response {
-  url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
-  return GetServer(url, isAccountLockedRequest)
-}
+// func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
+// }
+//
+// func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
+// }
+//
+// func ApproveAddress(approveAddressRequest *pb.ApproveAddressRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/approve", HostURL, approveAddressRequest.Base.AccountId)
+// }
+//
+// func RevokeApproval(revokeApprovalRequest *pb.RevokeApprovalRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/revoke", HostURL, revokeApprovalRequest.Base.AccountId)
+// }
+//
+// func Sign(SignRequest *pb.SignRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/sign", HostURL, SignRequest.Base.AccountId)
+// }
+//
+// func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
+// }
+//
+// func IsApproved(isApprovedRequest *pb.IsApprovedRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
+// }
+//
+// func IsOwner(isOwnerRequest *pb.IsOwnerRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
+// }
+//
+// func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) *http.Response {
+// url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
+// }
