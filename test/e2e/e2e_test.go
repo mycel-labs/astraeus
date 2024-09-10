@@ -45,8 +45,8 @@ func startSUAVEServer() error {
 	}
 	log.Println("SUAVE server started, waiting for it to be ready...")
 	time.Sleep(5 * time.Second)
-  
-  return nil
+
+	return nil
 }
 
 func startAstraeusServer() {
@@ -65,10 +65,10 @@ func startAstraeusServer() {
 }
 
 func setup(t *testing.T) {
-  // Start SUAVE server
-  if err := startSUAVEServer(); err != nil {
-    t.Fatalf("Failed to start SUAVE server: %v", err)
-  }
+	// Start SUAVE server
+	if err := startSUAVEServer(); err != nil {
+		t.Fatalf("Failed to start SUAVE server: %v", err)
+	}
 	// Deploy contract
 	fr = framework.New()
 	taStoreContract = fr.Suave.DeployContract(testutil.TAStoreContractPath)
@@ -107,6 +107,11 @@ func TestCreateAccountE2E(t *testing.T) {
 			name:        "Valid signature",
 			validFor:    time.Now().Unix() + 86400, // 1 day later
 			expectValid: true,
+		},
+		{
+			name:        "Expired signature",
+			validFor:    time.Now().Unix() - 86400, // 1 day ago
+			expectValid: false,
 		},
 	}
 	for _, tc := range testCases {
