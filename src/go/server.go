@@ -221,13 +221,18 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespons
 		return nil, err
 	}
 
+	data, err := hex.DecodeString(req.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode data: %v", err)
+	}
+
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
 				err = fmt.Errorf("error occurred during transaction execution: %v", r)
 			}
 		}()
-		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, req.Data}, nil)
+		result = s.taStoreContract.SendConfidentialRequest("sign", []interface{}{sig, req.Base.AccountId, data}, nil)
 	}()
 
 	if err != nil {
@@ -244,7 +249,10 @@ func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespons
 	}
 	signature := caEvent["signature"].([]byte)
 
-	return &pb.SignResponse{TxHash: result.TxHash.Hex(), Signature: signature}, nil
+	return &pb.SignResponse{
+		TxHash:    result.TxHash.Hex(),
+		Signature: hex.EncodeToString(signature),
+	}, nil
 }
 
 func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.GetAccountResponse, error) {

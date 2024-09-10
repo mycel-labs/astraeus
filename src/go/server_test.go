@@ -595,16 +595,17 @@ func TestSign(t *testing.T) {
 
 	message := []byte("Test message to sign")
 	messageHash := crypto.Keccak256(message)
+	messageHashHex := hex.EncodeToString(messageHash)
 
 	// Test cases
 	testCases := []struct {
 		name      string
 		accountId string
-		data      []byte
+		data      string
 		expectErr bool
 	}{
-		{"Valid signing", account.AccountId, messageHash, false},
-		{"Non-existent account", "non_existent_account_id", messageHash, true},
+		{"Valid signing", account.AccountId, messageHashHex, false},
+		{"Non-existent account", "non_existent_account_id", messageHashHex, true},
 	}
 
 	for _, tc := range testCases {
@@ -652,10 +653,20 @@ func TestSign(t *testing.T) {
 
 				t.Logf("Final pubKey: %+v", pubKey)
 
-				// Verify the signature
-				signature := resp.Signature[:64]
-				recoveryID := resp.Signature[64]
-				messageHash := tc.data
+				signatureBytes, err := hex.DecodeString(resp.Signature)
+				assert.NoError(t, err)
+				t.Logf("Signature: %x", signatureBytes)
+
+				if len(signatureBytes) != 65 {
+					t.Fatalf("Invalid signature length: expected 65, got %d", len(signatureBytes))
+				}
+
+				signature := signatureBytes[:64]
+				recoveryID := signatureBytes[64]
+
+				messageHash, err := hex.DecodeString(tc.data)
+				assert.NoError(t, err)
+				t.Logf("Message hash: %x", messageHash)
 
 				sigPublicKey, err := crypto.Ecrecover(messageHash, append(signature, recoveryID))
 				assert.NoError(t, err)

@@ -28,7 +28,7 @@ interface ITransferableAccountStore {
     event AccountLocked(string accountId, uint256 duration);
     event AccountUnlocked(string accountId);
     event AccountDeleted(string accountId);
-    event Signature(string accountId, bytes signature);
+    event Signature(bytes signature);
 
     // Getters
     function getAccount(string memory accountId) external view returns (Account memory);

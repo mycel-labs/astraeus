@@ -73,7 +73,7 @@ message RevokeApprovalRequest {
 
 message SignRequest {
     AccountOperationRequest base = 1;
-    bytes data = 2;
+    string data = 2; // hex encoded
 }
 
 message GetAccountRequest {
@@ -122,7 +122,7 @@ message RevokeApprovalResponse {
 
 message SignResponse {
     string tx_hash = 1;
-    bytes signature = 2;
+    string signature = 2; // hex encoded
 }
 
 message GetAccountResponse {
