@@ -1,13 +1,22 @@
-package main
+package server
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/big"
+	"net"
+	"net/http"
+	"os"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
 	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
@@ -26,6 +35,87 @@ type TimedSignature struct {
 	Signer      common.Address
 }
 
+const (
+	grpcPort            = ":50052"
+	restPort            = ":8080"
+	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore.json"
+)
+
+var (
+	privKey             string
+	taStoreContractAddr string
+)
+
+func checkEnvVars(fatal bool) {
+	taStoreContractAddr = os.Getenv("TA_STORE_CONTRACT_ADDRESS")
+	privKey = os.Getenv("PRIVATE_KEY")
+
+	if taStoreContractAddr == "" {
+		if fatal {
+			log.Fatalf("error: TA_STORE_CONTRACT_ADDRESS is not set")
+		} else {
+			log.Printf("warning: TA_STORE_CONTRACT_ADDRESS is not set")
+		}
+	}
+	if privKey == "" {
+		if fatal {
+			log.Fatalf("error: PRIVATE_KEY is not set")
+		} else {
+			log.Printf("warning: PRIVATE_KEY is not set")
+		}
+	}
+}
+
+func init() {
+	checkEnvVars(false)
+}
+
+func StartServer(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	// Ensure env variables are set
+	checkEnvVars(true)
+
+	// Setup framework and contract
+	fr := framework.New()
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to bind to existing contract: %v", err)
+	}
+
+	// gRPC server
+	s := grpc.NewServer()
+	lis, err := net.Listen("tcp", grpcPort)
+	if err != nil {
+		log.Fatalf("Failed to listen for gRPC server: %v", err)
+	}
+	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract})
+	log.Println("gRPC server started on", grpcPort)
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC server: %v", err)
+		}
+	}()
+
+	// Set up REST proxy
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err = pb.RegisterAccountServiceHandlerFromEndpoint(ctx, mux, fmt.Sprintf("localhost%s", grpcPort), opts)
+	if err != nil {
+		log.Fatalf("Failed to register REST proxy: %v", err)
+	}
+
+	// Start HTTP server
+	log.Println("REST proxy started on :8080")
+	if err := http.ListenAndServe(restPort, mux); err != nil {
+		log.Fatalf("Failed to serve REST proxy: %v", err)
+	}
+}
 func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	var result *types.Receipt
 	var err error

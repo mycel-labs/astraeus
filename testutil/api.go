@@ -29,7 +29,7 @@ func SendRequest(url string, data map[string]interface{}) *http.Response {
 	return resp
 }
 
-func CreateAccount(timedSignature TimedSignature) {
+func CreateAccount(timedSignature TimedSignature) *http.Response {
 	url := fmt.Sprintf("%s/v1/accounts", HostURL)
 	data := map[string]interface{}{
 		"proof": map[string]interface{}{
@@ -39,5 +39,5 @@ func CreateAccount(timedSignature TimedSignature) {
 			"signer":      timedSignature.Signer.Hex(),
 		},
 	}
-	SendRequest(url, data)
+	return SendRequest(url, data)
 }
