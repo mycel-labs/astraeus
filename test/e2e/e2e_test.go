@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mycel-labs/transferable-account/src/go/framework"
+	"github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 	"github.com/mycel-labs/transferable-account/testutil"
 )
 
@@ -54,7 +55,7 @@ func setup(t *testing.T) {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
-  // Start Astraeus server
+	// Start Astraeus server
 	testutil.StartAstraeusServer()
 }
 
@@ -84,12 +85,15 @@ func TestCreateAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup
-      timedSignature , err := testutil.GenerateTimedSignature(tc.validFor, privKey)
+			timedSignature, err := testutil.GenerateTimedSignature(tc.validFor, privKey)
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
 
-			response := testutil.CreateAccount(timedSignature)
+			request := &pb.CreateAccountRequest{
+				Proof: timedSignature,
+			}
+			response := testutil.CreateAccount(request)
 			valid := response.StatusCode == 200
 
 			assert.Equal(t, tc.expectValid, valid)
