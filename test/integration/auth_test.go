@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mycel-labs/transferable-account/src/go/framework"
 	"github.com/mycel-labs/transferable-account/testutil"
+	"github.com/mycel-labs/transferable-account/src/go/server"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,7 +82,7 @@ func TestAuth(t *testing.T) {
 
 			modifiedSignature := tc.modifySig(signature)
 
-			sig := &testutil.TimedSignature{
+			sig := &server.TimedSignature{
 				ValidFor:    uint64(tc.validFor),
 				MessageHash: messageHash,
 				Signature:   modifiedSignature,
