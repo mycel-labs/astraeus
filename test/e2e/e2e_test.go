@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"testing"
@@ -571,9 +572,11 @@ func TestSignE2E(t *testing.T) {
 					AccountId: createAccountResponse.AccountId,
 					Proof:     signSig,
 				},
-				Data: "Hello, World!",
+				Data: hex.EncodeToString([]byte("Hello, World!")),
 			}
 			_, resp, err = testutil.Sign(signRequest)
+			t.Logf("resp: %v", resp)
+			t.Logf("err: %v", err)
 			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
