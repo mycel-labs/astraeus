@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mycel-labs/transferable-account/src/go/framework"
-	"github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
+	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
 	"github.com/mycel-labs/transferable-account/testutil"
 )
 
@@ -226,7 +226,7 @@ func TestDeleteAccountE2E(t *testing.T) {
 			assert.Equal(t, 200, resp.StatusCode)
 
 			// Step 3: Delete the account
-			deleteSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.creator)
+			deleteSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
 
 			deleteAccountRequest := &pb.DeleteAccountRequest{
 				Base: &pb.AccountOperationRequest{

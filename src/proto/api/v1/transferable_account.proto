@@ -161,7 +161,8 @@ service AccountService {
     }
     rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse) {
         option (google.api.http) = {
-            delete: "/v1/accounts/{base.account_id}"
+            post: "/v1/accounts/{base.account_id}/delete"
+            body: "*"
         };
     }
     rpc UnlockAccount(UnlockAccountRequest) returns (UnlockAccountResponse) {

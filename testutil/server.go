@@ -114,7 +114,7 @@ func TransferAccount(transferAccountRequest *pb.TransferAccountRequest) (*pb.Tra
 }
 
 func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, *http.Response, error) {
-	url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, deleteAccountRequest.Base.AccountId)
+	url := fmt.Sprintf("%s/v1/accounts/%s/delete", HostURL, deleteAccountRequest.Base.AccountId)
 
 	// Create the Protobuf response message
 	deleteAccountResponse := &pb.DeleteAccountResponse{}
@@ -127,7 +127,6 @@ func DeleteAccount(deleteAccountRequest *pb.DeleteAccountRequest) (*pb.DeleteAcc
 
 	return deleteAccountResponse, resp, nil
 }
-
 
 func UnlockAccount(unlockAccountRequest *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/unlock", HostURL, unlockAccountRequest.Base.AccountId)
@@ -188,6 +187,7 @@ func Sign(signRequest *pb.SignRequest) (*pb.SignResponse, *http.Response, error)
 
 	return signResponse, resp, nil
 }
+
 // func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
 // url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
 // }
