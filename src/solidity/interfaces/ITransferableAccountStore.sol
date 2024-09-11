@@ -62,5 +62,5 @@ interface ITransferableAccountStore {
         external
         returns (bytes memory);
 
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external returns (bool);
 }

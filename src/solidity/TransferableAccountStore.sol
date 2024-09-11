@@ -27,6 +27,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
     mapping(string => Account) public accountsStore;
     mapping(Suave.DataId => address) public accountApprovals;
+    mapping(address => uint256) public nonces;
 
     /**
      * Modifiers
@@ -103,7 +104,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         Suave.DataId accountId,
         address _address
     ) public emitOffchainLogs onlyLocked(Utils.iToHex(abi.encodePacked(accountId))) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(
             isOwner(Utils.iToHex(abi.encodePacked(accountId)), timedSignature.signer),
             "The signer is not the owner of the account."
@@ -142,7 +143,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) public onlyLocked(accountId) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         Account storage account = accountsStore[accountId];
 
@@ -189,7 +190,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emitOffchainLogs
         returns (string memory)
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
         require(account.isLocked == true, "The account should be locked by default");
         string memory accountId = storeAccount(account);
@@ -240,7 +241,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address to
     ) public onlyLocked(accountId) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
         Account storage account = accountsStore[accountId];
         account.owner = to;
@@ -274,7 +275,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function deleteAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
         public
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
@@ -287,7 +288,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
         public
-        view
         returns (bytes memory)
     {
         require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
@@ -303,7 +303,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         public
         onlyLocked(accountId)
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(_verifyTimedSignatureWithNonceIncrement(timedSignature), "Invalid timedSignature");
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         Account storage account = accountsStore[accountId];
         account.isLocked = false;
@@ -317,7 +317,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function unlockAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
         public
-        view
         onlyLocked(accountId)
         returns (bytes memory)
     {
@@ -377,9 +376,31 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         view
         returns (bool)
     {
-        return SignatureVerifier.verifyTimedSignature(
-            timedSignature.validFor, timedSignature.messageHash, timedSignature.signature, timedSignature.signer
+        require(timedSignature.nonce == nonces[timedSignature.signer], "Invalid nonce");
+        bool isValid = SignatureVerifier.verifyTimedSignature(
+            timedSignature.validFor,
+            timedSignature.messageHash,
+            timedSignature.signature,
+            timedSignature.signer,
+            timedSignature.nonce
         );
+        return isValid;
+    }
+
+    /**
+     * @dev Verify a timed signature with a nonce
+     * @param timedSignature The timedSignature to verify
+     * @return bool Whether the timedSignature is valid
+     */
+    function _verifyTimedSignatureWithNonceIncrement(SignatureVerifier.TimedSignature calldata timedSignature)
+        private
+        returns (bool)
+    {
+        bool isValid = _verifyTimedSignature(timedSignature);
+        if (isValid) {
+            nonces[timedSignature.signer]++;
+        }
+        return isValid;
     }
 
     /**
