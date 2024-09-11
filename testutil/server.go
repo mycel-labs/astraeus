@@ -51,6 +51,12 @@ func PostServer(url string, request proto.Message, response proto.Message) (*htt
 		return resp, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	// Check if the status code is not 200
+	if resp.StatusCode != http.StatusOK {
+		// Return the response without unmarshaling
+		return resp, fmt.Errorf("server returned non-OK status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
 	// Unmarshal the response into the Protobuf response message
 	err = protojson.Unmarshal(body, response)
 	if err != nil {

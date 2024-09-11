@@ -567,16 +567,17 @@ func TestSignE2E(t *testing.T) {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
 
+			message := []byte("Hello, World!")
+			messageHash := crypto.Keccak256(message)
+
 			signRequest := &pb.SignRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: createAccountResponse.AccountId,
 					Proof:     signSig,
 				},
-				Data: hex.EncodeToString([]byte("Hello, World!")),
+				Data: hex.EncodeToString(messageHash),
 			}
 			_, resp, err = testutil.Sign(signRequest)
-			t.Logf("resp: %v", resp)
-			t.Logf("err: %v", err)
 			assert.Equal(t, tc.expectValid, resp.StatusCode == 200)
 		})
 	}
