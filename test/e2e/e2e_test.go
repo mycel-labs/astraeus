@@ -587,3 +587,73 @@ func TestSignE2E(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAccountE2E(t *testing.T) {
+	// Setup
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+
+	testCases := []struct {
+		name        string
+		setupFunc   func() string
+		expectValid bool
+	}{
+		{
+			name: "Valid account retrieval",
+			setupFunc: func() string {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+				return createAccountResponse.AccountId
+			},
+			expectValid: true,
+		},
+		{
+			name: "Invalid account ID",
+			setupFunc: func() string {
+				return "non_existent_account_id"
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			accountId := tc.setupFunc()
+
+			// Execute GetAccount request
+			getAccountRequest := &pb.GetAccountRequest{
+				AccountId: accountId,
+			}
+			getAccountResponse, resp, err := testutil.GetAccount(getAccountRequest)
+			if err != nil {
+				t.Fatalf("Failed to get account: %v", err)
+			}
+
+			// Verify the response
+			if tc.expectValid {
+				assert.Equal(t, 200, resp.StatusCode, "Expected successful account retrieval")
+
+				// Verify the account details
+				assert.Equal(t, accountId, getAccountResponse.Account.AccountId, "Account ID mismatch")
+				assert.NotEmpty(t, getAccountResponse.Account.Owner, "Owner should not be empty")
+				assert.True(t, getAccountResponse.Account.IsLocked, "Account should  be locked")
+			} else {
+				assert.Equal(t, 404, resp.StatusCode, "Expected not found status for invalid account ID")
+			}
+		})
+	}
+}

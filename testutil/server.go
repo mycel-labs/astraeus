@@ -67,7 +67,7 @@ func PostServer(url string, request proto.Message, response proto.Message) (*htt
 	return resp, nil
 }
 
-func GetServer(url string, responseMessage proto.Message) *http.Response {
+func GetServer(url string, response proto.Message) *http.Response {
 	// Send the GET request to the specified URL
 	resp, err := http.Get(url)
 	if err != nil {
@@ -81,8 +81,15 @@ func GetServer(url string, responseMessage proto.Message) *http.Response {
 		log.Fatal("Failed to read response body:", err)
 	}
 
+	// Check if the status code is not 200
+	if resp.StatusCode != http.StatusOK {
+		// Return the response without unmarshaling
+		log.Printf("Server returned non-OK status: %d, body: %s", resp.StatusCode, string(body))
+		return resp
+	}
+
 	// Unmarshal the JSON response into the provided Protobuf message
-	err = protojson.Unmarshal(body, responseMessage)
+	err = protojson.Unmarshal(body, response)
 	if err != nil {
 		log.Fatal("Failed to unmarshal JSON to Protobuf:", err)
 	}
@@ -194,18 +201,27 @@ func Sign(signRequest *pb.SignRequest) (*pb.SignResponse, *http.Response, error)
 	return signResponse, resp, nil
 }
 
-// func GetAccount(getAccountRequest *pb.GetAccountRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
-// }
-//
+func GetAccount(getAccountRequest *pb.GetAccountRequest) (*pb.GetAccountResponse, *http.Response, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s", HostURL, getAccountRequest.AccountId)
+	getAccountResponse := &pb.GetAccountResponse{}
+	resp := GetServer(url, getAccountResponse)
+	return getAccountResponse, resp, nil
+}
+
 // func IsApproved(isApprovedRequest *pb.IsApprovedRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
+// 	url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
+// 	resp := GetServer(url, isApprovedRequest)
+// 	return resp
 // }
-//
+
 // func IsOwner(isOwnerRequest *pb.IsOwnerRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
+// 	url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
+// 	resp := GetServer(url, isOwnerRequest)
+// 	return resp
 // }
-//
+
 // func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) *http.Response {
-// url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
+// 	url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
+// 	resp := GetServer(url, isAccountLockedRequest)
+// 	return resp
 // }

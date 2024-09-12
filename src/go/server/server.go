@@ -16,7 +16,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	framework "github.com/mycel-labs/transferable-account/src/go/framework"
 	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
@@ -361,12 +363,12 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 		IsLocked   bool           `json:"isLocked"`
 	})
 	if !ok {
-		return nil, fmt.Errorf("account data type is unexpected")
+		return nil, status.Errorf(codes.InvalidArgument, "account data type is invalid or unexpected")
 	}
 
 	// check if the account exists
 	if ac.Owner == (common.Address{}) {
-		return nil, fmt.Errorf("account not found")
+		return nil, status.Errorf(codes.NotFound, "account not found")
 	}
 
 	pbac := &pb.Account{
