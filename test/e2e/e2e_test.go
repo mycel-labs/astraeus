@@ -589,7 +589,6 @@ func TestSignE2E(t *testing.T) {
 }
 
 func TestGetAccountE2E(t *testing.T) {
-	// Setup
 	alicePrivKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("Failed to generate private key: %v", err)
@@ -603,20 +602,7 @@ func TestGetAccountE2E(t *testing.T) {
 		{
 			name: "Valid account retrieval",
 			setupFunc: func() string {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-				return createAccountResponse.AccountId
+				return testutil.CreateAccountHelper(t, alicePrivKey)
 			},
 			expectValid: true,
 		},
@@ -631,10 +617,8 @@ func TestGetAccountE2E(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
 			accountId := tc.setupFunc()
 
-			// Execute GetAccount request
 			getAccountRequest := &pb.GetAccountRequest{
 				AccountId: accountId,
 			}
@@ -643,14 +627,11 @@ func TestGetAccountE2E(t *testing.T) {
 				t.Fatalf("Failed to get account: %v", err)
 			}
 
-			// Verify the response
 			if tc.expectValid {
 				assert.Equal(t, 200, resp.StatusCode, "Expected successful account retrieval")
-
-				// Verify the account details
 				assert.Equal(t, accountId, getAccountResponse.Account.AccountId, "Account ID mismatch")
 				assert.NotEmpty(t, getAccountResponse.Account.Owner, "Owner should not be empty")
-				assert.True(t, getAccountResponse.Account.IsLocked, "Account should  be locked")
+				assert.True(t, getAccountResponse.Account.IsLocked, "Account should be locked")
 			} else {
 				assert.Equal(t, 404, resp.StatusCode, "Expected not found status for invalid account ID")
 			}
@@ -659,7 +640,6 @@ func TestGetAccountE2E(t *testing.T) {
 }
 
 func TestIsApprovedE2E(t *testing.T) {
-	// Setup
 	alicePrivKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("Failed to generate private key for Alice: %v", err)
@@ -677,58 +657,18 @@ func TestIsApprovedE2E(t *testing.T) {
 		{
 			name: "Approved address",
 			setupFunc: func() (string, string) {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				// Approve Bob's address
-				approveSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				approveAddressRequest := &pb.ApproveAddressRequest{
-					Base: &pb.AccountOperationRequest{
-						AccountId: createAccountResponse.AccountId,
-						Proof:     approveSig,
-					},
-					Address: bobPrivKey.PublicKey.X.String(),
-				}
-				_, resp, err = testutil.ApproveAddress(approveAddressRequest)
-				assert.NoError(t, err, "setup: failed to approve address")
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId, bobPrivKey.PublicKey.X.String()
+				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				bobAddress := bobPrivKey.PublicKey.X.String()
+				testutil.ApproveAddressHelper(t, accountId, alicePrivKey, bobAddress)
+				return accountId, bobAddress
 			},
 			expectValid: true,
 		},
 		{
 			name: "Non-approved address",
 			setupFunc: func() (string, string) {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId, bobPrivKey.PublicKey.X.String()
+				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				return accountId, bobPrivKey.PublicKey.X.String()
 			},
 			expectValid: false,
 		},
@@ -736,10 +676,8 @@ func TestIsApprovedE2E(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
 			accountId, address := tc.setupFunc()
 
-			// Execute IsApproved request
 			isApprovedRequest := &pb.IsApprovedRequest{
 				AccountId: accountId,
 				Address:   address,
@@ -747,20 +685,13 @@ func TestIsApprovedE2E(t *testing.T) {
 			isApprovedResponse, resp, err := testutil.IsApproved(isApprovedRequest)
 			assert.NoError(t, err, "Failed to get IsApproved response")
 
-			// Verify the response
-			if tc.expectValid {
-				assert.Equal(t, 200, resp.StatusCode, "Expected successful IsApproved check")
-				assert.True(t, isApprovedResponse.Result, "Expected address to be approved")
-			} else {
-				assert.Equal(t, 200, resp.StatusCode, "Expected successful IsApproved check")
-				assert.False(t, isApprovedResponse.Result, "Expected address to not be approved")
-			}
+			assert.Equal(t, 200, resp.StatusCode, "Expected successful IsApproved check")
+			assert.Equal(t, tc.expectValid, isApprovedResponse.Result, "Unexpected IsApproved result")
 		})
 	}
 }
 
 func TestIsOwnerE2E(t *testing.T) {
-	// Setup
 	alicePrivKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("Failed to generate private key for Alice: %v", err)
@@ -778,42 +709,16 @@ func TestIsOwnerE2E(t *testing.T) {
 		{
 			name: "Account owner",
 			setupFunc: func() (string, string) {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId, crypto.PubkeyToAddress(alicePrivKey.PublicKey).Hex()
+				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				return accountId, crypto.PubkeyToAddress(alicePrivKey.PublicKey).Hex()
 			},
 			expectOwner: true,
 		},
 		{
 			name: "Non-owner address",
 			setupFunc: func() (string, string) {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId, crypto.PubkeyToAddress(bobPrivKey.PublicKey).Hex()
+				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				return accountId, crypto.PubkeyToAddress(bobPrivKey.PublicKey).Hex()
 			},
 			expectOwner: false,
 		},
@@ -821,10 +726,8 @@ func TestIsOwnerE2E(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
 			accountId, address := tc.setupFunc()
 
-			// Execute IsOwner request
 			isOwnerRequest := &pb.IsOwnerRequest{
 				AccountId: accountId,
 				Address:   address,
@@ -832,7 +735,6 @@ func TestIsOwnerE2E(t *testing.T) {
 			isOwnerResponse, resp, err := testutil.IsOwner(isOwnerRequest)
 			assert.NoError(t, err, "Failed to get IsOwner response")
 
-			// Verify the response
 			assert.Equal(t, 200, resp.StatusCode, "Expected successful IsOwner check")
 			assert.Equal(t, tc.expectOwner, isOwnerResponse.Result, "Unexpected IsOwner result")
 		})
@@ -840,7 +742,6 @@ func TestIsOwnerE2E(t *testing.T) {
 }
 
 func TestIsAccountLockedE2E(t *testing.T) {
-	// Setup
 	alicePrivKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("Failed to generate private key for Alice: %v", err)
@@ -854,57 +755,16 @@ func TestIsAccountLockedE2E(t *testing.T) {
 		{
 			name: "Newly created account (locked)",
 			setupFunc: func() string {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId
+				return testutil.CreateAccountHelper(t, alicePrivKey)
 			},
 			expectLocked: true,
 		},
 		{
 			name: "Unlocked account",
 			setupFunc: func() string {
-				// Create an account
-				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				createAccountRequest := &pb.CreateAccountRequest{
-					Proof: createSig,
-				}
-				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
-				if err != nil {
-					t.Fatalf("Failed to create account: %v", err)
-				}
-				assert.Equal(t, 200, resp.StatusCode)
-
-				// Unlock the account
-				unlockSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
-				if err != nil {
-					t.Fatalf("Failed to generate timed signature: %v", err)
-				}
-				unlockAccountRequest := &pb.UnlockAccountRequest{
-					Base: &pb.AccountOperationRequest{
-						AccountId: createAccountResponse.AccountId,
-						Proof:     unlockSig,
-					},
-				}
-				_, resp, err = testutil.UnlockAccount(unlockAccountRequest)
-				assert.NoError(t, err, "Failed to unlock account")
-				assert.Equal(t, 200, resp.StatusCode)
-
-				return createAccountResponse.AccountId
+				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				testutil.UnlockAccountHelper(t, accountId, alicePrivKey)
+				return accountId
 			},
 			expectLocked: false,
 		},
@@ -912,17 +772,14 @@ func TestIsAccountLockedE2E(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
 			accountId := tc.setupFunc()
 
-			// Execute IsAccountLocked request
 			isAccountLockedRequest := &pb.IsAccountLockedRequest{
 				AccountId: accountId,
 			}
 			isAccountLockedResponse, resp, err := testutil.IsAccountLocked(isAccountLockedRequest)
 			assert.NoError(t, err, "Failed to get IsAccountLocked response")
 
-			// Verify the response
 			assert.Equal(t, 200, resp.StatusCode, "Expected successful IsAccountLocked check")
 			assert.Equal(t, tc.expectLocked, isAccountLockedResponse.Result, "Unexpected IsAccountLocked result")
 		})
