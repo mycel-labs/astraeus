@@ -1,14 +1,8 @@
 FROM golang:1.22.7-alpine3.20
 
-ENV GOPATH /go
+ENV GOPATH=/go
 ENV GOOS=linux
 ENV CGO_ENABLED=1
-
-# Set build arguments
-ARG TA_STORE_CONTRACT_ADDRESS
-ARG PRIVATE_KEY
-ARG RPC_URL
-
 # Install make and gcc
 RUN apk add --no-cache make gcc musl-dev
 
@@ -17,10 +11,8 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-
 # Set environment variables from build arguments
 ENV TA_STORE_CONTRACT_ADDRESS=${TA_STORE_CONTRACT_ADDRESS}
 ENV PRIVATE_KEY=${PRIVATE_KEY}
 ENV RPC_URL=${RPC_URL}
-
-RUN make run-go
+RUN chmod 755 ./scripts/docker/*.sh

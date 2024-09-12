@@ -34,15 +34,12 @@ services:
       - suave-net
 
   astraeus-api-node:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile-astraeus-api
-      args:
-        TA_STORE_CONTRACT_ADDRESS: ${TA_STORE_CONTRACT_ADDRESS}
-        PRIVATE_KEY: ${PRIVATE_KEY}
-        RPC_URL: ${RPC_URL:-http://host.docker.internal:8545}
+    image: test-api-node
+    depends_on:
+      - suave-enabled-chain
     networks:
       - suave-net
+    entrypoint: ["./scripts/docker/start-astraeus-api-node.sh", "2"]
     env_file:
       - .env
 
