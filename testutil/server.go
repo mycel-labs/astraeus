@@ -215,11 +215,12 @@ func IsApproved(isApprovedRequest *pb.IsApprovedRequest) (*pb.IsApprovedResponse
 	return isApprovedResponse, resp, nil
 }
 
-// func IsOwner(isOwnerRequest *pb.IsOwnerRequest) *http.Response {
-// 	url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
-// 	resp := GetServer(url, isOwnerRequest)
-// 	return resp
-// }
+func IsOwner(isOwnerRequest *pb.IsOwnerRequest) (*pb.IsOwnerResponse, *http.Response, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
+	isOwnerResponse := &pb.IsOwnerResponse{}
+	resp := GetServer(url, isOwnerResponse)
+	return isOwnerResponse, resp, nil
+}
 
 // func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) *http.Response {
 // 	url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)

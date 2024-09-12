@@ -758,3 +758,83 @@ func TestIsApprovedE2E(t *testing.T) {
 		})
 	}
 }
+
+func TestIsOwnerE2E(t *testing.T) {
+	// Setup
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key for Alice: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key for Bob: %v", err)
+	}
+
+	testCases := []struct {
+		name        string
+		setupFunc   func() (string, string)
+		expectOwner bool
+	}{
+		{
+			name: "Account owner",
+			setupFunc: func() (string, string) {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId, crypto.PubkeyToAddress(alicePrivKey.PublicKey).Hex()
+			},
+			expectOwner: true,
+		},
+		{
+			name: "Non-owner address",
+			setupFunc: func() (string, string) {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId, crypto.PubkeyToAddress(bobPrivKey.PublicKey).Hex()
+			},
+			expectOwner: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			accountId, address := tc.setupFunc()
+
+			// Execute IsOwner request
+			isOwnerRequest := &pb.IsOwnerRequest{
+				AccountId: accountId,
+				Address:   address,
+			}
+			isOwnerResponse, resp, err := testutil.IsOwner(isOwnerRequest)
+			assert.NoError(t, err, "Failed to get IsOwner response")
+
+			// Verify the response
+			assert.Equal(t, 200, resp.StatusCode, "Expected successful IsOwner check")
+			assert.Equal(t, tc.expectOwner, isOwnerResponse.Result, "Unexpected IsOwner result")
+		})
+	}
+}
