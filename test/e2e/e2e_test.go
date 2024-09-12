@@ -838,3 +838,93 @@ func TestIsOwnerE2E(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAccountLockedE2E(t *testing.T) {
+	// Setup
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key for Alice: %v", err)
+	}
+
+	testCases := []struct {
+		name         string
+		setupFunc    func() string
+		expectLocked bool
+	}{
+		{
+			name: "Newly created account (locked)",
+			setupFunc: func() string {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId
+			},
+			expectLocked: true,
+		},
+		{
+			name: "Unlocked account",
+			setupFunc: func() string {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				// Unlock the account
+				unlockSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				unlockAccountRequest := &pb.UnlockAccountRequest{
+					Base: &pb.AccountOperationRequest{
+						AccountId: createAccountResponse.AccountId,
+						Proof:     unlockSig,
+					},
+				}
+				_, resp, err = testutil.UnlockAccount(unlockAccountRequest)
+				assert.NoError(t, err, "Failed to unlock account")
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId
+			},
+			expectLocked: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			accountId := tc.setupFunc()
+
+			// Execute IsAccountLocked request
+			isAccountLockedRequest := &pb.IsAccountLockedRequest{
+				AccountId: accountId,
+			}
+			isAccountLockedResponse, resp, err := testutil.IsAccountLocked(isAccountLockedRequest)
+			assert.NoError(t, err, "Failed to get IsAccountLocked response")
+
+			// Verify the response
+			assert.Equal(t, 200, resp.StatusCode, "Expected successful IsAccountLocked check")
+			assert.Equal(t, tc.expectLocked, isAccountLockedResponse.Result, "Unexpected IsAccountLocked result")
+		})
+	}
+}

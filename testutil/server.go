@@ -222,8 +222,9 @@ func IsOwner(isOwnerRequest *pb.IsOwnerRequest) (*pb.IsOwnerResponse, *http.Resp
 	return isOwnerResponse, resp, nil
 }
 
-// func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) *http.Response {
-// 	url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
-// 	resp := GetServer(url, isAccountLockedRequest)
-// 	return resp
-// }
+func IsAccountLocked(isAccountLockedRequest *pb.IsAccountLockedRequest) (*pb.IsAccountLockedResponse, *http.Response, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/locked", HostURL, isAccountLockedRequest.AccountId)
+	isAccountLockedResponse := &pb.IsAccountLockedResponse{}
+	resp := GetServer(url, isAccountLockedResponse)
+	return isAccountLockedResponse, resp, nil
+}
