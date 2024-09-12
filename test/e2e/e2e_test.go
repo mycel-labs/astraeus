@@ -657,3 +657,104 @@ func TestGetAccountE2E(t *testing.T) {
 		})
 	}
 }
+
+func TestIsApprovedE2E(t *testing.T) {
+	// Setup
+	alicePrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key for Alice: %v", err)
+	}
+	bobPrivKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key for Bob: %v", err)
+	}
+
+	testCases := []struct {
+		name        string
+		setupFunc   func() (string, string)
+		expectValid bool
+	}{
+		{
+			name: "Approved address",
+			setupFunc: func() (string, string) {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				// Approve Bob's address
+				approveSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				approveAddressRequest := &pb.ApproveAddressRequest{
+					Base: &pb.AccountOperationRequest{
+						AccountId: createAccountResponse.AccountId,
+						Proof:     approveSig,
+					},
+					Address: bobPrivKey.PublicKey.X.String(),
+				}
+				_, resp, err = testutil.ApproveAddress(approveAddressRequest)
+				assert.NoError(t, err, "setup: failed to approve address")
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId, bobPrivKey.PublicKey.X.String()
+			},
+			expectValid: true,
+		},
+		{
+			name: "Non-approved address",
+			setupFunc: func() (string, string) {
+				// Create an account
+				createSig, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
+				createAccountRequest := &pb.CreateAccountRequest{
+					Proof: createSig,
+				}
+				createAccountResponse, resp, err := testutil.CreateAccount(createAccountRequest)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				assert.Equal(t, 200, resp.StatusCode)
+
+				return createAccountResponse.AccountId, bobPrivKey.PublicKey.X.String()
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			accountId, address := tc.setupFunc()
+
+			// Execute IsApproved request
+			isApprovedRequest := &pb.IsApprovedRequest{
+				AccountId: accountId,
+				Address:   address,
+			}
+			isApprovedResponse, resp, err := testutil.IsApproved(isApprovedRequest)
+			assert.NoError(t, err, "Failed to get IsApproved response")
+
+			// Verify the response
+			if tc.expectValid {
+				assert.Equal(t, 200, resp.StatusCode, "Expected successful IsApproved check")
+				assert.True(t, isApprovedResponse.Result, "Expected address to be approved")
+			} else {
+				assert.Equal(t, 200, resp.StatusCode, "Expected successful IsApproved check")
+				assert.False(t, isApprovedResponse.Result, "Expected address to not be approved")
+			}
+		})
+	}
+}

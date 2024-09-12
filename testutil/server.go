@@ -208,11 +208,12 @@ func GetAccount(getAccountRequest *pb.GetAccountRequest) (*pb.GetAccountResponse
 	return getAccountResponse, resp, nil
 }
 
-// func IsApproved(isApprovedRequest *pb.IsApprovedRequest) *http.Response {
-// 	url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
-// 	resp := GetServer(url, isApprovedRequest)
-// 	return resp
-// }
+func IsApproved(isApprovedRequest *pb.IsApprovedRequest) (*pb.IsApprovedResponse, *http.Response, error) {
+	url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
+	isApprovedResponse := &pb.IsApprovedResponse{}
+	resp := GetServer(url, isApprovedResponse)
+	return isApprovedResponse, resp, nil
+}
 
 // func IsOwner(isOwnerRequest *pb.IsOwnerRequest) *http.Response {
 // 	url := fmt.Sprintf("%s/v1/accounts/%s/owner/%s", HostURL, isOwnerRequest.AccountId, isOwnerRequest.Address)
