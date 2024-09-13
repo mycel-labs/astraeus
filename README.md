@@ -60,7 +60,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Generate signatures for both of your accounts.
    ```
-   $ go run scripts/utils/generate_timed_signature/main.go 1726946480(validFor) 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94(your_private_key)
+   go run scripts/utils/generate_timed_signature/main.go 1726946480(validFor) 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94(your_private_key)
    Address: 1b1374742cb5f84b1ef167db57236350380084e1
    Message Hash: 32948247c695a2545f9b35c040a293f1c6cd300062e9d7abdf0b3ed2a7b596d1
    Signature: 50346a31ad859f211294496e01083dcb85803bb27923b8d256756c71bdbfe36e1e89741215f58fd4bb8db42f04775303e60748b99f10c64e189d1f585d6b77531c
@@ -70,7 +70,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Execute the request to create a TA. Use the output from step 4 in the `proof` section:
    ```
-   $ curl -X POST http://localhost:8080/v1/accounts -d '{
+   curl -X POST http://localhost:8080/v1/accounts -d '{
      "proof": {
        "validFor": 1726946480,
        "messageHash": "32948247c695a2545f9b35c040a293f1c6cd300062e9d7abdf0b3ed2a7b596d1",
@@ -108,6 +108,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 7. **Transfer Account Request to API Server**
 
    Execute the transfer of TA ownership. This can be done by either the current TA owner or the approved account.
+   In this example, the transfer is executed with the signature of the TA creator, but you can also create and execute the request with the signature of the recipient.
 
    ```
    curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/transfer -d '{
