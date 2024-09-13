@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mycel-labs/transferable-account/src/go/framework"
 	"github.com/mycel-labs/transferable-account/src/go/server"
-	"github.com/mycel-labs/transferable-account/test/testutil"
+	testutil "github.com/mycel-labs/transferable-account/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
