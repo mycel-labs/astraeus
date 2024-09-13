@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     tar \
     git \
     make \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Go

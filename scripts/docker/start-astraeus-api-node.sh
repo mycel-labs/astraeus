@@ -28,11 +28,20 @@ message_hash=$(echo "$go_output" | grep "Message Hash:" | awk '{print $3}')
 signature=$(echo "$go_output" | grep "Signature:" | awk '{print $2}')
 
 # Send a POST request about creating a account to the API server
-curl -X POST http://localhost:8080/v1/accounts -d '{
+create_account_response=$(curl -s -X POST http://localhost:8080/v1/accounts -d '{
   "proof": {
     "validFor": 2000000000,
     "messageHash": "'"$message_hash"'",
     "signature": "'"$signature"'",
     "signer": "'"$address"'"
   }
-}'
+}')
+
+create_account_tx_hash=$(echo "$create_account_response" | jq -r '.txHash')
+create_account_account_id=$(echo "$create_account_response" | jq -r '.accountId')
+
+if [ "$create_account_tx_hash" != "" ] && [ "$create_account_account_id" != "" ]; then
+  echo "Create account succeeded: txHash=$create_account_tx_hash, accountId=$create_account_account_id"
+else
+  echo "Create account failed: $create_account_response"
+fi
