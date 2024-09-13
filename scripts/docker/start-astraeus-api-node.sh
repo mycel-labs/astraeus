@@ -17,8 +17,8 @@ echo "Deployed to ${TA_STORE_CONTRACT_ADDRESS}"
 
 make run-go &
 
-
-sleep 90
+# waiting for starting the API server.
+sleep 120
 
 # Run the generating TimedSignature scripts and capture its output
 future_unix_time=$(( $(date +%s) + 86400 ))
