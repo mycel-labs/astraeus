@@ -6,7 +6,7 @@ export RPC_URL=${RPC_URL:-http://host.docker.internal:8545}
 export ALICE_PRIVATE_KEY="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 export BOB_PRIVATE_KEY="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
-echo "Starting astraeus-api--node with arguments: $1"
+echo "Starting astraeus-api--node"
 
 forge install
 forge build --via-ir
@@ -53,7 +53,7 @@ else
 fi
 
 echo "--------------- Approve Address -------------------"
-curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/approve -d '{
+approve_address_response=$(curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/approve -d '{
   "base": {
     "account_id": "'"$create_account_account_id"'",
     "proof": {
@@ -64,10 +64,19 @@ curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/app
     }
   },
   "address": "'"$bob_address"'"
-}'
+}')
+
+approve_address_tx_hash=$(echo "$approve_address_response" | jq -r '.txHash')
+
+if [ "$approve_address_tx_hash" != "" ]; then
+  echo "Approve address succeeded: txHash=$approve_address_tx_hash"
+else
+  echo "Approve address failed: $approve_address_response"
+  exit 1
+fi
 
 echo "--------------- Transfer Account -------------------"
-curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/transfer -d '{
+transfer_account_response=$(curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/transfer -d '{
   "base": {
     "account_id": "'"$create_account_account_id"'",
     "proof": {
@@ -78,4 +87,14 @@ curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/tra
     }
   },
   "address": "'"$bob_address"'"
-}'
+}')
+
+transfer_account_tx_hash=$(echo "$transfer_account_response" | jq -r '.txHash')
+
+if [ "$transfer_account_tx_hash" != "null" ]; then
+  echo "Transfer account succeeded: txHash=$transfer_account_tx_hash"
+else
+  echo "Transfer account failed: $transfer_account_response"
+  exit 1
+fi
+

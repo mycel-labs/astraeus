@@ -39,7 +39,7 @@ services:
       - suave-enabled-chain
     networks:
       - suave-net
-    entrypoint: ["./scripts/docker/start-astraeus-api-node.sh", "2"]
+    entrypoint: ["./scripts/docker/start-astraeus-api-node.sh"]
     env_file:
       - .env
 
