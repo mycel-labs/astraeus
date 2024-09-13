@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/mycel-labs/transferable-account/src/go/server"
 )
 
 const (
@@ -41,12 +42,6 @@ Before running this script:
 After these steps, you can run this script to interact with the deployed contract via the API.
 */
 
-type TimedSignature struct {
-	ValidFor    uint64
-	MessageHash [32]byte
-	Signature   []byte
-	Signer      common.Address
-}
 
 func main() {
 	// Check if required environment variables are set
@@ -70,13 +65,13 @@ func main() {
 	createAccount(timedSignature)
 }
 
-func populateTimedSignature(privateKey *ecdsa.PrivateKey) (TimedSignature, error) {
+func populateTimedSignature(privateKey *ecdsa.PrivateKey) (server.TimedSignature, error) {
 	validFor := time.Now().Unix() + 1000000
 	address, messageHash, signature, err := generateTimedSignature(validFor, privateKey)
 	if err != nil {
-		return TimedSignature{}, err
+		return server.TimedSignature{}, err
 	}
-	return TimedSignature{
+	return server.TimedSignature{
 		ValidFor:    uint64(validFor),
 		MessageHash: messageHash,
 		Signature:   signature,
@@ -113,7 +108,7 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (addre
 	return address, messageHash, signature, nil
 }
 
-func createAccount(timedSignature TimedSignature) {
+func createAccount(timedSignature server.TimedSignature) {
 	url := fmt.Sprintf("%s/v1/accounts", hostURL)
 	data := map[string]interface{}{
 		"proof": map[string]interface{}{
