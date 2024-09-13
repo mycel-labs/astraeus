@@ -22,11 +22,6 @@ enum Curve {
   CURVE_EDDSA = 2;
 }
 
-message TimeLock {
-    uint64 lock_until = 1;
-    string locked_by = 2;
-}
-
 // Requests
 message TimedSignature {
     uint64 valid_for = 1; // unix timestamp
@@ -73,7 +68,7 @@ message RevokeApprovalRequest {
 
 message SignRequest {
     AccountOperationRequest base = 1;
-    bytes data = 2;
+    string data = 2; // hex encoded
 }
 
 message GetAccountRequest {
@@ -122,7 +117,7 @@ message RevokeApprovalResponse {
 
 message SignResponse {
     string tx_hash = 1;
-    bytes signature = 2;
+    string signature = 2; // hex encoded
 }
 
 message GetAccountResponse {
@@ -141,10 +136,6 @@ message IsAccountLockedResponse {
     bool result = 1;
 }
 
-message TimeLockResponse {
-    TimeLock time_lock = 1;
-}
-
 // Service
 service AccountService {
     rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {
@@ -161,7 +152,8 @@ service AccountService {
     }
     rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse) {
         option (google.api.http) = {
-            delete: "/v1/accounts/{base.account_id}"
+            post: "/v1/accounts/{base.account_id}/delete"
+            body: "*"
         };
     }
     rpc UnlockAccount(UnlockAccountRequest) returns (UnlockAccountResponse) {

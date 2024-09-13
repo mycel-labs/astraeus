@@ -349,8 +349,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         require(signingKey.length > 0, "Signing key not found");
 
         bytes memory signature = Suave.signMessage(data, Suave.CryptoSignature.SECP256, string(signingKey));
-        string memory accountIdString = Utils.iToHex(abi.encodePacked(accountId));
-        emit Signature(accountIdString, signature);
+        emit Signature(signature);
 
         return abi.encodePacked(this.signCallback.selector);
     }
