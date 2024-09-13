@@ -83,16 +83,6 @@ check-fmt: check-fmt-solidity check-fmt-go check-fmt-proto
 ci: build test lint check-fmt
 
 # e2e tests
-
-api-node-build-local:
-	@echo "----- Building astraeus API Node -----"
-	@docker buildx build \
-		--build-arg TA_STORE_CONTRACT_ADDRESS=$(TA_STORE_CONTRACT_ADDRESS) \
-		--build-arg PRIVATE_KEY=$(PRIVATE_KEY) \
-		--build-arg RPC_URL=$(RPC_URL) \
-		-t astraeus-api-node \
-		-f docker/Dockerfile-astraeus-api .
-
 test-e2e-docker:
 	@echo "----- Running e2e tests on docker compose -----"
 	@docker build --no-cache -t test-api-node -f ./docker/Dockerfile-astraeus-api .
