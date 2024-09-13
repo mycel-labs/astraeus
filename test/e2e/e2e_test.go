@@ -13,7 +13,7 @@ import (
 
 	"github.com/mycel-labs/transferable-account/src/go/framework"
 	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
-	"github.com/mycel-labs/transferable-account/testutil"
+	"github.com/mycel-labs/transferable-account/test/testutil"
 )
 
 var (

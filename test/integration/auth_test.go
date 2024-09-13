@@ -7,8 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mycel-labs/transferable-account/src/go/framework"
-	"github.com/mycel-labs/transferable-account/testutil"
 	"github.com/mycel-labs/transferable-account/src/go/server"
+	"github.com/mycel-labs/transferable-account/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,7 +75,7 @@ func TestAuth(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-      messageHash, signature, err := testutil.SignTimedSignatureMessage(tc.validFor, privKey)
+			messageHash, signature, err := testutil.SignTimedSignatureMessage(tc.validFor, privKey)
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
