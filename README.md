@@ -43,6 +43,12 @@ Run the test suite using Foundry:
 forge test
 ```
 
+Run the e2e tests on docker compose:
+
+```
+make test-e2e-docker
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

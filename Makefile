@@ -91,3 +91,8 @@ api-node-build-local:
 		--build-arg RPC_URL=$(RPC_URL) \
 		-t astraeus-api-node \
 		-f docker/Dockerfile-astraeus-api .
+
+test-e2e-docker:
+	@echo "----- Running e2e tests on docker compose -----"
+	@docker build --no-cache -t test-api-node -f ./docker/Dockerfile-astraeus-api .
+	@docker compose -f docker-compose-local.yaml up
