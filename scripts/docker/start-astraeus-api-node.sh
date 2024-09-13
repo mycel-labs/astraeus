@@ -4,6 +4,7 @@ export PRIVATE_KEY=${PRIVATE_KEY}
 export RPC_URL=${RPC_URL:-http://host.docker.internal:8545}
 
 export ALICE_PRIVATE_KEY="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+export BOB_PRIVATE_KEY="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
 echo "Starting astraeus-api--node with arguments: $1"
 
@@ -17,24 +18,28 @@ echo "Deployed to ${TA_STORE_CONTRACT_ADDRESS}"
 make run-go &
 
 
-sleep 120
+sleep 90
 
 # Run the generating TimedSignature scripts and capture its output
 future_unix_time=$(( $(date +%s) + 86400 ))
-go_output=$(go run scripts/utils/generate_timed_signature/main.go $future_unix_time $ALICE_PRIVATE_KEY)
 
-# Extract the necessary information from the Go script output
-address=$(echo "$go_output" | grep "Address:" | awk '{print $2}')
-message_hash=$(echo "$go_output" | grep "Message Hash:" | awk '{print $3}')
-signature=$(echo "$go_output" | grep "Signature:" | awk '{print $2}')
+alice_timedsignature_output=$(go run scripts/utils/generate_timed_signature/main.go $future_unix_time $ALICE_PRIVATE_KEY)
+alice_address=$(echo "$alice_timedsignature_output" | grep "Address:" | awk '{print $2}')
+alice_message_hash=$(echo "$alice_timedsignature_output" | grep "Message Hash:" | awk '{print $3}')
+alice_signature=$(echo "$alice_timedsignature_output" | grep "Signature:" | awk '{print $2}')
 
-# Send a POST request about creating a account to the API server
+bob_timedsignature_output=$(go run scripts/utils/generate_timed_signature/main.go $future_unix_time $BOB_PRIVATE_KEY)
+bob_address=$(echo "$bob_timedsignature_output" | grep "Address:" | awk '{print $2}')
+bob_message_hash=$(echo "$bob_timedsignature_output" | grep "Message Hash:" | awk '{print $3}')
+bob_signature=$(echo "$bob_timedsignature_output" | grep "Signature:" | awk '{print $2}')
+
+echo "--------------- Create Acccount -------------------"
 create_account_response=$(curl -s -X POST http://localhost:8080/v1/accounts -d '{
   "proof": {
     "validFor": "'"$future_unix_time"'",
-    "messageHash": "'"$message_hash"'",
-    "signature": "'"$signature"'",
-    "signer": "'"$address"'"
+    "messageHash": "'"$alice_message_hash"'",
+    "signature": "'"$alice_signature"'",
+    "signer": "'"$alice_address"'"
   }
 }')
 
@@ -46,3 +51,17 @@ if [ "$create_account_tx_hash" != "" ] && [ "$create_account_account_id" != "" ]
 else
   echo "Create account failed: $create_account_response"
 fi
+
+echo "--------------- Approve Address -------------------"
+curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/approve -d '{
+  "base": {
+    "account_id": "'"$create_account_account_id"'",
+    "proof": {
+      "validFor": "'"$future_unix_time"'",
+      "messageHash": "'"$alice_message_hash"'",
+      "signature": "'"$alice_signature"'",
+      "signer": "'"$alice_address"'"
+    }
+  },
+  "address": "'"$bob_address"'"
+}'
