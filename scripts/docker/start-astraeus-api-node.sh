@@ -20,7 +20,8 @@ make run-go &
 sleep 120
 
 # Run the generating TimedSignature scripts and capture its output
-go_output=$(go run scripts/utils/generate_timed_signature/main.go 2000000000 $ALICE_PRIVATE_KEY)
+future_unix_time=$(( $(date +%s) + 86400 ))
+go_output=$(go run scripts/utils/generate_timed_signature/main.go $future_unix_time $ALICE_PRIVATE_KEY)
 
 # Extract the necessary information from the Go script output
 address=$(echo "$go_output" | grep "Address:" | awk '{print $2}')
@@ -30,7 +31,7 @@ signature=$(echo "$go_output" | grep "Signature:" | awk '{print $2}')
 # Send a POST request about creating a account to the API server
 create_account_response=$(curl -s -X POST http://localhost:8080/v1/accounts -d '{
   "proof": {
-    "validFor": 2000000000,
+    "validFor": "'"$future_unix_time"'",
     "messageHash": "'"$message_hash"'",
     "signature": "'"$signature"'",
     "signer": "'"$address"'"
