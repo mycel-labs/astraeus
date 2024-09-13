@@ -79,7 +79,7 @@ func StartServer(wg *sync.WaitGroup) {
 	checkEnvVars(true)
 
 	// Setup framework and contract
-	fr := framework.New()
+	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
 	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
 	if err != nil {
 		log.Fatalf("Failed to bind to existing contract: %v", err)
