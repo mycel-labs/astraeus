@@ -18,6 +18,7 @@ echo "Deployed to ${TA_STORE_CONTRACT_ADDRESS}"
 make run-go &
 
 # waiting for starting the API server.
+echo "Waiting for 120 seconds for the API server to start."
 sleep 120
 
 # Run the generating TimedSignature scripts and capture its output
