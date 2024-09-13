@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export PRIVATE_KEY=${PRIVATE_KEY:-91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12}
-export RPC_URL=${RPC_URL:-http://host.docker.internal:8545}
+export PRIVATE_KEY=91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12
+export RPC_URL=http://host.docker.internal:8545
 
 export ALICE_PRIVATE_KEY="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 export BOB_PRIVATE_KEY="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -10,15 +10,19 @@ echo "Starting astraeus-api--node"
 
 forge install
 forge build --via-ir
-output=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY src/solidity/TransferableAccountStore.sol:TransferableAccountStore)
+output=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --legacy src/solidity/TransferableAccountStore.sol:TransferableAccountStore)
 contract_address=$(echo "$output" | grep "Deployed to:" | awk '{print $3}')
 export TA_STORE_CONTRACT_ADDRESS=$contract_address
+echo "RPC_URL: ${RPC_URL}"
 echo "Deployed to ${TA_STORE_CONTRACT_ADDRESS}"
+
+# Remove the existing .env file to avoid conflicts with other network configurations
+rm -f ./.env
 
 make run-go &
 
-# waiting for starting the API server.
-echo "Waiting for 120 seconds for the API server to start."
+# Waiting for the API server to start.
+echo "Waiting for the API server to start. This may take up to 120 seconds."
 sleep 120
 
 # Run the generating TimedSignature scripts and capture its output

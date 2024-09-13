@@ -40,8 +40,6 @@ services:
     networks:
       - suave-net
     entrypoint: ["./scripts/docker/start-astraeus-api-node.sh"]
-    env_file:
-      - .env
 
 networks:
   suave-net:

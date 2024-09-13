@@ -23,8 +23,4 @@ COPY go.sum .
 RUN go mod download
 COPY . .
 
-# Set environment variables from build arguments
-ENV TA_STORE_CONTRACT_ADDRESS=${TA_STORE_CONTRACT_ADDRESS}
-ENV PRIVATE_KEY=${PRIVATE_KEY}
-ENV RPC_URL=${RPC_URL}
 RUN chmod 755 ./scripts/docker/*.sh
