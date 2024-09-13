@@ -91,10 +91,9 @@ transfer_account_response=$(curl -s -X POST http://localhost:8080/v1/accounts/$c
 
 transfer_account_tx_hash=$(echo "$transfer_account_response" | jq -r '.txHash')
 
-if [ "$transfer_account_tx_hash" != "null" ]; then
+if [ "$transfer_account_tx_hash" != "" ]; then
   echo "Transfer account succeeded: txHash=$transfer_account_tx_hash"
 else
   echo "Transfer account failed: $transfer_account_response"
   exit 1
 fi
-
