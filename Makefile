@@ -82,8 +82,21 @@ check-fmt: check-fmt-solidity check-fmt-go check-fmt-proto
 # CI
 ci: build test lint check-fmt
 
-# e2e tests
+# Run e2e tests using docker compose
 test-e2e-docker:
 	@echo "----- Running e2e tests on docker compose -----"
 	@docker build --no-cache -t test-api-node -f ./docker/Dockerfile-astraeus-api .
 	@docker compose -f docker-compose-local.yaml up
+
+# Start API Server using Docker
+run-api-server-docker:
+	@echo "----- Building astraeus API Server -----"
+	@docker build --no-cache -t test-api-node -f ./docker/Dockerfile-astraeus-api .
+	@docker run -p 8080:8080 --name astraeus-api-server \
+		astraeus-api-server /bin/sh -c \
+		" \
+			PRIVATE_KEY=$(PRIVATE_KEY) \
+			TA_STORE_CONTRACT_ADDRESS=$(TA_STORE_CONTRACT_ADDRESS) \
+			RPC_URL=$(RPC_URL) \
+			make run-go \
+		"
