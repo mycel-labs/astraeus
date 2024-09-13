@@ -65,3 +65,17 @@ curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/app
   },
   "address": "'"$bob_address"'"
 }'
+
+echo "--------------- Transfer Account -------------------"
+curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/transfer -d '{
+  "base": {
+    "account_id": "'"$create_account_account_id"'",
+    "proof": {
+      "validFor": "'"$future_unix_time"'",
+      "messageHash": "'"$bob_message_hash"'",
+      "signature": "'"$bob_signature"'",
+      "signer": "'"$bob_address"'"
+    }
+  },
+  "address": "'"$bob_address"'"
+}'
