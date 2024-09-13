@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export PRIVATE_KEY=${PRIVATE_KEY}
+export PRIVATE_KEY=${PRIVATE_KEY:-91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12}
 export RPC_URL=${RPC_URL:-http://host.docker.internal:8545}
 
 export ALICE_PRIVATE_KEY="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
