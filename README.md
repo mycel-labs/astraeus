@@ -17,8 +17,8 @@ This project implements a transferable account system using smart contracts.
 
 1. Clone the repository:
    ```
-   git clone https://github.com/mycel-labs/transferable-account.git
-   cd transferable-account
+   git clone https://github.com/mycel-labs/astraeus.git
+   cd astraeus
    ```
 
 2. Install dependencies:

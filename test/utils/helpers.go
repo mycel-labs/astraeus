@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 func CreateAccountHelper(t *testing.T, privKey *ecdsa.PrivateKey) string {

@@ -1,4 +1,4 @@
-module github.com/mycel-labs/transferable-account
+module github.com/mycel-labs/astraeus
 
 go 1.22.3
 
