@@ -4,11 +4,11 @@ PROTOBUF_DOCKERFILE := docker/protobuf.Dockerfile
 # suave-geth
 .PHONY: devnet-up devnet-down 
 devnet-up:
-	@docker compose --file ./compose.yaml up --detach
+	@docker compose --file ./suave-geth.compose.yaml up --detach
 
 .PHONY: devnet-down
 devnet-down:
-	@docker compose --file ./compose.yaml down
+	@docker compose --file ./suave-geth.compose.yaml down
 
 # Solidity
 build-solidity:
