@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM golang:1.22
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -7,10 +7,6 @@ RUN apt-get update && apt-get install -y \
     make \
     jq \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Go
-RUN curl -L https://go.dev/dl/go1.22.3.linux-amd64.tar.gz | tar xvzf - -C /usr/local/
-ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Install foundry
 RUN curl -L https://foundry.paradigm.xyz | bash

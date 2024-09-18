@@ -89,5 +89,5 @@ test-e2e-docker:
 
 # Start API Server using Docker
 run-api-server-docker:
-	@echo "----- Running Astraeus API Server -----"
+	@echo "----- Starging Astraeus API Server... -----"
 	@docker compose -f compose.yaml up
