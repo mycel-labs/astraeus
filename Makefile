@@ -85,8 +85,7 @@ ci: build test lint check-fmt
 # Run e2e tests using docker compose
 test-e2e-docker:
 	@echo "----- Running e2e tests on docker compose -----"
-	@docker build --no-cache -t test-api-node -f ./docker/Dockerfile-astraeus-api .
-	@docker compose -f docker-compose-local.yaml up
+	@docker compose -f local.compose.yaml up
 
 # Start API Server using Docker
 run-api-server-docker:

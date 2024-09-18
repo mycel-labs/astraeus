@@ -34,7 +34,9 @@ services:
       - suave-net
 
   astraeus-api-node:
-    image: test-api-node
+    build:
+      context: .
+      dockerfile: ./docker/api.Dockerfile
     depends_on:
       - suave-enabled-chain
     networks:
