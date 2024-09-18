@@ -130,11 +130,6 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 For more details on API requests, refer to the documentation at:
    [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
 
-
-## Usage
-
-WIP
-
 ## Testing
 
 Run the test suite using Foundry:
