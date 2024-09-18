@@ -135,7 +135,7 @@ For more details on API requests, refer to the documentation at:
 Run the test suite using Foundry:
 
 ```
-forge test
+make build-solidity && make test-solidity
 ```
 
 Run the e2e tests on docker compose:
