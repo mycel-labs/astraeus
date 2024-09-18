@@ -4,11 +4,11 @@ PROTOBUF_DOCKERFILE := docker/protobuf.Dockerfile
 # suave-geth
 .PHONY: devnet-up devnet-down 
 devnet-up:
-	@docker compose --file ./compose.yaml up --detach
+	@docker compose --file ./suave-geth.compose.yaml up --detach
 
 .PHONY: devnet-down
 devnet-down:
-	@docker compose --file ./compose.yaml down
+	@docker compose --file ./suave-geth.compose.yaml down
 
 # Solidity
 build-solidity:
@@ -81,3 +81,14 @@ check-fmt: check-fmt-solidity check-fmt-go check-fmt-proto
 
 # CI
 ci: build test lint check-fmt
+
+# Run e2e tests using docker compose
+test-e2e-docker:
+	@echo "----- Running e2e tests on docker compose -----"
+	@docker compose -f local.compose.yaml up
+
+# Start API Server using Docker
+run-api-server-docker:
+	@echo "----- Starging Astraeus API Server... -----"
+	@docker compose -f compose.yaml up
+	

@@ -1,7 +1,7 @@
 package main
 
 import (
-  "sync"
+	"sync"
 
 	"github.com/mycel-labs/transferable-account/src/go/server"
 )
