@@ -1,4 +1,4 @@
-# Transferable Account
+# Astraeus
 
 This project implements a transferable account system using smart contracts.
 
