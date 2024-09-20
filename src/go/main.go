@@ -3,7 +3,7 @@ package main
 import (
 	"sync"
 
-	"github.com/mycel-labs/transferable-account/src/go/server"
+	"github.com/mycel-labs/astraeus/src/go/server"
 )
 
 func main() {

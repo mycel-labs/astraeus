@@ -12,8 +12,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
-	"github.com/mycel-labs/transferable-account/src/go/server"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	"github.com/mycel-labs/astraeus/src/go/server"
 )
 
 func StartAstraeusServer() {
