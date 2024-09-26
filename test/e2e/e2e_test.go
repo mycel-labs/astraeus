@@ -47,16 +47,18 @@ func setup(t *testing.T) {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
-	// Generate private key
-	privKey, err := crypto.GenerateKey()
-	if err != nil {
-		t.Fatalf("Failed to generate private key: %v", err)
-	}
-	err = os.Setenv("PRIVATE_KEY", privKey.X.String())
+
+  // Set PRIVATE_KEY environment variable for testing
+	err = os.Setenv("PRIVATE_KEY", "91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12")
 	if err != nil {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
+  // Set RPC URL
+  err = os.Setenv("RPC_URL", "http://localhost:8545")
+	if err != nil {
+		fmt.Println("Error setting environment variable:", err)
+	}
 	// Start Astraeus server
 	testutil.StartAstraeusServer()
 }
