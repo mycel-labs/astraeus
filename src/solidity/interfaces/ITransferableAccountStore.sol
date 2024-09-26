@@ -74,7 +74,7 @@ interface ITransferableAccountStore {
     function sign1559(
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
-        bytes memory rlpTxnHash
+        Transactions.EIP1559Request calldata transaction
     ) external returns (bytes memory);
     function sign155(
         SignatureVerifier.TimedSignature calldata timedSignature,
