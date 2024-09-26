@@ -47,26 +47,20 @@ func main() {
 
 	value := big.NewInt(100000000000000) // 0.0001 ETH
 	gasLimit := uint64(21000)            // Gas limit for a standard transaction
-	chainID := big.NewInt(11155111)      // Sepolia Testnet Chain ID
 
 	tx := types.NewTransaction(nonce, bobAddress, value, gasLimit, gasPrice, nil)
-	signer := types.NewEIP155Signer(chainID)
-	signedTx, err := types.SignTx(tx, signer, nil)
-	if err != nil {
-		log.Fatalf("Failed to sign transaction: %v", err)
-	}
 
-	JsonTx, err := signedTx.MarshalJSON()
+	JsonTx, err := tx.MarshalJSON()
 	if err != nil {
 		log.Fatalf("Failed to marshal transaction: %v", err)
 	}
 
 	fmt.Printf("Unsigned Transaction (JSON): %x\n", JsonTx)
-	rlpEncodedTx, err := rlp.EncodeToBytes(signedTx)
+	rlpEncodedTx, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		log.Fatalf("Failed to RLP encode transaction: %v", err)
 	}
 	fmt.Printf("Unsigned Transaction (RLP): %x\n", rlpEncodedTx)
-	hashedTx := crypto.Keccak256(rlpEncodedTx)
+	hashedTx := crypto.Keccak256([]byte(rlpEncodedTx))
 	fmt.Printf("Unsigned Hashed Transaction: %x\n", hashedTx)
 }
