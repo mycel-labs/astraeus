@@ -63,7 +63,5 @@ func main() {
 	println("Signature Public Key Y (Hex): ", yHex)
 	println("Signature Public Key X (Decimal): ", new(big.Int).SetBytes(x.Bytes()).String())
 	println("Signature Public Key Y (Decimal): ", new(big.Int).SetBytes(y.Bytes()).String())
-	println("Signature Public Key X: ", x)
-	println("Signature Public Key Y: ", y)
 	fmt.Printf("Ethereum Address: 0x%s\n", address)
 }

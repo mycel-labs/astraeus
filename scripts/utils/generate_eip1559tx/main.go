@@ -10,10 +10,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func main() {
@@ -49,24 +46,17 @@ func main() {
 	gasLimit := uint64(21000)            // Gas limit for a standard transaction
 	chainID := big.NewInt(11155111)      // Sepolia Testnet Chain ID
 
-	tx := types.NewTransaction(nonce, bobAddress, value, gasLimit, gasPrice, nil)
-	signer := types.NewEIP155Signer(chainID)
-	signedTx, err := types.SignTx(tx, signer, nil)
-	if err != nil {
-		log.Fatalf("Failed to sign transaction: %v", err)
+	eip1559Request := Transactions.EIP1559Request{
+		To:                   bobAddress,
+		Gas:                  gasLimit,
+		MaxFeePerGas:         gasPrice,
+		MaxPriorityFeePerGas: big.NewInt(2000000000), // 2 Gwei
+		Value:                value,
+		Nonce:                nonce,
+		Data:                 nil,
+		ChainId:              chainID,
+		AccessList:           nil,
 	}
 
-	JsonTx, err := signedTx.MarshalJSON()
-	if err != nil {
-		log.Fatalf("Failed to marshal transaction: %v", err)
-	}
-
-	fmt.Printf("Unsigned Transaction (JSON): %x\n", JsonTx)
-	rlpEncodedTx, err := rlp.EncodeToBytes(signedTx)
-	if err != nil {
-		log.Fatalf("Failed to RLP encode transaction: %v", err)
-	}
-	fmt.Printf("Unsigned Transaction (RLP): %x\n", rlpEncodedTx)
-	hashedTx := crypto.Keccak256(rlpEncodedTx)
-	fmt.Printf("Unsigned Hashed Transaction: %x\n", hashedTx)
+	fmt.Printf("EIP1559Request: %+v\n", eip1559Request)
 }

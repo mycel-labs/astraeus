@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "suave-std/Test.sol";
 import "suave-std/suavelib/Suave.sol";
+import "suave-std/Transactions.sol";
 import "../src/solidity/TransferableAccountStore.sol";
 import "../src/solidity/interfaces/ITransferableAccountStore.sol";
 import "../src/solidity/lib/SignatureVerifier.sol";
@@ -31,6 +32,24 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             messageHash: messageHash,
             signature: signature,
             signer: signer
+        });
+    }
+
+    function generateEIP1559TxRequest(address to, uint256 chainId, uint256 value, uint256 nonce, bytes memory data)
+        internal
+        pure
+        returns (Transactions.EIP1559Request memory)
+    {
+        return Transactions.EIP1559Request({
+            to: to,
+            gas: 21000, // 適当なガスリミット
+            maxFeePerGas: 1000000000, // 適当な最大ガス料金
+            maxPriorityFeePerGas: 2000000000, // 適当な優先ガス料金
+            value: value,
+            nonce: nonce,
+            data: data,
+            chainId: chainId,
+            accessList: ""
         });
     }
 
@@ -454,6 +473,41 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bytes4 selector;
         assembly {
             selector := mload(add(encodedSignData, 32))
+        }
+
+        assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
+    }
+
+    function testSign1559() public {
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(sig, account);
+
+        bool isAccountLocked = tas.isAccountLocked(accountId);
+        assertTrue(isAccountLocked, "Account should be locked immediately after creation");
+
+        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
+        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
+
+        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
+            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
+        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+
+        isAccountLocked = tas.isAccountLocked(accountId);
+        require(!isAccountLocked, "Account is still locked");
+
+        Transactions.EIP1559Request memory unsignedTxRequest =
+            generateEIP1559TxRequest(address(0x123), 11155111, 1000, 0, "0x");
+
+        bytes memory encodedSignTx = tas.sign1559(sig, accountId, unsignedTxRequest);
+        bytes4 selector;
+        assembly {
+            selector := mload(add(encodedSignTx, 32))
         }
 
         assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");

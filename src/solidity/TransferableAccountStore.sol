@@ -7,6 +7,8 @@ import "suave-std/Context.sol";
 import "suave-std/Transactions.sol";
 import "suave-std/suavelib/Suave.sol";
 
+import "forge-std/console.sol";
+
 import "./interfaces/ITransferableAccountStore.sol";
 import "./lib/EllipticCurve.sol";
 import "./lib/Utils.sol";
@@ -351,6 +353,121 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         bytes memory signature = Suave.signMessage(data, Suave.CryptoSignature.SECP256, string(signingKey));
         emit Signature(signature);
 
+        return abi.encodePacked(this.signCallback.selector);
+    }
+
+    // function sign1559(
+    //     SignatureVerifier.TimedSignature calldata timedSignature,
+    //     string memory accountId,
+    //     Transactions.EIP1559Request calldata transactionRequest
+    // ) public confidential onlyUnlocked(Utils.iToHex(abi.encodePacked((accountId)))) returns (bytes memory) {
+    //     require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+    //     require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
+
+    //     Account storage account = accountsStore[accountId];
+    //     require(account.owner != address(0), "Account does not exist");
+
+    //     bytes memory signingKey = Suave.confidentialRetrieve(account.accountId, KEY_FA);
+    //     require(signingKey.length > 0, "Signing key not found");
+    //     require(Utils.isValidHexString(signingKey), "Invalid hex string format for signing key");
+
+    //     bytes memory rlptxn = Transactions.encodeRLP(transactionRequest);
+    //     emit RLPTransaction(rlptxn);
+
+    //     // Transactions.EIP1559 memory signedTx = Transactions.signTxn(transactionRequest, string(signingKey));
+    //     bytes memory rlpTxnHash = abi.encodePacked(keccak256(rlptxn));
+    //     emit RLPTransactionHashed(rlpTxnHash);
+
+    //     bytes memory signature = Suave.signMessage(rlpTxnHash, Suave.CryptoSignature.SECP256, string(signingKey));
+    //     emit Signature(signature);
+
+    //     (uint8 v, bytes32 r, bytes32 s) = Utils.decodeSignature(signature);
+
+    //     Transactions.EIP1559 memory signedTx;
+    //     signedTx.to = transactionRequest.to;
+    //     signedTx.gas = transactionRequest.gas;
+    //     signedTx.maxFeePerGas = transactionRequest.maxFeePerGas;
+    //     signedTx.maxPriorityFeePerGas = transactionRequest.maxPriorityFeePerGas;
+    //     signedTx.value = transactionRequest.value;
+    //     signedTx.nonce = transactionRequest.nonce;
+    //     signedTx.data = transactionRequest.data;
+    //     signedTx.chainId = transactionRequest.chainId;
+    //     signedTx.accessList = transactionRequest.accessList;
+    //     signedTx.v = v;
+    //     signedTx.r = r;
+    //     signedTx.s = s;
+
+    //     // bytes32 rlpTxnHash2 = keccak256(rlptxn);
+    //     // bytes memory signedTxBytes =
+    //     //     Suave.signEthTransaction(abi.encodePacked(rlpTxnHash2), "0xaa36a7", string(signingKey));
+    //     emit Privatekey(signingKey);
+    //     emit PrivatekeyString(string(signingKey));
+    //     emit Transaction1559(signedTx);
+    //     emit Transaction1559bytes(hex"deadbeef");
+    //     return abi.encodePacked(this.signCallback.selector);
+    // }
+
+    function sign1559(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        bytes memory rlpTxnHash
+    ) public confidential onlyUnlocked(Utils.iToHex(abi.encodePacked((accountId)))) returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
+
+        Account storage account = accountsStore[accountId];
+        require(account.owner != address(0), "Account does not exist");
+
+        bytes memory signingKey = Suave.confidentialRetrieve(account.accountId, KEY_FA);
+        require(signingKey.length > 0, "Signing key not found");
+        require(Utils.isValidHexString(signingKey), "Invalid hex string format for signing key");
+
+        bytes memory signature = Suave.signMessage(rlpTxnHash, Suave.CryptoSignature.SECP256, string(signingKey));
+        emit Signature(signature);
+
+        (uint8 v, bytes32 r, bytes32 s) = Utils.decodeSignature(signature);
+
+        Transactions.EIP1559 memory signedTx;
+        signedTx.to = address(0); // アドレスのデフォルト値
+        signedTx.gas = 0; // ガスのデフォルト値
+        signedTx.maxFeePerGas = 0; // 最大ガス料金のデフォルト値
+        signedTx.maxPriorityFeePerGas = 0; // 優先ガス料金のデフォルト値
+        signedTx.value = 0; // トランザクションの値のデフォルト値
+        signedTx.nonce = 0; // ノンスのデフォルト値
+        signedTx.data = ""; // データのデフォルト値
+        signedTx.chainId = 0; // チェーンIDのデフォルト値
+        signedTx.v = v;
+        signedTx.r = r;
+        signedTx.s = s;
+
+        emit PrivatekeyString(string(signingKey));
+        emit Transaction1559(signedTx);
+        return abi.encodePacked(this.signCallback.selector);
+    }
+
+    function sign155(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        Transactions.EIP155Request calldata transactionRequest
+    ) public confidential onlyUnlocked(Utils.iToHex(abi.encodePacked((accountId)))) returns (bytes memory) {
+        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
+
+        Account storage account = accountsStore[accountId];
+        require(account.owner != address(0), "Account does not exist");
+
+        bytes memory signingKey = Suave.confidentialRetrieve(account.accountId, KEY_FA);
+        require(signingKey.length > 0, "Signing key not found");
+
+        bytes memory rlptxn = Transactions.encodeRLP(transactionRequest);
+
+        emit RLPTransaction(rlptxn);
+        console.log("ChainId:", transactionRequest.chainId);
+
+        Transactions.EIP155 memory signedTx = Transactions.signTxn(transactionRequest, string(signingKey));
+
+        emit Privatekey(signingKey);
+        emit Transaction155(signedTx);
         return abi.encodePacked(this.signCallback.selector);
     }
 

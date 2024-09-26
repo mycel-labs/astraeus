@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "suave-std/suavelib/Suave.sol";
+import "suave-std/Transactions.sol";
 import "../lib/SignatureVerifier.sol";
 
 interface ITransferableAccountStore {
@@ -29,6 +30,14 @@ interface ITransferableAccountStore {
     event AccountUnlocked(string accountId);
     event AccountDeleted(string accountId);
     event Signature(bytes signature);
+    event RLPTransaction(bytes rlptxn);
+    event RLPTransactionHashed(bytes rlpTxnHash);
+    event Transaction1559(Transactions.EIP1559 signedTx);
+    event Transaction1559bytes(bytes signedTx);
+    event Transaction155(Transactions.EIP155 signedTx);
+    event Privatekey(bytes signingKey);
+    event PrivatekeyString(string signingKey);
+    event SignerAddress(address signer);
 
     // Getters
     function getAccount(string memory accountId) external view returns (Account memory);
@@ -61,6 +70,17 @@ interface ITransferableAccountStore {
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         external
         returns (bytes memory);
+
+    function sign1559(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        bytes memory rlpTxnHash
+    ) external returns (bytes memory);
+    function sign155(
+        SignatureVerifier.TimedSignature calldata timedSignature,
+        string memory accountId,
+        Transactions.EIP155Request calldata transaction
+    ) external returns (bytes memory);
 
     function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
 }
