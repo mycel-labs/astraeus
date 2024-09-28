@@ -134,6 +134,8 @@ For more details on API requests, refer to the documentation at:
 
    If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
 
+   Before executing the command, make sure to set the RPC of the chain to broadcast the Tx as `WITHDRAW_TESTNET_RPC` in your `.env` file.
+
    Specify the arguments in the following order: the accountID of the TA you are using, the ChainID to execute the Tx, the address to which you want to send the ETH, and the amount of ETH to send.
 
    Example:
