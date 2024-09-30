@@ -31,7 +31,7 @@ This project implements a transferable account system using smart contracts.
 
 ## Getting Started
 
-This guide will help you set up the Astraeus API server on the Suave Toliman Testnet to easily use Transferable Accounts (TA). You will learn how to create, approve, and transfer TAs using the API server.
+This guide will help you set up the Astraeus API server on the Suave Toliman Testnet to easily use Transferable Accounts (TA). You will learn how to create, approve, and transfer TAs using the API server. Additionally, you will learn how to sign transactions on external chains using TAs.
 
 ### Prerequisites
 
@@ -60,10 +60,10 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Generate signatures for both of your accounts.
    ```
-   go run scripts/utils/generate_timed_signature/main.go 1726946480(validFor) 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94(your_private_key)
+   go run scripts/utils/generate_timed_signature/main.go 1759244400(validFor) 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94(your_private_key)
    Address: 1b1374742cb5f84b1ef167db57236350380084e1
-   Message Hash: 32948247c695a2545f9b35c040a293f1c6cd300062e9d7abdf0b3ed2a7b596d1
-   Signature: 50346a31ad859f211294496e01083dcb85803bb27923b8d256756c71bdbfe36e1e89741215f58fd4bb8db42f04775303e60748b99f10c64e189d1f585d6b77531c
+   Message Hash: 2f9cc010a830e69220428772a000f8c057229d5c8e668ec86d5d74cf07cffcd2
+   Signature: 31f8e01e19bfb2bf66f01e34006eef1ac9a3384a71832779e768b80c7a5f1b3c6db26a20a99abce0d612046e4e0b6a73c1da892f0f98a41155a9a4998f29dcbd1c
    ```
 
 5. **Create Account Request to API Server**
@@ -72,13 +72,13 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
    ```
    curl -X POST http://localhost:8080/v1/accounts -d '{
      "proof": {
-       "validFor": 1726946480,
-       "messageHash": "32948247c695a2545f9b35c040a293f1c6cd300062e9d7abdf0b3ed2a7b596d1",
-       "signature": "50346a31ad859f211294496e01083dcb85803bb27923b8d256756c71bdbfe36e1e89741215f58fd4bb8db42f04775303e60748b99f10c64e189d1f585d6b77531c",
+       "validFor": 1759244400,
+       "messageHash": "2f9cc010a830e69220428772a000f8c057229d5c8e668ec86d5d74cf07cffcd2",
+       "signature": "31f8e01e19bfb2bf66f01e34006eef1ac9a3384a71832779e768b80c7a5f1b3c6db26a20a99abce0d612046e4e0b6a73c1da892f0f98a41155a9a4998f29dcbd1c",
        "signer": "1b1374742cb5f84b1ef167db57236350380084e1"
      }
    }'
-   {"txHash":"0x554f24eeeb38bd54b64551863c6ab1878b559d390ac14ad26a4b1f3e07beaf5d", "accountId":"0xb06e9fd4baf654208e7886284cdcdab2"}
+   {"txHash":"0x87deac0a0982fcc41bc915f01c4924f27c1b1b16882d04e64d0f3e1442314fea", "accountId":"0x65c987ba099153e19942c809e2289120"}
    ```
 
    Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` is the ID of the account you created.
@@ -127,8 +127,25 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Once these steps are completed, the ownership of the TA will be transferred.
 
-For more details on API requests, refer to the documentation at:
+   For more details on API requests, refer to the documentation at:
    [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
+
+8. **Sign from Transferable Account Request to API Server**
+
+   If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
+
+   Before executing the command, make sure to set the RPC of the chain to broadcast the Tx as `WITHDRAW_TESTNET_RPC` in your `.env` file.
+
+   Specify the arguments in the following order: the accountID of the TA you are using, the ChainID to execute the Tx, the address to which you want to send the ETH, and the amount of ETH to send.
+
+   Example:
+   ```
+   $ go run scripts/utils/execute_withdraw_tx/main.go 0x439376239c54540980f027ac33e1c11a 11155111 0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3 0.0001
+   ```
+
+   Once the transfer is successful, the `txHash` will be displayed.
+
+
 
 ## Testing
 
