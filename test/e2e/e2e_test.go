@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mycel-labs/transferable-account/src/go/framework"
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
-	testutil "github.com/mycel-labs/transferable-account/test/utils"
+	"github.com/mycel-labs/astraeus/src/go/framework"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
 var (

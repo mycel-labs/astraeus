@@ -20,8 +20,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	framework "github.com/mycel-labs/transferable-account/src/go/framework"
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
+	framework "github.com/mycel-labs/astraeus/src/go/framework"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 type server struct {

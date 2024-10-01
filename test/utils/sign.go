@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 func SignTimedSignatureMessage(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {

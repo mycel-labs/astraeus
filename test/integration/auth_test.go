@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/mycel-labs/transferable-account/src/go/framework"
-	"github.com/mycel-labs/transferable-account/src/go/server"
-	testutil "github.com/mycel-labs/transferable-account/test/utils"
+	"github.com/mycel-labs/astraeus/src/go/framework"
+	"github.com/mycel-labs/astraeus/src/go/server"
+	testutil "github.com/mycel-labs/astraeus/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
