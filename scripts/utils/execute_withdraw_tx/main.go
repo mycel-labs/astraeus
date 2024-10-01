@@ -21,8 +21,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
-	testutil "github.com/mycel-labs/transferable-account/test/utils"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
 func calculateEthereumAddress(publicKeyX, publicKeyY string) (common.Address, error) {
