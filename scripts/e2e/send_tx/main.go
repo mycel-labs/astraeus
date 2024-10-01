@@ -20,8 +20,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	pb "github.com/mycel-labs/transferable-account/src/go/pb/api/v1"
-	testutil "github.com/mycel-labs/transferable-account/test/utils"
+	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
 func calculateEthereumAddress(publicKeyX, publicKeyY string) (common.Address, error) {
@@ -179,7 +179,7 @@ func main() {
 
 	// Deposit 0.001 ETH to the account
 	reader := bufio.NewReader(os.Stdin)
-  fmt.Printf("You need to depoist 0.01 + gas ETH to %s (y/n): ", accountAddress.Hex())
+	fmt.Printf("You need to depoist 0.01 + gas ETH to %s (y/n): ", accountAddress.Hex())
 	confirmation, _ := reader.ReadString('\n')
 	confirmation = strings.TrimSpace(strings.ToLower(confirmation))
 	if confirmation != "y" {
