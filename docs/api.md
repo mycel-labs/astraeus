@@ -25,8 +25,6 @@
     - [RevokeApprovalResponse](#api-v1-RevokeApprovalResponse)
     - [SignRequest](#api-v1-SignRequest)
     - [SignResponse](#api-v1-SignResponse)
-    - [TimeLock](#api-v1-TimeLock)
-    - [TimeLockResponse](#api-v1-TimeLockResponse)
     - [TimedSignature](#api-v1-TimedSignature)
     - [TransferAccountRequest](#api-v1-TransferAccountRequest)
     - [TransferAccountResponse](#api-v1-TransferAccountResponse)
@@ -370,37 +368,6 @@ Responses
 | ----- | ---- | ----- | ----------- |
 | tx_hash | [string](#string) |  |  |
 | signature | [string](#string) |  | hex encoded |
-
-
-
-
-
-
-<a name="api-v1-TimeLock"></a>
-
-### TimeLock
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock_until | [uint64](#uint64) |  |  |
-| locked_by | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="api-v1-TimeLockResponse"></a>
-
-### TimeLockResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| time_lock | [TimeLock](#api-v1-TimeLock) |  |  |
 
 
 
