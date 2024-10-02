@@ -240,7 +240,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
-    function testDeleteAccountCallback() public {
+    function testDeleteAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
@@ -253,14 +253,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, account.owner, "Owner should match before deletion");
 
-        bytes memory encodedDeleteAccountData = tas.deleteAccount(sig, accountId);
-        bytes memory deleteAccountData = decodeEncodedData(encodedDeleteAccountData);
+        tas.deleteAccount(sig, accountId);
 
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(deleteAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.deleteAccountCallback(decodedTimedSignature, decodedAccountId);
-
-        retrievedAccount = tas.getAccount(decodedAccountId);
+        retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
     }
 

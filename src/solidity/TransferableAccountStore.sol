@@ -232,28 +232,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @dev Delete an account
      * @param accountId The account ID
      */
-    function deleteAccountCallback(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
-        public
-    {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+    function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId) public {
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
         require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
-    }
-
-    /**
-     * @dev Delete an account
-     * @param accountId The account ID
-     * @return bytes The encoded callback data
-     */
-    function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId)
-        public
-        view
-        returns (bytes memory)
-    {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
-        return abi.encodePacked(this.deleteAccountCallback.selector, abi.encode(timedSignature, accountId));
     }
 
     /**
