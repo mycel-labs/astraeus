@@ -39,8 +39,7 @@ interface ITransferableAccountStore {
     // Actions
     function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
     function transferAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, address to)
-        external
-        returns (bytes memory);
+        external;
     function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
         external
         returns (bytes memory);
