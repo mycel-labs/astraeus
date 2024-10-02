@@ -42,6 +42,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     }
 
     /**
+     * Errors
+     */
+    error InvalidTimedSignature();
+
+    error OnlyOwnerCanApproveAddresses();
+
+    /**
      * Functions
      */
 
@@ -98,38 +105,20 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to approve
      */
-    function approveAddressCallback(
-        SignatureVerifier.TimedSignature calldata timedSignature,
-        Suave.DataId accountId,
-        address _address
-    ) public emitOffchainLogs onlyLocked(Utils.iToHex(abi.encodePacked(accountId))) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        require(
-            isOwner(Utils.iToHex(abi.encodePacked(accountId)), timedSignature.signer),
-            "The signer is not the owner of the account."
-        );
-        accountApprovals[accountId] = _address;
-        emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
-    }
-
-    /**
-     * @dev Approve an address for a given account
-     * @param accountId The account ID
-     * @param _address The address to approve
-     * @return bytes The encoded callback data
-     */
     function approveAddress(
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
-    ) external view onlyLocked(accountId) returns (bytes memory) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-
+    ) external onlyLocked(accountId) {
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
         Account storage account = accountsStore[accountId];
-        require(account.owner == timedSignature.signer, "Only owner can approve addresses");
-        return abi.encodePacked(
-            this.approveAddressCallback.selector, abi.encode(timedSignature, account.accountId, _address)
-        );
+        if (account.owner != timedSignature.signer) {
+            revert OnlyOwnerCanApproveAddresses();
+        }
+        accountApprovals[account.accountId] = _address;
+        emit AddressApproved(Utils.iToHex(abi.encodePacked(accountId)), _address);
     }
 
     /**
