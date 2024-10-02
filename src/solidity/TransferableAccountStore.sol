@@ -45,8 +45,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * Errors
      */
     error InvalidTimedSignature();
-
     error OnlyOwnerCanApproveAddresses();
+    error OnlyOwnerCanRevokeApproval();
 
     /**
      * Functions
@@ -126,34 +126,21 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      * @param _address The address to revoke
      */
-    function revokeApprovalCallback(
-        SignatureVerifier.TimedSignature calldata timedSignature,
-        string memory accountId,
-        address _address
-    ) public onlyLocked(accountId) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
-        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
-        Account storage account = accountsStore[accountId];
-
-        delete accountApprovals[account.accountId];
-        emit ApprovalRevoked(accountId, _address);
-    }
-
-    /**
-     * @dev Revoke an address for a given account
-     * @param accountId The account ID
-     * @param _address The address to revoke
-     */
     function revokeApproval(
         SignatureVerifier.TimedSignature calldata timedSignature,
         string memory accountId,
         address _address
-    ) public view onlyLocked(accountId) returns (bytes memory) {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+    ) public onlyLocked(accountId) {
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
+        if (!isOwner(accountId, timedSignature.signer)) {
+            revert OnlyOwnerCanRevokeApproval();
+        }
 
         Account storage account = accountsStore[accountId];
-        require(account.owner == timedSignature.signer, "Only owner can revoke addresses");
-        return abi.encodePacked(this.revokeApprovalCallback.selector, abi.encode(timedSignature, accountId, _address));
+        delete accountApprovals[account.accountId];
+        emit ApprovalRevoked(accountId, _address);
     }
 
     /**
