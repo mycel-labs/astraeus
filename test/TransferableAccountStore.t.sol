@@ -259,7 +259,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
     }
 
-    function testUnlockAccountCallback() public {
+    function testUnlockAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
@@ -272,12 +272,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
-        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
-
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+        tas.unlockAccount(sig, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
@@ -296,12 +291,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
-        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
-
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+        tas.unlockAccount(sig, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
 
