@@ -36,11 +36,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         _;
     }
 
-    modifier onlyUnlocked(string memory accountId) {
-        require(!isAccountLocked(accountId), "Account must be unlocked to perform this action");
-        _;
-    }
-
     /**
      * Errors
      */
@@ -50,6 +45,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     error OnlyOwnerCanDeleteAccount();
     error OnlyOwnerCanUnlockAccount();
     error OnlyApprovedAccount();
+    error OnlyUnlockAccount();
 
     /**
      * Functions
@@ -282,7 +278,6 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         public
         confidential
-        onlyUnlocked(Utils.iToHex(abi.encodePacked(accountId)))
         returns (bytes memory)
     {
         if (!verifyTimedSignature(timedSignature)) {
@@ -290,6 +285,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         }
         if (!isApproved(accountId, timedSignature.signer)) {
             revert OnlyApprovedAccount();
+        }
+        if (isAccountLocked(accountId)) {
+            revert OnlyUnlockAccount();
         }
 
         Account storage account = accountsStore[accountId];
