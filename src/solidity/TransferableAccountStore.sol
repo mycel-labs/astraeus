@@ -165,7 +165,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emitOffchainLogs
         returns (string memory)
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
         require(account.isLocked == true, "The account should be locked by default");
         string memory accountId = storeAccount(account);
@@ -181,7 +183,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
 
         string memory keyData = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
 
@@ -272,7 +276,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         onlyUnlocked(Utils.iToHex(abi.encodePacked(accountId)))
         returns (bytes memory)
     {
-        require(_verifyTimedSignature(timedSignature), "Invalid timedSignature");
+        if (!verifyTimedSignature(timedSignature)) {
+            revert InvalidTimedSignature();
+        }
         require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
 
         Account storage account = accountsStore[accountId];
