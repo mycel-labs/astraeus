@@ -308,6 +308,28 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
     }
+
+    function testSignWhenAccountIsLocked() public {
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(sig, account);
+
+        bool isAccountLocked = tas.isAccountLocked(accountId);
+        assertTrue(isAccountLocked, "Account should be locked immediately after creation");
+
+        require(isAccountLocked, "Account should be still locked");
+
+        bytes memory dummyData = abi.encodePacked("dummy data");
+        bytes32 hashedDummyData = keccak256(dummyData);
+
+        vm.expectRevert();
+        tas.sign(sig, accountId, abi.encodePacked(hashedDummyData));
+    }
 }
 
 library StringUtils {
