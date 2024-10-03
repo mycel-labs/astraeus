@@ -47,6 +47,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     error InvalidTimedSignature();
     error OnlyOwnerCanApproveAddresses();
     error OnlyOwnerCanRevokeApproval();
+    error OnlyOwnerCanDeleteAccount();
+    error OnlyOwnerCanUnlockAccount();
+    error OnlyApprovedAccount();
 
     /**
      * Functions
@@ -114,7 +117,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
             revert InvalidTimedSignature();
         }
         Account storage account = accountsStore[accountId];
-        if (account.owner != timedSignature.signer) {
+        if (!isOwner(accountId, timedSignature.signer)) {
             revert OnlyOwnerCanApproveAddresses();
         }
         accountApprovals[account.accountId] = _address;
@@ -223,7 +226,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         if (!verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
-        require(isApproved(accountId, timedSignature.signer), "the signer is not approved");
+        if (!isApproved(accountId, timedSignature.signer)) {
+            revert OnlyApprovedAccount();
+        }
         Account storage account = accountsStore[accountId];
         account.owner = to;
 
@@ -240,7 +245,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         if (!verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
-        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
+        if (!isOwner(accountId, timedSignature.signer)) {
+            revert OnlyOwnerCanDeleteAccount();
+        }
         delete accountsStore[accountId];
         emit AccountDeleted(accountId);
     }
@@ -256,7 +263,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         if (!verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
-        require(isOwner(accountId, timedSignature.signer), "The signer is not the owner of the account.");
+        if (!isOwner(accountId, timedSignature.signer)) {
+            revert OnlyOwnerCanUnlockAccount();
+        }
         Account storage account = accountsStore[accountId];
         account.isLocked = false;
         emit AccountUnlocked(accountId);
@@ -279,7 +288,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         if (!verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
-        require(isApproved(accountId, timedSignature.signer), "The signer is not approved");
+        if (!isApproved(accountId, timedSignature.signer)) {
+            revert OnlyApprovedAccount();
+        }
 
         Account storage account = accountsStore[accountId];
         require(account.owner != address(0), "Account does not exist");
