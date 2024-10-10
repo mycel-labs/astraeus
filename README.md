@@ -60,13 +60,22 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Generate signatures for both of your accounts.
    ```
-   go run scripts/utils/generate_timed_signature/main.go 1759244400(validFor) 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94(your_private_key)
+   go run scripts/utils/generate_timed_signature/main.go <validFor:1759244400> <your_private_key>
+   ```
+   
+   input example:
+   ```
+    go run scripts/utils/generate_timed_signature/main.go 1759244400 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94
+   ```
+   
+   output example:
+   ```
    Address: 1b1374742cb5f84b1ef167db57236350380084e1
    Message Hash: 2f9cc010a830e69220428772a000f8c057229d5c8e668ec86d5d74cf07cffcd2
    Signature: 31f8e01e19bfb2bf66f01e34006eef1ac9a3384a71832779e768b80c7a5f1b3c6db26a20a99abce0d612046e4e0b6a73c1da892f0f98a41155a9a4998f29dcbd1c
    ```
 
-5. **Create Account Request to API Server**
+6. **Create Account Request to API Server**
 
    Execute the request to create a TA. Use the output from step 4 in the `proof` section:
    ```
@@ -83,7 +92,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` is the ID of the account you created.
 
-6. **Approve Address Request to API Server**
+7. **Approve Address Request to API Server**
 
    Approve the transfer of TA ownership from the current account to another account.
 
@@ -105,7 +114,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Once the `txHash` is displayed, the account approval is complete.
 
-7. **Transfer Account Request to API Server**
+8. **Transfer Account Request to API Server**
 
    Execute the transfer of TA ownership. This can be done by either the current TA owner or the approved account.
    In this example, the transfer is executed with the signature of the TA creator, but you can also create and execute the request with the signature of the recipient.
@@ -130,7 +139,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
    For more details on API requests, refer to the documentation at:
    [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
 
-8. **Sign from Transferable Account Request to API Server**
+9. **Sign from Transferable Account Request to API Server**
 
    If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
 
