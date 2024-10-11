@@ -119,16 +119,21 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testApproveAddress() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory decodedAccount) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        string memory accountId = tas.createAccountCallback(sig, decodedAccount);
-        tas.approveAddress(sig, accountId, bob);
+        SignatureVerifier.TimedSignature memory sig_1 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 1);
+        tas.approveAddress(sig_1, accountId, bob);
 
         address approvedAddress = tas.accountApprovals(decodedAccount.accountId);
         assertEq(bob, approvedAddress, "Approved account address should match");
