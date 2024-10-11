@@ -41,30 +41,21 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         return signature;
     }
 
-    function setupTransferableAccountStore(uint64 validFor, address user, uint256 privateKey)
-        internal
-        returns (TransferableAccountStore, SignatureVerifier.TimedSignature memory)
-    {
-        vm.prank(user);
-        TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig = generateTimedSignature(validFor, user, privateKey);
-        return (tas, sig);
-    }
-
     function testVerifyTimedSignature() public {
-        vm.warp(1000);
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
 
-        bool isValid = tas.verifyTimedSignature(sig);
+        vm.warp(1000);
+        bool isValid = tas._verifyTimedSignature(sig_0);
         assertTrue(isValid, "Valid signature should be accepted");
 
         vm.warp(uint64(block.timestamp + 86401));
-        isValid = tas.verifyTimedSignature(sig);
+        isValid = tas._verifyTimedSignature(sig_0);
         assertFalse(isValid, "Expired signature should be rejected");
 
-        sig.signature[0] ^= 0xFF;
-        isValid = tas.verifyTimedSignature(sig);
+        sig_0.signature[0] ^= 0xFF;
+        isValid = tas._verifyTimedSignature(sig_0);
         assertFalse(isValid, "Invalid signature should be rejected");
     }
 
