@@ -314,19 +314,24 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testSign() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
-        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(sig, account);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        tas.unlockAccount(sig, accountId);
+        SignatureVerifier.TimedSignature memory sig_1 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 1);
+        tas.unlockAccount(sig_1, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
 
@@ -335,7 +340,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
         require(!isAccountLocked, "Account is still locked");
 
-        bytes memory encodedSignData = tas.sign(sig, accountId, abi.encodePacked(hashedDummyData));
+        SignatureVerifier.TimedSignature memory sig_2 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 2);
+        bytes memory encodedSignData = tas.sign(sig_2, accountId, abi.encodePacked(hashedDummyData));
         bytes4 selector;
         assembly {
             selector := mload(add(encodedSignData, 32))
