@@ -356,4 +356,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     function generatePublicKey(uint256 privKey) private pure returns (uint256, uint256) {
         return EllipticCurve.ecMul(privKey, GX, GY, AA, PP);
     }
+
+    /**
+     * @dev Get the nonce for a given address
+     * @param _address The address to get the nonce for
+     * @return uint64 The nonce associated with the address
+     */
+    function getNonce(address _address) public view returns (uint64) {
+        return nonces[_address];
+    }
 }
