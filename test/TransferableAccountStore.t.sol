@@ -17,12 +17,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     address public alice = vm.addr(alicePrivateKey);
     address public bob = vm.addr(bobPrivateKey);
 
-    function generateTimedSignature(uint64 validFor, address signer, uint256 privateKey)
+    function generateTimedSignature(uint64 validFor, address signer, uint256 privateKey, uint64 nonce)
         internal
         pure
         returns (SignatureVerifier.TimedSignature memory)
     {
-        bytes32 messageHash = SignatureVerifier.hashMessage(validFor, signer);
+        bytes32 messageHash = SignatureVerifier.hashMessage(validFor, signer, nonce);
         bytes32 mycelSignedMessageHash = keccak256(abi.encodePacked("\x19Mycel Signed Message:\n32", messageHash));
         bytes memory signature = signMessage(mycelSignedMessageHash, privateKey);
 
@@ -30,7 +30,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             validFor: validFor,
             messageHash: messageHash,
             signature: signature,
-            signer: signer
+            signer: signer,
+            nonce: nonce
         });
     }
 
