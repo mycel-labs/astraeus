@@ -290,19 +290,24 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testUnlockAccount() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
-        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(sig, account);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        tas.unlockAccount(sig, accountId);
+        SignatureVerifier.TimedSignature memory sig_1 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 1);
+        tas.unlockAccount(sig_1, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
