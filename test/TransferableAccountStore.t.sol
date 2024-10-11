@@ -352,14 +352,17 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testSignWhenAccountIsLocked() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
-        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(sig, account);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
@@ -370,7 +373,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bytes32 hashedDummyData = keccak256(dummyData);
 
         vm.expectRevert();
-        tas.sign(sig, accountId, abi.encodePacked(hashedDummyData));
+        SignatureVerifier.TimedSignature memory sig_1 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 1);
+        tas.sign(sig_1, accountId, abi.encodePacked(hashedDummyData));
     }
 }
 
