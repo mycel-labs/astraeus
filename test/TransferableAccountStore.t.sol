@@ -140,21 +140,26 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testTransferAccount() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory aliceSig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory aliceSig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        string memory accountId = tas.createAccountCallback(aliceSig, account);
-        tas.approveAddress(aliceSig, accountId, bob);
+        SignatureVerifier.TimedSignature memory aliceSig_1 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 1);
+        tas.approveAddress(aliceSig_1, accountId, bob);
 
-        SignatureVerifier.TimedSignature memory bobSig =
-            generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
+        SignatureVerifier.TimedSignature memory bobSig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey, 0);
 
-        tas.transferAccount(bobSig, accountId, bob);
+        tas.transferAccount(bobSig_0, accountId, bob);
 
         (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(accountId);
 
