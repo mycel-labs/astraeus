@@ -69,9 +69,11 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testCreateAccount() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedData = tas.createAccount(sig);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+
+        bytes memory encodedData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedData);
 
         (
@@ -79,8 +81,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             ITransferableAccountStore.Account memory decodedAccount
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
-        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
-        assertEq(decodedAccount.owner, sig.signer, "Owner should be alice");
+        assertEq(decodedTimedSignature.signature, sig_0.signature, "Signature should be same");
+        assertEq(decodedAccount.owner, sig_0.signer, "Owner should be alice");
         assertTrue(decodedAccount.isLocked, "Account should be locked");
     }
 
