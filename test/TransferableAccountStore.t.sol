@@ -215,23 +215,26 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     }
 
     function testGetAccount() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory sig_0 =
+            generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, 0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-        string memory accountId = tas.createAccountCallback(sig, account);
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         bytes16 retrievedAccountIdBytes = Suave.DataId.unwrap(retrievedAccount.accountId);
 
         assertEq(StringUtils.bytes16ToString(retrievedAccountIdBytes), accountId, "Account ID should match");
-        assertEq(retrievedAccount.owner, account.owner, "Owner should match");
-        assertEq(retrievedAccount.publicKeyX, account.publicKeyX, "Public Key X should match");
-        assertEq(retrievedAccount.publicKeyY, account.publicKeyY, "Public Key Y should match");
-        assertEq(uint256(retrievedAccount.curve), uint256(account.curve), "Curve should match");
+        assertEq(retrievedAccount.owner, decodedAccount.owner, "Owner should match");
+        assertEq(retrievedAccount.publicKeyX, decodedAccount.publicKeyX, "Public Key X should match");
+        assertEq(retrievedAccount.publicKeyY, decodedAccount.publicKeyY, "Public Key Y should match");
+        assertEq(uint256(retrievedAccount.curve), uint256(decodedAccount.curve), "Curve should match");
     }
 
     function testRevokeApproval() public {
