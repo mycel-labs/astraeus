@@ -27,6 +27,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
 
     mapping(string => Account) public accountsStore;
     mapping(Suave.DataId => address) public accountApprovals;
+    mapping(address => uint64) public nonces;
 
     /**
      * Modifiers
@@ -182,7 +183,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        if (!verifyTimedSignature(timedSignature)) {
+        if (!_verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
 
@@ -307,12 +308,13 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param timedSignature The timedSignature to verify
      * @return bool Whether the timedSignature is valid
      */
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
-        public
-        view
-        returns (bool)
-    {
-        return _verifyTimedSignature(timedSignature);
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bool) {
+        require(timedSignature.nonce == nonces[timedSignature.signer], "Invalid nonce");
+        bool isValid = _verifyTimedSignature(timedSignature);
+        if (isValid) {
+            nonces[timedSignature.signer]++;
+        }
+        return isValid;
     }
 
     /**
@@ -321,12 +323,16 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @return bool Whether the timedSignature is valid
      */
     function _verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
-        private
+        public
         view
         returns (bool)
     {
         return SignatureVerifier.verifyTimedSignature(
-            timedSignature.validFor, timedSignature.messageHash, timedSignature.signature, timedSignature.signer
+            timedSignature.validFor,
+            timedSignature.messageHash,
+            timedSignature.signature,
+            timedSignature.signer,
+            timedSignature.nonce
         );
     }
 
