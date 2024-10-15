@@ -15,9 +15,9 @@ interface ITransferableAccountStore {
     }
 
     enum SignatureAlgorithm {
-        CURVE_UNKNOWN,
-        ECDSA,
-        EDDSA
+        SignatureAlgorithm_UNSPECIFIED,
+        SignatureAlgorithm_ECDSA,
+        SignatureAlgorithm_EDDSA
     }
 
     // Events
