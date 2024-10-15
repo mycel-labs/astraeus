@@ -26,6 +26,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         keccak256("RevokeApproval(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
     bytes32 DELETE_ACCOUNT_FUNCTION_HASH =
         keccak256("DeleteAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
+    bytes32 UNLOCK_ACCOUNT_FUNCTION_HASH =
+        keccak256("UnlockAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
 
     function generateTimedSignature(
         uint64 validFor,
@@ -323,11 +325,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testUnlockAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 APPROVE_ADDRESS_TYPEHASH = keccak256(
-            "ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)"
-        );
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
         bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
@@ -342,7 +341,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
         SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), UNLOCK_ACCOUNT_FUNCTION_HASH
         );
         tas.unlockAccount(sig_1, accountId);
 
