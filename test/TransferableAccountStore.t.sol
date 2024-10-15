@@ -264,11 +264,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testRevokeApproval() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 APPROVE_ADDRESS_TYPEHASH = keccak256(
-            "ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)"
-        );
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
         bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
@@ -280,7 +277,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
         );
         tas.approveAddress(sig_1, accountId, bob);
 
@@ -288,7 +285,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertTrue(isApproved, "Address should be approved");
 
         SignatureVerifier.TimedSignature memory sig_2 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), REVOKE_APPROVAL_FUNCTION_HASH
         );
         tas.revokeApproval(sig_2, accountId, bob);
 
