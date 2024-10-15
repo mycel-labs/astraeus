@@ -47,15 +47,15 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             generateTimedSignature(uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice));
 
         vm.warp(1000);
-        bool isValid = tas._verifyTimedSignature(sig_0);
+        bool isValid = tas.verifyTimedSignature(sig_0);
         assertTrue(isValid, "Valid signature should be accepted");
 
         vm.warp(uint64(block.timestamp + 86401));
-        isValid = tas._verifyTimedSignature(sig_0);
+        isValid = tas.verifyTimedSignature(sig_0);
         assertFalse(isValid, "Expired signature should be rejected");
 
         sig_0.signature[0] ^= 0xFF;
-        isValid = tas._verifyTimedSignature(sig_0);
+        isValid = tas.verifyTimedSignature(sig_0);
         assertFalse(isValid, "Invalid signature should be rejected");
     }
 

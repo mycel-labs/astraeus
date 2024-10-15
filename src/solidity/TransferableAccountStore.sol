@@ -110,7 +110,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) external onlyLocked(accountId) {
-        if (!verifyTimedSignature(timedSignature)) {
+        if (!consumeNonce(timedSignature)) {
             revert InvalidTimedSignature();
         }
         Account storage account = accountsStore[accountId];
@@ -131,7 +131,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) public onlyLocked(accountId) {
-        if (!verifyTimedSignature(timedSignature)) {
+        if (!consumeNonce(timedSignature)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -165,7 +165,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emitOffchainLogs
         returns (string memory)
     {
-        if (!verifyTimedSignature(timedSignature)) {
+        if (!consumeNonce(timedSignature)) {
             revert InvalidTimedSignature();
         }
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
@@ -183,7 +183,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        if (!_verifyTimedSignature(timedSignature)) {
+        if (!verifyTimedSignature(timedSignature)) {
             revert InvalidTimedSignature();
         }
 
@@ -308,9 +308,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param timedSignature The timedSignature to verify
      * @return bool Whether the timedSignature is valid
      */
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bool) {
+    function consumeNonce(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bool) {
         require(timedSignature.nonce == nonces[timedSignature.signer], "Invalid nonce");
-        bool isValid = _verifyTimedSignature(timedSignature);
+        bool isValid = verifyTimedSignature(timedSignature);
         if (isValid) {
             nonces[timedSignature.signer]++;
         }
@@ -322,7 +322,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param timedSignature The timedSignature to verify
      * @return bool Whether the timedSignature is valid
      */
-    function _verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
         public
         view
         returns (bool)
