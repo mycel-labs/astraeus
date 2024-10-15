@@ -47,11 +47,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     function testVerifyTimedSignature() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         bytes32 VERIFY_TIMEDSIGNATRE = keccak256("test timedSignature");
-        console.logBytes32(VERIFY_TIMEDSIGNATRE);
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
             uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), VERIFY_TIMEDSIGNATRE
         );
-        console.logBytes32(sig_0.targetFunctionHash);
 
         vm.warp(1000);
         bool isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATRE);
@@ -77,11 +75,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 APPROVE_ADDRESS_TYPEHASH = keccak256(
-            "ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)"
-        );
+        bytes32 CREATE_ACCOUNT_FUNCTION_HASH =
+            keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
 
         bytes memory encodedData = tas.createAccount(sig_0);
@@ -99,11 +96,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 APPROVE_ADDRESS_TYPEHASH = keccak256(
-            "ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)"
-        );
+        bytes32 CREATE_ACCOUNT_FUNCTION_HASH =
+            keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
         bytes memory encodedData = tas.createAccount(sig_0);
         bytes memory accountData = decodeEncodedData(encodedData);

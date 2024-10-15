@@ -169,9 +169,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emitOffchainLogs
         returns (string memory)
     {
-        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
-        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
+        // keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
+        bytes32 CREATE_ACCOUNT_FUNCTION_HASH = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
+        if (!consumeNonce(timedSignature, CREATE_ACCOUNT_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
@@ -189,9 +189,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
-        if (!verifyTimedSignature(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
+        // keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
+        bytes32 CREATE_ACCOUNT_FUNCTION_HASH = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
+        if (!verifyTimedSignature(timedSignature, CREATE_ACCOUNT_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
 
