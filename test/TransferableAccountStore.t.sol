@@ -20,6 +20,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
     bytes32 CREATE_ACCOUNT_FUNCTION_HASH = keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
     bytes32 APPROVE_ADDRESS_FUNCTION_HASH =
         keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+    bytes32 TRANSFER_ACCOUNT_FUNCTION_HASH =
+        keccak256("TransferAccount(SignatureVerifier.TimedSignature timedSignature,string accountId,address to)");
 
     function generateTimedSignature(
         uint64 validFor,
@@ -154,11 +156,8 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testTransferAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 APPROVE_ADDRESS_TYPEHASH = keccak256(
-            "ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)"
-        );
         SignatureVerifier.TimedSignature memory aliceSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
         bytes memory encodedCreateAccountData = tas.createAccount(aliceSig_0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
@@ -170,12 +169,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
         SignatureVerifier.TimedSignature memory aliceSig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
         );
         tas.approveAddress(aliceSig_1, accountId, bob);
 
         SignatureVerifier.TimedSignature memory bobSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), APPROVE_ADDRESS_TYPEHASH
+            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
         );
 
         tas.transferAccount(bobSig_0, accountId, bob);

@@ -228,8 +228,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address to
     ) public onlyLocked(accountId) {
-        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        // keccak256("TransferAccount(SignatureVerifier.TimedSignature timedSignature,string accountId,address to)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x29535a955f68dc291a88a89b6112c958d2edce1684117ccd6b54ca173656f65f;
         if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
