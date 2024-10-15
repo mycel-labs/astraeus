@@ -110,7 +110,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) external onlyLocked(accountId) {
-        if (!consumeNonce(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         Account storage account = accountsStore[accountId];
@@ -131,7 +133,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address _address
     ) public onlyLocked(accountId) {
-        if (!consumeNonce(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -165,7 +169,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         emitOffchainLogs
         returns (string memory)
     {
-        if (!consumeNonce(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
@@ -183,7 +189,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        if (!verifyTimedSignature(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!verifyTimedSignature(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
 
@@ -220,7 +228,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         string memory accountId,
         address to
     ) public onlyLocked(accountId) {
-        if (!verifyTimedSignature(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isApproved(accountId, timedSignature.signer)) {
@@ -239,7 +249,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId) public {
-        if (!verifyTimedSignature(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -257,7 +269,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         public
         onlyLocked(accountId)
     {
-        if (!verifyTimedSignature(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -281,7 +295,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        if (!verifyTimedSignature(timedSignature)) {
+        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
+        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!verifyTimedSignature(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isApproved(accountId, timedSignature.signer)) {
@@ -308,9 +324,12 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param timedSignature The timedSignature to verify
      * @return bool Whether the timedSignature is valid
      */
-    function consumeNonce(SignatureVerifier.TimedSignature calldata timedSignature) public returns (bool) {
+    function consumeNonce(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
+        public
+        returns (bool)
+    {
         require(timedSignature.nonce == nonces[timedSignature.signer], "Invalid nonce");
-        bool isValid = verifyTimedSignature(timedSignature);
+        bool isValid = verifyTimedSignature(timedSignature, targetFunctionHash);
         if (isValid) {
             nonces[timedSignature.signer]++;
         }
@@ -322,17 +341,19 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param timedSignature The timedSignature to verify
      * @return bool Whether the timedSignature is valid
      */
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature)
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
         public
         view
         returns (bool)
     {
+        require(timedSignature.targetFunctionHash == targetFunctionHash, "Invalid targetFunctionHash");
         return SignatureVerifier.verifyTimedSignature(
             timedSignature.validFor,
             timedSignature.messageHash,
             timedSignature.signature,
             timedSignature.signer,
-            timedSignature.nonce
+            nonces[timedSignature.signer],
+            targetFunctionHash
         );
     }
 
