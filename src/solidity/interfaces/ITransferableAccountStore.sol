@@ -10,11 +10,11 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        Curve curve;
+        SignatureAlgorithm signatureAlgorithm;
         bool isLocked;
     }
 
-    enum Curve {
+    enum SignatureAlgorithm {
         CURVE_UNKNOWN,
         ECDSA,
         EDDSA

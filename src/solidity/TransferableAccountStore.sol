@@ -223,7 +223,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
             owner: timedSignature.signer,
             publicKeyX: x,
             publicKeyY: y,
-            curve: Curve.ECDSA,
+            signatureAlgorithm: SignatureAlgorithm.ECDSA,
             isLocked: true
         });
 

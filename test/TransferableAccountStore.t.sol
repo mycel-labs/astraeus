@@ -109,7 +109,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             address storedOwner,
             uint256 storedPublicKeyX,
             uint256 storedPublicKeyY,
-            ITransferableAccountStore.Curve storedCurve,
+            ITransferableAccountStore.SignatureAlgorithm signatureAlgorithm,
             bool isLocked
         ) = tas.accountsStore(accountId);
         bytes16 storedAccountIdBytes = Suave.DataId.unwrap(storedAccountId);
@@ -119,7 +119,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(storedOwner, decodedAccount.owner, "Stored account owner should match");
         assertEq(storedPublicKeyX, decodedAccount.publicKeyX, "Stored account public key X should match");
         assertEq(storedPublicKeyY, decodedAccount.publicKeyY, "Stored account public key Y should match");
-        assertEq(uint256(storedCurve), uint256(decodedAccount.curve), "Stored account curve should match");
+        assertEq(
+            uint256(signatureAlgorithm), uint256(decodedAccount.signatureAlgorithm), "Stored account curve should match"
+        );
         assertTrue(isLocked, "Stored account shouold be locked");
     }
 
@@ -306,7 +308,9 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(retrievedAccount.owner, account.owner, "Owner should match");
         assertEq(retrievedAccount.publicKeyX, account.publicKeyX, "Public Key X should match");
         assertEq(retrievedAccount.publicKeyY, account.publicKeyY, "Public Key Y should match");
-        assertEq(uint256(retrievedAccount.curve), uint256(account.curve), "Curve should match");
+        assertEq(
+            uint256(retrievedAccount.signatureAlgorithm), uint256(account.signatureAlgorithm), "Curve should match"
+        );
     }
 
     function testRevokeApproval() public {
