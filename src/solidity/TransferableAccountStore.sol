@@ -295,9 +295,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         confidential
         returns (bytes memory)
     {
-        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
-        if (!verifyTimedSignature(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
+        // keccak256("Sign(SignatureVerifier.TimedSignature timedSignature,string accountId,bytes data)");
+        bytes32 SIGN_FUNCTION_HASH = 0xd34780a58dd276dd414ea2abde077f3492ca5422926cdcadf8def7a93f12e993;
+        if (!verifyTimedSignature(timedSignature, SIGN_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isApproved(accountId, timedSignature.signer)) {
