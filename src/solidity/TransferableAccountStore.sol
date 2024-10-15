@@ -249,9 +249,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      * @param accountId The account ID
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId) public {
-        // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
-        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
+        // keccak256("DeleteAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
+        bytes32 DELETE_ACCOUNT_FUNCTION_HASH = 0x31819315e31d5175ae85114dd27816114c585abc7f9d53ef5ca9bf3c4f2db038;
+        if (!consumeNonce(timedSignature, DELETE_ACCOUNT_FUNCTION_HASH)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
