@@ -355,12 +355,12 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	}
 
 	ac, ok := result[0].(struct {
-		AccountId  [16]uint8      `json:"accountId"`
-		Owner      common.Address `json:"owner"`
-		PublicKeyX *big.Int       `json:"publicKeyX"`
-		PublicKeyY *big.Int       `json:"publicKeyY"`
-		Curve      uint8          `json:"curve"`
-		IsLocked   bool           `json:"isLocked"`
+		AccountId          [16]uint8      `json:"accountId"`
+		Owner              common.Address `json:"owner"`
+		PublicKeyX         *big.Int       `json:"publicKeyX"`
+		PublicKeyY         *big.Int       `json:"publicKeyY"`
+		SignatureAlgorithm uint8          `json:"signatureAlgorithm"`
+		IsLocked           bool           `json:"isLocked"`
 	})
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "account data type is invalid or unexpected")
@@ -372,12 +372,12 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	}
 
 	pbac := &pb.Account{
-		AccountId:  req.AccountId,
-		Owner:      ac.Owner.Hex(),
-		PublicKeyX: ac.PublicKeyX.Text(16),
-		PublicKeyY: ac.PublicKeyY.Text(16),
-		Curve:      pb.Curve(ac.Curve),
-		IsLocked:   ac.IsLocked,
+		AccountId:          req.AccountId,
+		Owner:              ac.Owner.Hex(),
+		PublicKeyX:         ac.PublicKeyX.Text(16),
+		PublicKeyY:         ac.PublicKeyY.Text(16),
+		SignatureAlgorithm: pb.SignatureAlgorithm(ac.SignatureAlgorithm),
+		IsLocked:           ac.IsLocked,
 	}
 
 	return &pb.GetAccountResponse{Account: pbac}, nil
