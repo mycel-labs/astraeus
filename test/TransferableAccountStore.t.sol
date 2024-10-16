@@ -133,44 +133,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(sig, decodedAccount);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
+        tas.approveAddress(sig, accountId, bob);
 
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            bytes16 decodedAccountId,
-            address decodedAddress
-        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-
-        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
-        assertEq(StringUtils.bytes16ToString(decodedAccountId), accountId, "Approved account ID should match");
-        assertEq(decodedAddress, bob, "Approved account address should match");
-    }
-
-    function testApproveAddressCallback() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
-        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
-
-        (, ITransferableAccountStore.Account memory decodedAccount) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-
-        string memory accountId = tas.createAccountCallback(sig, decodedAccount);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            bytes16 decodedAccountId,
-            address decodedAddress
-        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(decodedTimedSignature, Suave.DataId.wrap(decodedAccountId), decodedAddress);
-
-        assertEq(decodedAddress, bob, "Approved account address should match");
-
-        address approvedAddress = tas.accountApprovals(Suave.DataId.wrap(decodedAccountId));
-        assertEq(approvedAddress, decodedAddress, "Approved account address should match");
+        address approvedAddress = tas.accountApprovals(decodedAccount.accountId);
+        assertEq(bob, approvedAddress, "Approved account address should match");
     }
 
     function testTransferAccount() public {
@@ -183,62 +149,14 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(aliceSig, account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (, bytes16 decodedAccountId, address decodedAddress) =
-            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddress(aliceSig, accountId, bob);
 
         SignatureVerifier.TimedSignature memory bobSig =
             generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
 
-        bytes memory encodedTransferAccountData = tas.transferAccount(bobSig, accountId, bob);
-        bytes memory transferAccountData = decodeEncodedData(encodedTransferAccountData);
+        tas.transferAccount(bobSig, accountId, bob);
 
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            string memory decodedTransferdAccountId,
-            address decodedToAddress
-        ) = abi.decode(transferAccountData, (SignatureVerifier.TimedSignature, string, address));
-
-        assertEq(decodedTimedSignature.signature, bobSig.signature, "Signature should be same");
-        assertEq(decodedTransferdAccountId, accountId, "Approved account ID should match");
-        assertEq(decodedToAddress, bob, "Approved account address should match");
-    }
-
-    function testTransferAccountCallback() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory aliceSig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig);
-        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
-
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-
-        string memory accountId = tas.createAccountCallback(aliceSig, account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(aliceSig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (, bytes16 decodedAccountId, address decodedAddress) =
-            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(aliceSig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
-
-        SignatureVerifier.TimedSignature memory bobSig =
-            generateTimedSignature(uint64(block.timestamp + 86400), bob, bobPrivateKey);
-
-        bytes memory encodedTransferAccountData = tas.transferAccount(bobSig, accountId, bob);
-        bytes memory transferAccountData = decodeEncodedData(encodedTransferAccountData);
-
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            string memory decodedTransferdAccountId,
-            address decodedToAddress
-        ) = abi.decode(transferAccountData, (SignatureVerifier.TimedSignature, string, address));
-
-        tas.transferAccountCallback(decodedTimedSignature, decodedTransferdAccountId, decodedToAddress);
-
-        (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(decodedTransferdAccountId);
+        (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(accountId);
 
         assertEq(newOwner, bob, "Stored account owner should match");
         assertTrue(isAccountLocked, "Transfered account should be locked");
@@ -254,20 +172,12 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(sig, account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            bytes16 decodedAccountId,
-            address decodedAddress
-        ) = abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(decodedTimedSignature, Suave.DataId.wrap(decodedAccountId), decodedAddress);
+        tas.approveAddress(sig, accountId, bob);
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        tas.revokeApprovalCallback(sig, accountId, bob);
+        tas.revokeApproval(sig, accountId, bob);
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
@@ -319,63 +229,18 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
         string memory accountId = tas.createAccountCallback(sig, account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (, bytes16 decodedAccountId, address decodedAddress) =
-            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
-
-        bytes memory encodedRevokeApprovalData = tas.revokeApproval(sig, accountId, bob);
-        bytes memory revokeApprovalData = decodeEncodedData(encodedRevokeApprovalData);
-
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            string memory decodedRevokeAccountId,
-            address decodedRevokeAddress
-        ) = abi.decode(revokeApprovalData, (SignatureVerifier.TimedSignature, string, address));
-
-        assertEq(decodedTimedSignature.signature, sig.signature, "Signature should be same");
-        assertEq(decodedRevokeAccountId, accountId, "Approved account ID should match");
-        assertEq(decodedRevokeAddress, bob, "Approved account address should match");
-    }
-
-    function testRevokeApprovalCallback() public {
-        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
-            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
-        bytes memory encodedCreateAccountData = tas.createAccount(sig);
-        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
-
-        (, ITransferableAccountStore.Account memory account) =
-            abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
-
-        string memory accountId = tas.createAccountCallback(sig, account);
-        bytes memory encodedApproveAddressData = tas.approveAddress(sig, accountId, bob);
-        bytes memory approveAddressData = decodeEncodedData(encodedApproveAddressData);
-
-        (, bytes16 decodedAccountId, address decodedAddress) =
-            abi.decode(approveAddressData, (SignatureVerifier.TimedSignature, bytes16, address));
-        tas.approveAddressCallback(sig, Suave.DataId.wrap(decodedAccountId), decodedAddress);
-
-        bytes memory encodedRevokeApprovalData = tas.revokeApproval(sig, accountId, bob);
-        bytes memory revokeApprovalData = decodeEncodedData(encodedRevokeApprovalData);
-
-        (
-            SignatureVerifier.TimedSignature memory decodedTimedSignature,
-            string memory decodedRevokeAccountId,
-            address decodedRevokeAddress
-        ) = abi.decode(revokeApprovalData, (SignatureVerifier.TimedSignature, string, address));
+        tas.approveAddress(sig, accountId, bob);
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        tas.revokeApprovalCallback(decodedTimedSignature, decodedRevokeAccountId, decodedRevokeAddress);
+        tas.revokeApproval(sig, accountId, bob);
 
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
-    function testDeleteAccountCallback() public {
+    function testDeleteAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
@@ -388,18 +253,13 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, account.owner, "Owner should match before deletion");
 
-        bytes memory encodedDeleteAccountData = tas.deleteAccount(sig, accountId);
-        bytes memory deleteAccountData = decodeEncodedData(encodedDeleteAccountData);
+        tas.deleteAccount(sig, accountId);
 
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(deleteAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.deleteAccountCallback(decodedTimedSignature, decodedAccountId);
-
-        retrievedAccount = tas.getAccount(decodedAccountId);
+        retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
     }
 
-    function testUnlockAccountCallback() public {
+    function testUnlockAccount() public {
         (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
             setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
         bytes memory encodedCreateAccountData = tas.createAccount(sig);
@@ -412,12 +272,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
-        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
-
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+        tas.unlockAccount(sig, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
@@ -436,12 +291,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        bytes memory encodedUnlockAccountData = tas.unlockAccount(sig, accountId);
-        bytes memory unlockAccountData = decodeEncodedData(encodedUnlockAccountData);
-
-        (SignatureVerifier.TimedSignature memory decodedTimedSignature, string memory decodedAccountId) =
-            abi.decode(unlockAccountData, (SignatureVerifier.TimedSignature, string));
-        tas.unlockAccountCallback(decodedTimedSignature, decodedAccountId);
+        tas.unlockAccount(sig, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
 
@@ -457,6 +307,28 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         }
 
         assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
+    }
+
+    function testSignWhenAccountIsLocked() public {
+        (TransferableAccountStore tas, SignatureVerifier.TimedSignature memory sig) =
+            setupTransferableAccountStore(uint64(block.timestamp + 86400), alice, alicePrivateKey);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig);
+        bytes memory createdAccountData = decodeEncodedData(encodedCreateAccountData);
+
+        (, ITransferableAccountStore.Account memory account) =
+            abi.decode(createdAccountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(sig, account);
+
+        bool isAccountLocked = tas.isAccountLocked(accountId);
+        assertTrue(isAccountLocked, "Account should be locked immediately after creation");
+
+        require(isAccountLocked, "Account should be still locked");
+
+        bytes memory dummyData = abi.encodePacked("dummy data");
+        bytes32 hashedDummyData = keccak256(dummyData);
+
+        vm.expectRevert();
+        tas.sign(sig, accountId, abi.encodePacked(hashedDummyData));
     }
 }
 
