@@ -31,7 +31,7 @@
     - [UnlockAccountRequest](#api-v1-UnlockAccountRequest)
     - [UnlockAccountResponse](#api-v1-UnlockAccountResponse)
   
-    - [Curve](#api-v1-Curve)
+    - [SignatureAlgorithm](#api-v1-SignatureAlgorithm)
   
     - [AccountService](#api-v1-AccountService)
   
@@ -58,7 +58,7 @@ Structs
 | owner | [string](#string) |  |  |
 | public_key_x | [string](#string) |  |  |
 | public_key_y | [string](#string) |  |  |
-| curve | [Curve](#api-v1-Curve) |  |  |
+| signature_algorithm | [SignatureAlgorithm](#api-v1-SignatureAlgorithm) |  |  |
 | is_locked | [bool](#bool) |  |  |
 
 
@@ -455,16 +455,16 @@ Requests
  
 
 
-<a name="api-v1-Curve"></a>
+<a name="api-v1-SignatureAlgorithm"></a>
 
-### Curve
+### SignatureAlgorithm
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| CURVE_UNSPECIFIED | 0 |  |
-| CURVE_ECDSA | 1 |  |
-| CURVE_EDDSA | 2 |  |
+| SignatureAlgorithm_UNSPECIFIED | 0 |  |
+| SignatureAlgorithm_ECDSA | 1 |  |
+| SignatureAlgorithm_EDDSA | 2 |  |
 
 
  
