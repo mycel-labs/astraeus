@@ -272,31 +272,23 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		result = s.taStoreContract.SendConfidentialRequest("revokeApproval", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.Address)}, nil)
-	}()
+	tx, err := s.taStoreContractBind.RevokeApproval(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.Address))
+	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
 
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, fmt.Errorf("failed to revoke approval")
-	}
-
-	return &pb.RevokeApprovalResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.RevokeApprovalResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
