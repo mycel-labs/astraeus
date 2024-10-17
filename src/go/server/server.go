@@ -229,31 +229,18 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		result = s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.Address)}, nil)
-	}()
-
+	tx, err := s.taStoreContractBind.ApproveAddress(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.Address))
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, fmt.Errorf("failed to approve address")
-	}
-
-	return &pb.ApproveAddressResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.ApproveAddressResponse{TxHash: tx.Hash().Hex()}, nil
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {

@@ -454,9 +454,7 @@ func TestUnlockAccount(t *testing.T) {
 
 func TestApproveAddress(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	account := createAccount(t, privateKey)
 	newApprovedAddress := "0x1234567890123456789012345678901234567890"
 	sig := newPbTimedSignature(t, privateKey)
