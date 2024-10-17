@@ -270,7 +270,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(
             uint256(retrievedAccount.signatureAlgorithm),
             uint256(decodedAccount.signatureAlgorithm),
-            "Curve should match"
+            "signatureAlgorithm should match"
         );
     }
 
