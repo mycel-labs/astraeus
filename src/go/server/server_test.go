@@ -96,16 +96,6 @@ func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 	}
 }
 
-func newTasTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
-	_sig := newTimedSignature(t, privateKey)
-	return &tas.SignatureVerifierTimedSignature{
-		ValidFor:    _sig.ValidFor,
-		MessageHash: _sig.MessageHash,
-		Signature:   _sig.Signature,
-		Signer:      _sig.Signer,
-	}
-}
-
 func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSignature {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
@@ -120,19 +110,18 @@ func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSi
 	}
 }
 
-func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *TimedSignature {
+func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
 	if err != nil {
 		t.Fatalf("failed to generate timed signature: %v", err)
 	}
-	sig := &TimedSignature{
+	return &tas.SignatureVerifierTimedSignature{
 		ValidFor:    validFor,
 		MessageHash: messageHash,
 		Signature:   signature,
 		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey),
 	}
-	return sig
 }
 
 func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
@@ -240,7 +229,7 @@ func TestIsApproved(t *testing.T) {
 	}
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
 	account := createAccount(t, privateKey)
-	sig := newTasTimedSignature(t, privateKey)
+	sig := newTimedSignature(t, privateKey)
 	tx, err := taStoreContractBind.ApproveAddress(auth, *sig, account.AccountId, testAddress)
 	if err != nil {
 		t.Fatalf("failed to approve address: %v", err)

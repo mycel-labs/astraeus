@@ -36,13 +36,6 @@ type server struct {
 	auth                *bind.TransactOpts
 }
 
-type TimedSignature struct {
-	ValidFor    uint64
-	MessageHash [32]byte
-	Signature   []byte
-	Signer      common.Address
-}
-
 const (
 	grpcPort            = ":50052"
 	restPort            = ":8080"
@@ -154,7 +147,7 @@ func StartServer(wg *sync.WaitGroup) {
 func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Proof)
+	sig, err := populateTimedSignature(req.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +184,7 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +217,7 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +250,7 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +278,7 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +306,7 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +334,7 @@ func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalReque
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
 	var result *types.Receipt
 	var err error
-	sig, _, err := populateTimedSignature(req.Base.Proof)
+	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
@@ -474,31 +467,26 @@ func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	return messageHashBytes, nil
 }
 
-func populateTimedSignature(sig *pb.TimedSignature) (*TimedSignature, *tas.SignatureVerifierTimedSignature, error) {
+func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimedSignature, error) {
 	messageHash, err := hex.DecodeString(sig.MessageHash)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to decode message hash: %v", err)
+		return nil, fmt.Errorf("failed to decode message hash: %v", err)
 	}
 
 	signature, err := hex.DecodeString(sig.Signature)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to decode signature: %v", err)
+		return nil, fmt.Errorf("failed to decode signature: %v", err)
 	}
 
 	messageHashBytes, err := convertMessageHash(messageHash)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to convert message hash: %v", err)
+		return nil, fmt.Errorf("failed to convert message hash: %v", err)
 	}
 
-	return &TimedSignature{
-			ValidFor:    sig.ValidFor,
-			MessageHash: messageHashBytes,
-			Signature:   signature,
-			Signer:      common.HexToAddress(sig.Signer),
-		}, &tas.SignatureVerifierTimedSignature{
-			ValidFor:    sig.ValidFor,
-			MessageHash: messageHashBytes,
-			Signature:   signature,
-			Signer:      common.HexToAddress(sig.Signer),
-		}, nil
+	return &tas.SignatureVerifierTimedSignature{
+		ValidFor:    sig.ValidFor,
+		MessageHash: messageHashBytes,
+		Signature:   signature,
+		Signer:      common.HexToAddress(sig.Signer),
+	}, nil
 }
