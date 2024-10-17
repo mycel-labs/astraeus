@@ -202,19 +202,12 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 		return nil, err
 	}
 
-	// Wait for the transaction to be mined
-	receipt, err := bind.WaitMined(ctx, s.client, tx)
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
-		log.Printf("error waiting for transaction to be mined: %v", err)
 		return nil, err
 	}
 
-	// Check if the transaction was successful
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return nil, fmt.Errorf("transaction failed")
-	}
-
-	return &pb.TransferAccountResponse{TxHash: tx.Hash().Hex()}, nil
+	return &pb.TransferAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
@@ -229,7 +222,12 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 		return nil, err
 	}
 
-	return &pb.DeleteAccountResponse{TxHash: tx.Hash().Hex()}, nil
+	receipt, err := s.waitForTransaction(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DeleteAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
@@ -245,7 +243,12 @@ func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest
 		return nil, err
 	}
 
-	return &pb.UnlockAccountResponse{TxHash: tx.Hash().Hex()}, nil
+	receipt, err := s.waitForTransaction(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UnlockAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
@@ -260,7 +263,12 @@ func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressReque
 		return nil, err
 	}
 
-	return &pb.ApproveAddressResponse{TxHash: tx.Hash().Hex()}, nil
+	receipt, err := s.waitForTransaction(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ApproveAddressResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
@@ -417,6 +425,22 @@ func (s *server) IsAccountLocked(ctx context.Context, req *pb.IsAccountLockedReq
 /*
 ** Helper functions
  */
+
+func (s *server) waitForTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+	// Wait for the transaction to be mined
+	receipt, err := bind.WaitMined(ctx, s.client, tx)
+	if err != nil {
+		log.Printf("error waiting for transaction to be mined: %v", err)
+		return nil, err
+	}
+
+	// Check if the transaction was successful
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return nil, fmt.Errorf("transaction failed")
+	}
+
+	return receipt, nil
+}
 
 func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	var messageHashBytes [32]byte
