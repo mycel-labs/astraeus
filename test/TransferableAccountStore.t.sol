@@ -264,11 +264,13 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bytes16 retrievedAccountIdBytes = Suave.DataId.unwrap(retrievedAccount.accountId);
 
         assertEq(StringUtils.bytes16ToString(retrievedAccountIdBytes), accountId, "Account ID should match");
-        assertEq(retrievedAccount.owner, account.owner, "Owner should match");
-        assertEq(retrievedAccount.publicKeyX, account.publicKeyX, "Public Key X should match");
-        assertEq(retrievedAccount.publicKeyY, account.publicKeyY, "Public Key Y should match");
+        assertEq(retrievedAccount.owner, decodedAccount.owner, "Owner should match");
+        assertEq(retrievedAccount.publicKeyX, decodedAccount.publicKeyX, "Public Key X should match");
+        assertEq(retrievedAccount.publicKeyY, decodedAccount.publicKeyY, "Public Key Y should match");
         assertEq(
-            uint256(retrievedAccount.signatureAlgorithm), uint256(account.signatureAlgorithm), "Curve should match"
+            uint256(retrievedAccount.signatureAlgorithm),
+            uint256(decodedAccount.signatureAlgorithm),
+            "Curve should match"
         );
     }
 
