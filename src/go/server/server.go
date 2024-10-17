@@ -34,6 +34,7 @@ type server struct {
 	taStoreContract     *framework.Contract
 	taStoreContractBind *tas.Contract
 	auth                *bind.TransactOpts
+	client              *ethclient.Client
 }
 
 const (
@@ -42,14 +43,9 @@ const (
 	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore.json"
 )
 
-var (
-	privKey             string
-	taStoreContractAddr string
-)
-
 func checkEnvVars(fatal bool) {
-	taStoreContractAddr = os.Getenv("TA_STORE_CONTRACT_ADDRESS")
-	privKey = os.Getenv("PRIVATE_KEY")
+	taStoreContractAddr := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
+	privKey := os.Getenv("PRIVATE_KEY")
 
 	if taStoreContractAddr == "" {
 		if fatal {
@@ -71,57 +67,69 @@ func init() {
 	checkEnvVars(false)
 }
 
+func NewServer(rpcUrl string, privateKey string, taStoreContractAddr string) (*server, error) {
+
+	fr := framework.New(framework.WithCustomConfig(privateKey, rpcUrl))
+
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind to existing contract: %v", err)
+	}
+
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial RPC: %v", err)
+	}
+
+	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind to contract: %v", err)
+	}
+
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain ID: %v", err)
+	}
+
+	priv, err := crypto.HexToECDSA(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert hex to private key: %v", err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(priv, chainId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transactor: %v", err)
+	}
+
+	return &server{fr: fr, taStoreContract: taStoreContract, taStoreContractBind: taStoreContractBind, auth: auth, client: client}, nil
+}
+
 func StartServer(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Ensure env variables are set
 	checkEnvVars(true)
-
 	// Setup framework and contract
 	rpcUrl := os.Getenv("RPC_URL")
 	privateKeyStr := os.Getenv("PRIVATE_KEY")
-	fr := framework.New(framework.WithCustomConfig(privateKeyStr, rpcUrl))
-	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
-	if err != nil {
-		log.Fatalf("Failed to bind to existing contract: %v", err)
-	}
+	taStoreContractAddr := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
 
-	client, err := ethclient.Dial(rpcUrl)
+	s, err := NewServer(rpcUrl, privateKeyStr, taStoreContractAddr)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	privateKey, err := crypto.HexToECDSA(privateKeyStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// gRPC server
-	s := grpc.NewServer()
+	gprcs := grpc.NewServer()
 	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
-	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract, taStoreContractBind: taStoreContractBind, auth: auth})
+	pb.RegisterAccountServiceServer(gprcs, s)
 	log.Println("gRPC server started on", grpcPort)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := gprcs.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC server: %v", err)
 		}
 	}()
@@ -192,6 +200,18 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 	if err != nil {
 		log.Printf("err: %v", err)
 		return nil, err
+	}
+
+	// Wait for the transaction to be mined
+	receipt, err := bind.WaitMined(ctx, s.client, tx)
+	if err != nil {
+		log.Printf("error waiting for transaction to be mined: %v", err)
+		return nil, err
+	}
+
+	// Check if the transaction was successful
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return nil, fmt.Errorf("transaction failed")
 	}
 
 	return &pb.TransferAccountResponse{TxHash: tx.Hash().Hex()}, nil

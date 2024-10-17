@@ -11,10 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 
 	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
@@ -23,12 +21,10 @@ import (
 )
 
 var (
-	fr                  *framework.Framework
-	taStoreContract     *framework.Contract
-	taStoreContractBind *tas.Contract
-	auth                *bind.TransactOpts
-	accountId           string
-	privateKey          *ecdsa.PrivateKey
+	fr         *framework.Framework
+	accountId  string
+	privateKey *ecdsa.PrivateKey
+	s          *server
 )
 
 const fundedAddress = "0xBE69d72ca5f88aCba033a063dF5DBe43a4148De0"
@@ -50,7 +46,7 @@ func setup(t *testing.T) {
 	fr = framework.New()
 
 	// Deploy contract
-	taStoreContract = fr.Suave.DeployContract(taStoreContractPath)
+	taStoreContract := fr.Suave.DeployContract(taStoreContractPath)
 	os.Setenv("TA_STORE_CONTRACT_ADDRESS", taStoreContract.Contract.Address().Hex())
 
 	// Initialize test data
@@ -60,39 +56,17 @@ func setup(t *testing.T) {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
 
-	client, err := ethclient.Dial("http://localhost:8545")
+	rpcUrl := "http://localhost:8545"
+	s, err = NewServer(rpcUrl, hex.EncodeToString(crypto.FromECDSA(privateKey)), taStoreContract.Contract.Address().Hex())
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	taStoreContractBind, err = tas.NewContract(taStoreContract.Contract.Address(), client)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("failed to create server: %v", err)
 	}
 }
 
-func newServer() *server {
-	return &server{
-		taStoreContract:     taStoreContract,
-		taStoreContractBind: taStoreContractBind,
-		auth:                auth,
-	}
-}
-
-func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
+func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 	sig := newTimedSignature(t, privateKey)
-	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
-	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	receipt := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	ev, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
 	if err != nil {
 		t.Fatalf("failed to parse log: %v", err)
 	}
@@ -163,9 +137,6 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messa
 
 func TestCreateAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
 	sig := newTimedSignature(t, privateKey)
 
 	// Execute
@@ -196,10 +167,7 @@ func TestCreateAccount(t *testing.T) {
 
 func TestGetAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -232,11 +200,10 @@ func TestGetAccount(t *testing.T) {
 
 func TestIsApproved(t *testing.T) {
 	// Setup
-	s := newServer()
-	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-	account := createAccount(t, privateKey)
+	testAddress := common.HexToAddress("0x123456789012345678901234568901234567890")
+	account := newAccount(t, privateKey)
 	sig := newTimedSignature(t, privateKey)
-	tx, err := taStoreContractBind.ApproveAddress(auth, *sig, account.AccountId, testAddress)
+	tx, err := s.taStoreContractBind.ApproveAddress(s.auth, *sig, account.AccountId, testAddress)
 	if err != nil {
 		t.Fatalf("failed to approve address: %v", err)
 	}
@@ -275,8 +242,7 @@ func TestIsApproved(t *testing.T) {
 
 func TestIsOwner(t *testing.T) {
 	// Setup
-	s := newServer()
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -310,8 +276,7 @@ func TestIsOwner(t *testing.T) {
 
 func TestTransferAccount(t *testing.T) {
 	// Setup
-	s := newServer()
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	newOwner := "0x1234567890123456789012345678901234567890"
 
 	// Test cases
@@ -361,8 +326,7 @@ func TestTransferAccount(t *testing.T) {
 
 func TestDeleteAccount(t *testing.T) {
 	// Setup
-	s := newServer()
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -407,8 +371,7 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestUnlockAccount(t *testing.T) {
 	// Setup
-	s := newServer()
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -454,8 +417,7 @@ func TestUnlockAccount(t *testing.T) {
 
 func TestApproveAddress(t *testing.T) {
 	// Setup
-	s := newServer()
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	newApprovedAddress := "0x1234567890123456789012345678901234567890"
 	sig := newPbTimedSignature(t, privateKey)
 
@@ -507,10 +469,7 @@ func TestApproveAddress(t *testing.T) {
 
 func TestRevokeApproval(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	addressToApprove := "0x1234567890123456789012345678901234567890"
 	sig := newPbTimedSignature(t, privateKey)
 
@@ -573,10 +532,7 @@ func TestRevokeApproval(t *testing.T) {
 
 func TestIsAccountLocked(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -613,13 +569,10 @@ func TestIsAccountLocked(t *testing.T) {
 
 func TestSign(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	sig := newTimedSignature(t, privateKey)
 
-	taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
+	s.taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
 
 	message := []byte("Test message to sign")
 	messageHash := crypto.Keccak256(message)
