@@ -81,6 +81,14 @@ func setup(t *testing.T) {
 	}
 }
 
+func newServer() *server {
+	return &server{
+		taStoreContract:     taStoreContract,
+		taStoreContractBind: taStoreContractBind,
+		auth:                auth,
+	}
+}
+
 func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 	sig := newTimedSignature(t, privateKey)
 	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
@@ -224,9 +232,7 @@ func TestGetAccount(t *testing.T) {
 
 func TestIsApproved(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
 	account := createAccount(t, privateKey)
 	sig := newTimedSignature(t, privateKey)
@@ -269,9 +275,7 @@ func TestIsApproved(t *testing.T) {
 
 func TestIsOwner(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	account := createAccount(t, privateKey)
 
 	// Test cases
@@ -306,9 +310,7 @@ func TestIsOwner(t *testing.T) {
 
 func TestTransferAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	account := createAccount(t, privateKey)
 	newOwner := "0x1234567890123456789012345678901234567890"
 

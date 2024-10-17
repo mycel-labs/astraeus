@@ -182,36 +182,18 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
 
-	// Use an anonymous function to handle potential panics
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Convert panic to error
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.To)}, nil)
-	}()
-
-	// Check if a panic occurred and was converted to an error
+	tx, err := s.taStoreContractBind.TransferAccount(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.To))
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	// Check if the transaction was successful
-	if result == nil {
-		return nil, fmt.Errorf("failed to transfer account")
-	}
-
-	return &pb.TransferAccountResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.TransferAccountResponse{TxHash: tx.Hash().Hex()}, nil
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
