@@ -361,9 +361,7 @@ func TestTransferAccount(t *testing.T) {
 
 func TestDeleteAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	account := createAccount(t, privateKey)
 
 	// Test cases

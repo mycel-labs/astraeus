@@ -184,6 +184,7 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
@@ -197,36 +198,18 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
-
-	// Use an anonymous function to handle potential panics
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Convert panic to error
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("deleteAccount", []interface{}{sig, req.Base.AccountId}, nil)
-	}()
-
-	// Check if a panic occurred and was converted to an error
+	tx, err := s.taStoreContractBind.DeleteAccount(s.auth, *sig, req.Base.AccountId)
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	// Check if the transaction was successful
-	if result == nil {
-		return nil, fmt.Errorf("failed to delete account")
-	}
-
-	return &pb.DeleteAccountResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.DeleteAccountResponse{TxHash: tx.Hash().Hex()}, nil
 }
 
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
