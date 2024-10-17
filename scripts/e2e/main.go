@@ -14,7 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/mycel-labs/astraeus/src/go/server"
+	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 )
 
 const (
@@ -42,7 +42,6 @@ Before running this script:
 After these steps, you can run this script to interact with the deployed contract via the API.
 */
 
-
 func main() {
 	// Check if required environment variables are set
 	contractAddress := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
@@ -65,13 +64,13 @@ func main() {
 	createAccount(timedSignature)
 }
 
-func populateTimedSignature(privateKey *ecdsa.PrivateKey) (server.TimedSignature, error) {
+func populateTimedSignature(privateKey *ecdsa.PrivateKey) (tas.SignatureVerifierTimedSignature, error) {
 	validFor := time.Now().Unix() + 1000000
 	address, messageHash, signature, err := generateTimedSignature(validFor, privateKey)
 	if err != nil {
-		return server.TimedSignature{}, err
+		return tas.SignatureVerifierTimedSignature{}, err
 	}
-	return server.TimedSignature{
+	return tas.SignatureVerifierTimedSignature{
 		ValidFor:    uint64(validFor),
 		MessageHash: messageHash,
 		Signature:   signature,
@@ -108,7 +107,7 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (addre
 	return address, messageHash, signature, nil
 }
 
-func createAccount(timedSignature server.TimedSignature) {
+func createAccount(timedSignature tas.SignatureVerifierTimedSignature) {
 	url := fmt.Sprintf("%s/v1/accounts", hostURL)
 	data := map[string]interface{}{
 		"proof": map[string]interface{}{
