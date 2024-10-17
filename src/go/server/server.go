@@ -11,8 +11,11 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -20,14 +23,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
-	fr              *framework.Framework
-	taStoreContract *framework.Contract
+	fr                  *framework.Framework
+	taStoreContract     *framework.Contract
+	taStoreContractBind *tas.Contract
+	auth                *bind.TransactOpts
 }
 
 type TimedSignature struct {
@@ -79,10 +85,37 @@ func StartServer(wg *sync.WaitGroup) {
 	checkEnvVars(true)
 
 	// Setup framework and contract
-	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
+	rpcUrl := os.Getenv("RPC_URL")
+	privateKeyStr := os.Getenv("PRIVATE_KEY")
+	fr := framework.New(framework.WithCustomConfig(privateKeyStr, rpcUrl))
 	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
 	if err != nil {
 		log.Fatalf("Failed to bind to existing contract: %v", err)
+	}
+
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// gRPC server
@@ -91,7 +124,7 @@ func StartServer(wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
-	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract})
+	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract, taStoreContractBind: taStoreContractBind, auth: auth})
 	log.Println("gRPC server started on", grpcPort)
 
 	go func() {
