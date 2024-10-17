@@ -14,6 +14,12 @@ devnet-down:
 build-solidity:
 	forge build --via-ir
 
+build-solidity-extra:
+	forge build --extra-output-files abi bin --via-ir
+
+gen-solidity-go-bindings:
+	./scripts/utils/gen-solidity-go-bindings.sh
+
 test-solidity:
 	forge test --ffi --via-ir test/**/*.t.sol
 
