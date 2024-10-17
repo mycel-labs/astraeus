@@ -5,24 +5,30 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 
+	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 var (
-	fr              *framework.Framework
-	taStoreContract *framework.Contract
-	accountId       string
-	privateKey      *ecdsa.PrivateKey
+	fr                  *framework.Framework
+	taStoreContract     *framework.Contract
+	taStoreContractBind *tas.Contract
+	auth                *bind.TransactOpts
+	accountId           string
+	privateKey          *ecdsa.PrivateKey
 )
 
 const fundedAddress = "0xBE69d72ca5f88aCba033a063dF5DBe43a4148De0"
@@ -53,6 +59,26 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
+
+	client, err := ethclient.Dial("http://localhost:8545")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	taStoreContractBind, err = tas.NewContract(taStoreContract.Contract.Address(), client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
@@ -67,6 +93,16 @@ func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 	return &pb.Account{
 		AccountId: accountId,
 		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+}
+
+func newTasTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
+	_sig := newTimedSignature(t, privateKey)
+	return &tas.SignatureVerifierTimedSignature{
+		ValidFor:    _sig.ValidFor,
+		MessageHash: _sig.MessageHash,
+		Signature:   _sig.Signature,
+		Signer:      _sig.Signer,
 	}
 }
 
@@ -203,8 +239,13 @@ func TestIsApproved(t *testing.T) {
 		taStoreContract: taStoreContract,
 	}
 	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-	sig := newTimedSignature(t, privateKey)
-	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, accountId, testAddress}, nil)
+	account := createAccount(t, privateKey)
+	sig := newTasTimedSignature(t, privateKey)
+	tx, err := taStoreContractBind.ApproveAddress(auth, *sig, account.AccountId, testAddress)
+	if err != nil {
+		t.Fatalf("failed to approve address: %v", err)
+	}
+	log.Printf("tx: %v", tx)
 
 	// Test cases
 	testCases := []struct {
@@ -213,8 +254,9 @@ func TestIsApproved(t *testing.T) {
 		address   string
 		expected  bool
 	}{
-		{"Approved address", accountId, testAddress.String(), true},
-		{"Not approved address", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Owner", account.AccountId, account.Owner, true},
+		{"Approved address", account.AccountId, testAddress.String(), true},
+		{"Not approved address", account.AccountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 		{"Non-existent account ID", "non_existent_account_id", "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 	}
 
