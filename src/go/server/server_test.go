@@ -283,6 +283,7 @@ func TestIsOwner(t *testing.T) {
 	s := &server{
 		taStoreContract: taStoreContract,
 	}
+	account := createAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -291,8 +292,8 @@ func TestIsOwner(t *testing.T) {
 		address   string
 		expected  bool
 	}{
-		{"Is owner", accountId, fundedAddress, true},
-		{"Not owner", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Is owner", account.AccountId, account.Owner, true},
+		{"Not owner", account.AccountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 		{"Non-existent account ID", "non_existent_account_id", fundedAddress, false},
 	}
 
