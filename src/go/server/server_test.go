@@ -407,9 +407,7 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestUnlockAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	s := newServer()
 	account := createAccount(t, privateKey)
 
 	// Test cases
