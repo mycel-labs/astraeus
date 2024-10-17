@@ -55,84 +55,12 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
-
 	rpcUrl := "http://localhost:8545"
+
 	s, err = NewServer(rpcUrl, hex.EncodeToString(crypto.FromECDSA(privateKey)), taStoreContract.Contract.Address().Hex())
 	if err != nil {
 		t.Fatalf("failed to create server: %v", err)
 	}
-}
-
-func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
-	sig := newTimedSignature(t, privateKey)
-	receipt := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
-	ev, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
-	if err != nil {
-		t.Fatalf("failed to parse log: %v", err)
-	}
-	accountId = ev["accountId"].(string)
-
-	return &pb.Account{
-		AccountId: accountId,
-		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
-	}
-}
-
-func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
-	if err != nil {
-		t.Fatalf("failed to generate timed signature: %v", err)
-	}
-	return &pb.TimedSignature{
-		ValidFor:    validFor,
-		MessageHash: hex.EncodeToString(messageHash[:]),
-		Signature:   hex.EncodeToString(signature),
-		Signer:      fundedAddress,
-	}
-}
-
-func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
-	if err != nil {
-		t.Fatalf("failed to generate timed signature: %v", err)
-	}
-	return &tas.SignatureVerifierTimedSignature{
-		ValidFor:    validFor,
-		MessageHash: messageHash,
-		Signature:   signature,
-		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey),
-	}
-}
-
-func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-
-	// Step 1: Create the message hash
-	// Combine validFor timestamp and signer's address, then hash with Keccak256
-	messageHash = crypto.Keccak256Hash(
-		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
-		common.LeftPadBytes(address.Bytes(), 20),
-	)
-
-	// Step 2: Apply Mycel-specific prefix
-	// Prepend "\x19Mycel Signed Message:\n32" and hash again
-	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
-	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
-
-	// Step 3: Generate the signature
-	// Sign the prefixed message hash with the private key
-	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
-	if err != nil {
-		return [32]byte{}, nil, err
-	}
-
-	// Adjust the v value of the signature (add 27)
-	// This ensures compatibility with Mycel's signature standard
-	signature[64] += 27
-
-	return messageHash, signature, nil
 }
 
 func TestCreateAccount(t *testing.T) {
@@ -668,4 +596,79 @@ func TestSign(t *testing.T) {
 			}
 		})
 	}
+}
+
+/*
+ * Helpers
+ */
+func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
+	sig := newTimedSignature(t, privateKey)
+	receipt := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	ev, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	if err != nil {
+		t.Fatalf("failed to parse log: %v", err)
+	}
+	accountId = ev["accountId"].(string)
+
+	return &pb.Account{
+		AccountId: accountId,
+		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+}
+
+func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSignature {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
+	if err != nil {
+		t.Fatalf("failed to generate timed signature: %v", err)
+	}
+	return &pb.TimedSignature{
+		ValidFor:    validFor,
+		MessageHash: hex.EncodeToString(messageHash[:]),
+		Signature:   hex.EncodeToString(signature),
+		Signer:      fundedAddress,
+	}
+}
+
+func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
+	if err != nil {
+		t.Fatalf("failed to generate timed signature: %v", err)
+	}
+	return &tas.SignatureVerifierTimedSignature{
+		ValidFor:    validFor,
+		MessageHash: messageHash,
+		Signature:   signature,
+		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey),
+	}
+}
+
+func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	// Step 1: Create the message hash
+	// Combine validFor timestamp and signer's address, then hash with Keccak256
+	messageHash = crypto.Keccak256Hash(
+		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
+		common.LeftPadBytes(address.Bytes(), 20),
+	)
+
+	// Step 2: Apply Mycel-specific prefix
+	// Prepend "\x19Mycel Signed Message:\n32" and hash again
+	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
+	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
+
+	// Step 3: Generate the signature
+	// Sign the prefixed message hash with the private key
+	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
+	if err != nil {
+		return [32]byte{}, nil, err
+	}
+
+	// Adjust the v value of the signature (add 27)
+	// This ensures compatibility with Mycel's signature standard
+	signature[64] += 27
+
+	return messageHash, signature, nil
 }
