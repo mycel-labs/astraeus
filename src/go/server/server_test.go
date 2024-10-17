@@ -570,9 +570,14 @@ func TestIsAccountLocked(t *testing.T) {
 func TestSign(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
-	sig := newTimedSignature(t, privateKey)
 
-	s.taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
+	_, err := s.UnlockAccount(context.Background(), &pb.UnlockAccountRequest{
+		Base: &pb.AccountOperationRequest{
+			AccountId: account.AccountId,
+			Proof:     newPbTimedSignature(t, privateKey),
+		},
+	})
+	assert.NoError(t, err)
 
 	message := []byte("Test message to sign")
 	messageHash := crypto.Keccak256(message)
