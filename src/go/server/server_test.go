@@ -66,7 +66,7 @@ func setup(t *testing.T) {
 
 func TestCreateAccount(t *testing.T) {
 	// Setup
-	targetFunctionHash := common.HexToHash("")
+	targetFunctionHash := common.HexToHash(CREATE_ACCOUNT_FUNCTION_HASH)
 	sig := newTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Execute
@@ -132,7 +132,7 @@ func TestIsApproved(t *testing.T) {
 	// Setup
 	testAddress := common.HexToAddress("0x123456789012345678901234568901234567890")
 	account := newAccount(t, privateKey)
-	targetFunctionHash := common.HexToHash("")
+	targetFunctionHash := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
 	sig := newTimedSignature(t, privateKey, targetFunctionHash)
 	tx, err := s.taStoreContractBind.ApproveAddress(s.auth, *sig, account.AccountId, testAddress)
 	if err != nil {
@@ -224,7 +224,7 @@ func TestTransferAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			targetFunctionHash := common.HexToHash("")
+			targetFunctionHash := common.HexToHash(TRANSFER_ACCOUNT_FUNCTION_HASH)
 			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			req := &pb.TransferAccountRequest{
 				Base: &pb.AccountOperationRequest{
@@ -272,7 +272,7 @@ func TestDeleteAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			targetFunctionHash := common.HexToHash("")
+			targetFunctionHash := common.HexToHash(DELETE_ACCOUNT_FUNCTION_HASH)
 			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			// Execute
 			req := &pb.DeleteAccountRequest{
@@ -318,7 +318,7 @@ func TestUnlockAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			targetFunctionHash := common.HexToHash("")
+			targetFunctionHash := common.HexToHash(UNLOCK_ACCOUNT_FUNCTION_HASH)
 			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			// Execute
 			req := &pb.UnlockAccountRequest{
@@ -353,7 +353,7 @@ func TestApproveAddress(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
 	newApprovedAddress := "0x1234567890123456789012345678901234567890"
-	targetFunctionHash := common.HexToHash("")
+	targetFunctionHash := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
 	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Test cases
@@ -406,7 +406,7 @@ func TestRevokeApproval(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
 	addressToApprove := "0x1234567890123456789012345678901234567890"
-	targetFunctionHash := common.HexToHash("")
+	targetFunctionHash := common.HexToHash(REVOKE_APPROVAL_FUNCTION_HASH)
 	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Approve the address first
@@ -546,7 +546,7 @@ func TestSign(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
 
-	targetFunctionHash := common.HexToHash("")
+	targetFunctionHash := common.HexToHash(SIGN_FUNCTION_HASH)
 	_, err := s.UnlockAccount(context.Background(), &pb.UnlockAccountRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: account.AccountId,
@@ -572,7 +572,7 @@ func TestSign(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			targetFunctionHash := common.HexToHash("")
+			targetFunctionHash := common.HexToHash(SIGN_FUNCTION_HASH)
 			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			// Execute
 			req := &pb.SignRequest{
@@ -659,7 +659,7 @@ func getNonce(t *testing.T, address common.Address) uint64 {
 }
 
 func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
-	targetFunctionHash := common.HexToHash("0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f")
+	targetFunctionHash := common.HexToHash(CREATE_ACCOUNT_FUNCTION_HASH)
 	sig := newTimedSignature(t, privateKey, targetFunctionHash)
 	receipt := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
 	ev, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
