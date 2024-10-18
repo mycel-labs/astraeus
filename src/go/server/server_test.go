@@ -675,23 +675,22 @@ func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 }
 
 func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *pb.TimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	nonce := getNonce(t, crypto.PubkeyToAddress(privateKey.PublicKey))
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
-	if err != nil {
-		t.Fatalf("failed to generate timed signature: %v", err)
-	}
+	sig := _newTimedSignature(t, privateKey, targetFunctionHash)
 	return &pb.TimedSignature{
-		ValidFor:           validFor,
-		MessageHash:        hex.EncodeToString(messageHash[:]),
-		Signature:          hex.EncodeToString(signature),
-		Signer:             fundedAddress,
-		Nonce:              nonce,
-		TargetFunctionHash: hex.EncodeToString(targetFunctionHash[:]),
+		ValidFor:           sig.ValidFor,
+		MessageHash:        hex.EncodeToString(sig.MessageHash[:]),
+		Signature:          hex.EncodeToString(sig.Signature),
+		Signer:             sig.Signer.Hex(),
+		Nonce:              sig.Nonce,
+		TargetFunctionHash: hex.EncodeToString(sig.TargetFunctionHash[:]),
 	}
 }
 
 func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
+	return _newTimedSignature(t, privateKey, targetFunctionHash)
+}
+
+func _newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	nonce := getNonce(t, crypto.PubkeyToAddress(privateKey.PublicKey))
 	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
