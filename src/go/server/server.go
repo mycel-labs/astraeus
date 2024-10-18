@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -151,8 +153,24 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 		panic(err)
 	}
 	accountId := caEvent["accountId"].(string)
+	account := caEvent["account"].(struct {
+		AccountId  [16]uint8      `json:"accountId"`
+		Owner      common.Address `json:"owner"`
+		PublicKeyX *big.Int       `json:"publicKeyX"`
+		PublicKeyY *big.Int       `json:"publicKeyY"`
+		Curve      uint8          `json:"curve"`
+		IsLocked   bool           `json:"isLocked"`
+	})
 
-	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId}, nil
+	publicKey := ecdsa.PublicKey{
+		Curve: crypto.S256(), // Use the secp256k1 curve, standard for Ethereum
+		X:     account.PublicKeyX,
+		Y:     account.PublicKeyY,
+	}
+
+	address := crypto.PubkeyToAddress(publicKey)
+
+	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId, Address: address.Hex()}, nil
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {

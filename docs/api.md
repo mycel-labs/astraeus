@@ -138,6 +138,7 @@ Responses
 | ----- | ---- | ----- | ----------- |
 | tx_hash | [string](#string) |  |  |
 | account_id | [string](#string) |  |  |
+| address | [string](#string) |  |  |
 
 
 

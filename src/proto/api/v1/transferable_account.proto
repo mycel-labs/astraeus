@@ -93,6 +93,7 @@ message IsAccountLockedRequest {
 message CreateAccountResponse {
     string tx_hash = 1;
     string account_id = 2;
+    string address = 3;
 }
 
 message TransferAccountResponse {
