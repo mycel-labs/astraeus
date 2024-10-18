@@ -91,6 +91,14 @@ message IsAccountLockedRequest {
     string account_id = 1;
 }
 
+message GetNonceRequest {
+    string address = 1;
+}
+
+message GetNonceResponse {
+    uint64 nonce = 1;
+}
+
 // Responses
 message CreateAccountResponse {
     string tx_hash = 1;
@@ -185,6 +193,11 @@ service AccountService {
     rpc GetAccount(GetAccountRequest) returns (GetAccountResponse) {
         option (google.api.http) = {
             get: "/v1/accounts/{account_id}"
+        };
+    }
+    rpc GetNonce(GetNonceRequest) returns (GetNonceResponse) {
+        option (google.api.http) = {
+            get: "/v1/nonce/{address}"
         };
     }
     rpc IsApproved(IsApprovedRequest) returns (IsApprovedResponse) {
