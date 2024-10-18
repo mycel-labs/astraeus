@@ -475,9 +475,11 @@ func populateTimedSignature(sig *pb.TimedSignature) (*ct.SignatureVerifierTimedS
 	}
 
 	return &ct.SignatureVerifierTimedSignature{
-		ValidFor:    sig.ValidFor,
-		MessageHash: messageHashBytes,
-		Signature:   signature,
-		Signer:      common.HexToAddress(sig.Signer),
+		ValidFor:           sig.ValidFor,
+		MessageHash:        messageHashBytes,
+		Signature:          signature,
+		Signer:             common.HexToAddress(sig.Signer),
+		Nonce:              sig.Nonce,
+		TargetFunctionHash: common.HexToHash(sig.TargetFunctionHash),
 	}, nil
 }
