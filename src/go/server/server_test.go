@@ -67,16 +67,11 @@ func setup(t *testing.T) {
 func TestCreateAccount(t *testing.T) {
 	// Setup
 	targetFunctionHash := common.HexToHash(CREATE_ACCOUNT_FUNCTION_HASH)
-	sig := newTimedSignature(t, privateKey, targetFunctionHash)
+	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Execute
 	req := &pb.CreateAccountRequest{
-		Proof: &pb.TimedSignature{
-			ValidFor:    sig.ValidFor,
-			MessageHash: hex.EncodeToString(sig.MessageHash[:]),
-			Signature:   hex.EncodeToString(sig.Signature),
-			Signer:      sig.Signer.Hex(),
-		},
+		Proof: sig,
 	}
 	resp, err := s.CreateAccount(context.Background(), req)
 
@@ -406,14 +401,15 @@ func TestRevokeApproval(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
 	addressToApprove := "0x1234567890123456789012345678901234567890"
-	targetFunctionHash := common.HexToHash(REVOKE_APPROVAL_FUNCTION_HASH)
-	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
+	targetFunctionHashApprove := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
+	targetFunctionHashRevoke := common.HexToHash(REVOKE_APPROVAL_FUNCTION_HASH)
+	sigApprove := newPbTimedSignature(t, privateKey, targetFunctionHashApprove)
 
 	// Approve the address first
 	approveReq := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: account.AccountId,
-			Proof:     sig,
+			Proof:     sigApprove,
 		},
 		Address: addressToApprove,
 	}
@@ -434,14 +430,15 @@ func TestRevokeApproval(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.RevokeApprovalRequest{
+			sigRevoke := newPbTimedSignature(t, privateKey, targetFunctionHashRevoke)
+			revokeReq := &pb.RevokeApprovalRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof:     sig,
+					Proof:     sigRevoke,
 				},
 				Address: tc.address,
 			}
-			resp, err := s.RevokeApproval(context.Background(), req)
+			resp, err := s.RevokeApproval(context.Background(), revokeReq)
 
 			// Assert
 			if tc.expectErr {
@@ -546,11 +543,11 @@ func TestSign(t *testing.T) {
 	// Setup
 	account := newAccount(t, privateKey)
 
-	targetFunctionHash := common.HexToHash(SIGN_FUNCTION_HASH)
+	targetFunctionHashUnlock := common.HexToHash(UNLOCK_ACCOUNT_FUNCTION_HASH)
 	_, err := s.UnlockAccount(context.Background(), &pb.UnlockAccountRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: account.AccountId,
-			Proof:     newPbTimedSignature(t, privateKey, targetFunctionHash),
+			Proof:     newPbTimedSignature(t, privateKey, targetFunctionHashUnlock),
 		},
 	})
 	assert.NoError(t, err)
@@ -572,8 +569,8 @@ func TestSign(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			targetFunctionHash := common.HexToHash(SIGN_FUNCTION_HASH)
-			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
+			targetFunctionHashSign := common.HexToHash(SIGN_FUNCTION_HASH)
+			sig := newPbTimedSignature(t, privateKey, targetFunctionHashSign)
 			// Execute
 			req := &pb.SignRequest{
 				Base: &pb.AccountOperationRequest{
