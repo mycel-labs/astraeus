@@ -369,6 +369,21 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	return &pb.GetAccountResponse{Account: pbac}, nil
 }
 
+func (s *server) GetNonce(ctx context.Context, req *pb.GetNonceRequest) (*pb.GetNonceResponse, error) {
+	result := s.taStoreContract.Call("getNonce", []interface{}{common.HexToAddress(req.Address)})
+
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
+	nonce, ok := result[0].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("nonce data type is unexpected")
+	}
+
+	return &pb.GetNonceResponse{Nonce: nonce}, nil
+}
+
 func (s *server) IsApproved(ctx context.Context, req *pb.IsApprovedRequest) (*pb.IsApprovedResponse, error) {
 	result := s.taStoreContract.Call("isApproved", []interface{}{req.AccountId, common.HexToAddress(req.Address)})
 
