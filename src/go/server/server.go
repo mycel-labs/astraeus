@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
@@ -32,7 +32,7 @@ type server struct {
 	pb.UnimplementedAccountServiceServer
 	fr                  *framework.Framework
 	taStoreContract     *framework.Contract
-	taStoreContractBind *tas.Contract
+	taStoreContractBind *ct.Transferableaccountstore
 	auth                *bind.TransactOpts
 	client              *ethclient.Client
 }
@@ -81,7 +81,7 @@ func NewServer(rpcUrl string, privateKey string, taStoreContractAddr string) (*s
 		return nil, fmt.Errorf("failed to dial RPC: %v", err)
 	}
 
-	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
+	taStoreContractBind, err := ct.NewTransferableaccountstore(taStoreContract.Contract.Address(), client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bind to contract: %v", err)
 	}
@@ -443,7 +443,7 @@ func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	return messageHashBytes, nil
 }
 
-func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimedSignature, error) {
+func populateTimedSignature(sig *pb.TimedSignature) (*ct.SignatureVerifierTimedSignature, error) {
 	messageHash, err := hex.DecodeString(sig.MessageHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message hash: %v", err)
@@ -459,7 +459,7 @@ func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimed
 		return nil, fmt.Errorf("failed to convert message hash: %v", err)
 	}
 
-	return &tas.SignatureVerifierTimedSignature{
+	return &ct.SignatureVerifierTimedSignature{
 		ValidFor:    sig.ValidFor,
 		MessageHash: messageHashBytes,
 		Signature:   signature,

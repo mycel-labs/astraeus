@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
@@ -630,13 +630,13 @@ func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSi
 	}
 }
 
-func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *tas.SignatureVerifierTimedSignature {
+func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *ct.SignatureVerifierTimedSignature {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
 	if err != nil {
 		t.Fatalf("failed to generate timed signature: %v", err)
 	}
-	return &tas.SignatureVerifierTimedSignature{
+	return &ct.SignatureVerifierTimedSignature{
 		ValidFor:    validFor,
 		MessageHash: messageHash,
 		Signature:   signature,

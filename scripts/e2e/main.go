@@ -14,7 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 )
 
 const (
@@ -64,13 +64,13 @@ func main() {
 	createAccount(timedSignature)
 }
 
-func populateTimedSignature(privateKey *ecdsa.PrivateKey) (tas.SignatureVerifierTimedSignature, error) {
+func populateTimedSignature(privateKey *ecdsa.PrivateKey) (ct.SignatureVerifierTimedSignature, error) {
 	validFor := time.Now().Unix() + 1000000
 	address, messageHash, signature, err := generateTimedSignature(validFor, privateKey)
 	if err != nil {
-		return tas.SignatureVerifierTimedSignature{}, err
+		return ct.SignatureVerifierTimedSignature{}, err
 	}
-	return tas.SignatureVerifierTimedSignature{
+	return ct.SignatureVerifierTimedSignature{
 		ValidFor:    uint64(validFor),
 		MessageHash: messageHash,
 		Signature:   signature,
@@ -107,7 +107,7 @@ func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (addre
 	return address, messageHash, signature, nil
 }
 
-func createAccount(timedSignature tas.SignatureVerifierTimedSignature) {
+func createAccount(timedSignature ct.SignatureVerifierTimedSignature) {
 	url := fmt.Sprintf("%s/v1/accounts", hostURL)
 	data := map[string]interface{}{
 		"proof": map[string]interface{}{

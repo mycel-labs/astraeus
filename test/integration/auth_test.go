@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	"github.com/mycel-labs/astraeus/src/go/framework"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 	"github.com/stretchr/testify/assert"
@@ -82,7 +82,7 @@ func TestAuth(t *testing.T) {
 
 			modifiedSignature := tc.modifySig(signature)
 
-			sig := &tas.SignatureVerifierTimedSignature{
+			sig := &ct.SignatureVerifierTimedSignature{
 				ValidFor:    uint64(tc.validFor),
 				MessageHash: messageHash,
 				Signature:   modifiedSignature,
