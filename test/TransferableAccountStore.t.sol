@@ -60,7 +60,7 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testVerifyTimedSignature() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 VERIFY_TIMEDSIGNATRE = keccak256("test timedSignature");
+        bytes32 VERIFY_TIMEDSIGNATURE = keccak256("test timedSignature");
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
             uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), VERIFY_TIMEDSIGNATRE
         );
