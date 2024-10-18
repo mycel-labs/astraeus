@@ -28,6 +28,8 @@ message TimedSignature {
     string message_hash = 2; // hex encoded
     string signature = 3; // hex encoded
     string signer = 4; // address
+    uint64 nonce = 5;
+    string target_function_hash = 6; // hex encoded
 }
 
 message AccountOperationRequest {
