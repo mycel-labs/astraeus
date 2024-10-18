@@ -14,7 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 )
 
 const (

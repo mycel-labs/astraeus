@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
-	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )

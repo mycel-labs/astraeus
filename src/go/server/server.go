@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )

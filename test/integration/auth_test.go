@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	ct "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	"github.com/mycel-labs/astraeus/src/go/framework"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 	"github.com/stretchr/testify/assert"
