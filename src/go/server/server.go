@@ -161,6 +161,9 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 		Curve      uint8          `json:"curve"`
 		IsLocked   bool           `json:"isLocked"`
 	})
+	if account.PublicKeyX == nil || account.PublicKeyY == nil {
+		return nil, fmt.Errorf("public key components are missing")
+	}
 
 	publicKey := ecdsa.PublicKey{
 		Curve: crypto.S256(), // Use the secp256k1 curve, standard for Ethereum
