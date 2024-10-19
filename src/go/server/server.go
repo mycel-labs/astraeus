@@ -150,7 +150,7 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	caEvent, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(result.Logs[0])
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to parse AccountCreated event: %v", err)
 	}
 	accountId := caEvent["accountId"].(string)
 	account := caEvent["account"].(struct {
