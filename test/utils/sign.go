@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,30 +16,31 @@ import (
 	impl "github.com/mycel-labs/astraeus/src/go/server"
 )
 
-type SignTestUtil struct {
-	T               *testing.T
-	TaStoreContract *framework.Contract
-}
-
-func (su *SignTestUtil) NewAccount(privateKey *ecdsa.PrivateKey) *pb.Account {
+func NewAccount(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKey) (*pb.Account, error) {
 	targetFunctionHash := common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	sig := su.NewTimedSignature(privateKey, validFor, targetFunctionHash)
-	receipt := su.TaStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
-	ev, err := su.TaStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	sig, err := NewTimedSignature(taStoreContract, privateKey, validFor, targetFunctionHash)
 	if err != nil {
-		su.T.Fatalf("failed to parse log: %v", err)
+		return nil, fmt.Errorf("failed to create timed signature: %v", err)
+	}
+	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse log: %v", err)
 	}
 	accountId := ev["accountId"].(string)
 
 	return &pb.Account{
 		AccountId: accountId,
 		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
-	}
+	}, nil
 }
 
-func (su *SignTestUtil) NewPbTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *pb.TimedSignature {
-	sig := su._newTimedSignature(privateKey, validFor, targetFunctionHash)
+func NewPbTimedSignature(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) (*pb.TimedSignature, error) {
+	sig, err := newTimedSignature(taStoreContract, privateKey, validFor, targetFunctionHash)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.TimedSignature{
 		ValidFor:           validFor,
 		MessageHash:        hex.EncodeToString(sig.MessageHash[:]),
@@ -48,18 +48,21 @@ func (su *SignTestUtil) NewPbTimedSignature(privateKey *ecdsa.PrivateKey, validF
 		Signer:             sig.Signer.Hex(),
 		Nonce:              sig.Nonce,
 		TargetFunctionHash: hex.EncodeToString(sig.TargetFunctionHash[:]),
-	}
+	}, nil
 }
 
-func (su *SignTestUtil) NewTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
-	return su._newTimedSignature(privateKey, validFor, targetFunctionHash)
+func NewTimedSignature(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) (*ct.SignatureVerifierTimedSignature, error) {
+	return newTimedSignature(taStoreContract, privateKey, validFor, targetFunctionHash)
 }
 
-func (su *SignTestUtil) _newTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
-	nonce := su.getNonce(crypto.PubkeyToAddress(privateKey.PublicKey))
-	messageHash, signature, err := su.generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
+func newTimedSignature(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) (*ct.SignatureVerifierTimedSignature, error) {
+	nonce, err := getNonce(taStoreContract, crypto.PubkeyToAddress(privateKey.PublicKey))
 	if err != nil {
-		su.T.Fatalf("failed to generate timed signature: %v", err)
+		return nil, err
+	}
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate timed signature: %v", err)
 	}
 	return &ct.SignatureVerifierTimedSignature{
 		ValidFor:           validFor,
@@ -68,22 +71,22 @@ func (su *SignTestUtil) _newTimedSignature(privateKey *ecdsa.PrivateKey, validFo
 		Signer:             crypto.PubkeyToAddress(privateKey.PublicKey),
 		Nonce:              nonce,
 		TargetFunctionHash: targetFunctionHash,
-	}
+	}, nil
 }
 
-func (su *SignTestUtil) getNonce(address common.Address) uint64 {
-	result := su.TaStoreContract.Call("getNonce", []interface{}{address})
+func getNonce(taStoreContract *framework.Contract, address common.Address) (uint64, error) {
+	result := taStoreContract.Call("getNonce", []interface{}{address})
 	if len(result) == 0 || result[0] == nil {
-		su.T.Fatalf("empty result")
+		return 0, fmt.Errorf("empty result")
 	}
 	nonce, ok := result[0].(uint64)
 	if !ok {
-		su.T.Fatalf("nonce data type is unexpected")
+		return 0, fmt.Errorf("nonce data type is unexpected")
 	}
-	return nonce
+	return nonce, nil
 }
 
-func (su *SignTestUtil) generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
+func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	// Step 1: Create the message hash

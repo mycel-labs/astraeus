@@ -14,12 +14,11 @@ import (
 )
 
 func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, privKey *ecdsa.PrivateKey) string {
-	signTestUtil := &SignTestUtil{
-		T:               t,
-		TaStoreContract: taStoreContract,
-	}
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	createSig := signTestUtil.NewPbTimedSignature(privKey, validFor, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
+	createSig, err := NewPbTimedSignature(taStoreContract, privKey, validFor, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
+	if err != nil {
+		t.Fatalf("Failed to generate timed signature: %v", err)
+	}
 	createAccountRequest := &pb.CreateAccountRequest{
 		Proof: createSig,
 	}
@@ -33,12 +32,11 @@ func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, priv
 
 // Helper function to approve an address
 func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey, addressToApprove string) {
-	signTestUtil := &SignTestUtil{
-		T:               t,
-		TaStoreContract: taStoreContract,
-	}
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	approveSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, validFor, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
+	approveSig, err := NewPbTimedSignature(taStoreContract, ownerPrivKey, validFor, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
+	if err != nil {
+		t.Fatalf("Failed to generate timed signature: %v", err)
+	}
 	approveAddressRequest := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: accountId,
@@ -53,12 +51,11 @@ func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, acc
 
 // Helper function to unlock an account
 func UnlockAccountHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey) {
-	signTestUtil := &SignTestUtil{
-		T:               t,
-		TaStoreContract: taStoreContract,
-	}
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	unlockSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, validFor, common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
+	unlockSig, err := NewPbTimedSignature(taStoreContract, ownerPrivKey, validFor, common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
+	if err != nil {
+		t.Fatalf("Failed to generate timed signature: %v", err)
+	}
 	unlockAccountRequest := &pb.UnlockAccountRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: accountId,

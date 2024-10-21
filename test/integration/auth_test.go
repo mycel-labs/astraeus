@@ -17,7 +17,6 @@ import (
 var (
 	fr              *framework.Framework
 	taStoreContract *framework.Contract
-	signTestUtil    *testutil.SignTestUtil
 )
 
 func TestMain(m *testing.M) {
@@ -37,10 +36,6 @@ func setup(t *testing.T) {
 
 	// Deploy contract
 	taStoreContract = fr.Suave.DeployContract(testutil.TAStoreContractPath)
-	signTestUtil = &testutil.SignTestUtil{
-		T:               t,
-		TaStoreContract: taStoreContract,
-	}
 }
 
 func TestAuth(t *testing.T) {
@@ -83,7 +78,10 @@ func TestAuth(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			functionHash := common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
-			timedSignature := signTestUtil.NewTimedSignature(privKey, uint64(tc.validFor), functionHash)
+			timedSignature, err := testutil.NewTimedSignature(taStoreContract, privKey, uint64(tc.validFor), functionHash)
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
+			}
 
 			modifiedSignature := tc.modifySig([]byte(timedSignature.Signature))
 

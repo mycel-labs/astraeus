@@ -90,11 +90,10 @@ func TestCreateAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, uint64(tc.validFor), common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			timedSignature := signTestUtil.NewPbTimedSignature(privKey, uint64(tc.validFor), common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 
 			request := &pb.CreateAccountRequest{
 				Proof: timedSignature,
@@ -149,11 +148,10 @@ func TestTransferAccountE2E(t *testing.T) {
 			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
 
 			// Transfer account
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			transferSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
 			request := &pb.TransferAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -213,11 +211,10 @@ func TestDeleteAccountE2E(t *testing.T) {
 			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
 
 			// Step 3: Delete the account
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			deleteSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			deleteSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH))
 			deleteAccountRequest := &pb.DeleteAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -274,11 +271,10 @@ func TestUnlockAccountE2E(t *testing.T) {
 			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
 
 			// Step 2: Unlock the account
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			unlockSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			unlockSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
 			unlockAccountRequest := &pb.UnlockAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -337,11 +333,10 @@ func TestApproveAddressE2E(t *testing.T) {
 			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
 
 			// Step 2: Approve the account
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			approveSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			approveSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
 			approveAddressRequest := &pb.ApproveAddressRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -357,7 +352,10 @@ func TestApproveAddressE2E(t *testing.T) {
 
 			// Step 3: Check if the address is approved
 			if tc.expectValid {
-				transferSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
+				transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
 				transferRequest := &pb.TransferAccountRequest{
 					Base: &pb.AccountOperationRequest{
 						AccountId: accountId,
@@ -421,11 +419,10 @@ func TestRevokeApprovalE2E(t *testing.T) {
 			testutil.ApproveAddressHelper(t, taStoreContract, accountId, tc.creator, tc.to.PublicKey.X.String())
 
 			// Step 3: Revoke the approval
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			revokeSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			revokeSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH))
 			revokeApprovalRequest := &pb.RevokeApprovalRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -441,7 +438,10 @@ func TestRevokeApprovalE2E(t *testing.T) {
 
 			// Step 4: Check if the address is revoked
 			if tc.expectValid {
-				transferSig := signTestUtil.NewPbTimedSignature(tc.to, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
+				transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.to, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
+				if err != nil {
+					t.Fatalf("Failed to generate timed signature: %v", err)
+				}
 				transferRequest := &pb.TransferAccountRequest{
 					Base: &pb.AccountOperationRequest{
 						AccountId: accountId,
@@ -501,11 +501,10 @@ func TestSignE2E(t *testing.T) {
 			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
 
 			// Step 3: Sign the message
-			signTestUtil := &testutil.SignTestUtil{
-				T:               t,
-				TaStoreContract: taStoreContract,
+			signSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.SIGN_FUNCTION_HASH))
+			if err != nil {
+				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-			signSig := signTestUtil.NewPbTimedSignature(tc.sender, uint64(tc.validFor), common.HexToHash(impl.SIGN_FUNCTION_HASH))
 
 			message := []byte("Hello, World!")
 			messageHash := crypto.Keccak256(message)
