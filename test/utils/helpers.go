@@ -5,13 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 )
 
-func CreateAccountHelper(t *testing.T, privKey *ecdsa.PrivateKey) string {
-	createSig, err := GenerateTimedSignature(time.Now().Unix()+86400, privKey)
+func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, privKey *ecdsa.PrivateKey) string {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	createSig, err := NewPbTimedSignature(taStoreContract, privKey, validFor, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 	if err != nil {
 		t.Fatalf("Failed to generate timed signature: %v", err)
 	}
@@ -27,8 +31,9 @@ func CreateAccountHelper(t *testing.T, privKey *ecdsa.PrivateKey) string {
 }
 
 // Helper function to approve an address
-func ApproveAddressHelper(t *testing.T, accountId string, ownerPrivKey *ecdsa.PrivateKey, addressToApprove string) {
-	approveSig, err := GenerateTimedSignature(time.Now().Unix()+86400, ownerPrivKey)
+func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey, addressToApprove string) {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	approveSig, err := NewPbTimedSignature(taStoreContract, ownerPrivKey, validFor, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
 	if err != nil {
 		t.Fatalf("Failed to generate timed signature: %v", err)
 	}
@@ -45,8 +50,9 @@ func ApproveAddressHelper(t *testing.T, accountId string, ownerPrivKey *ecdsa.Pr
 }
 
 // Helper function to unlock an account
-func UnlockAccountHelper(t *testing.T, accountId string, ownerPrivKey *ecdsa.PrivateKey) {
-	unlockSig, err := GenerateTimedSignature(time.Now().Unix()+86400, ownerPrivKey)
+func UnlockAccountHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey) {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	unlockSig, err := NewPbTimedSignature(taStoreContract, ownerPrivKey, validFor, common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
 	if err != nil {
 		t.Fatalf("Failed to generate timed signature: %v", err)
 	}

@@ -27,6 +27,7 @@ const (
 	AccountService_RevokeApproval_FullMethodName  = "/api.v1.AccountService/RevokeApproval"
 	AccountService_Sign_FullMethodName            = "/api.v1.AccountService/Sign"
 	AccountService_GetAccount_FullMethodName      = "/api.v1.AccountService/GetAccount"
+	AccountService_GetNonce_FullMethodName        = "/api.v1.AccountService/GetNonce"
 	AccountService_IsApproved_FullMethodName      = "/api.v1.AccountService/IsApproved"
 	AccountService_IsOwner_FullMethodName         = "/api.v1.AccountService/IsOwner"
 	AccountService_IsAccountLocked_FullMethodName = "/api.v1.AccountService/IsAccountLocked"
@@ -46,6 +47,7 @@ type AccountServiceClient interface {
 	RevokeApproval(ctx context.Context, in *RevokeApprovalRequest, opts ...grpc.CallOption) (*RevokeApprovalResponse, error)
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error)
+	GetNonce(ctx context.Context, in *GetNonceRequest, opts ...grpc.CallOption) (*GetNonceResponse, error)
 	IsApproved(ctx context.Context, in *IsApprovedRequest, opts ...grpc.CallOption) (*IsApprovedResponse, error)
 	IsOwner(ctx context.Context, in *IsOwnerRequest, opts ...grpc.CallOption) (*IsOwnerResponse, error)
 	IsAccountLocked(ctx context.Context, in *IsAccountLockedRequest, opts ...grpc.CallOption) (*IsAccountLockedResponse, error)
@@ -139,6 +141,16 @@ func (c *accountServiceClient) GetAccount(ctx context.Context, in *GetAccountReq
 	return out, nil
 }
 
+func (c *accountServiceClient) GetNonce(ctx context.Context, in *GetNonceRequest, opts ...grpc.CallOption) (*GetNonceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNonceResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetNonce_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *accountServiceClient) IsApproved(ctx context.Context, in *IsApprovedRequest, opts ...grpc.CallOption) (*IsApprovedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IsApprovedResponse)
@@ -183,6 +195,7 @@ type AccountServiceServer interface {
 	RevokeApproval(context.Context, *RevokeApprovalRequest) (*RevokeApprovalResponse, error)
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error)
+	GetNonce(context.Context, *GetNonceRequest) (*GetNonceResponse, error)
 	IsApproved(context.Context, *IsApprovedRequest) (*IsApprovedResponse, error)
 	IsOwner(context.Context, *IsOwnerRequest) (*IsOwnerResponse, error)
 	IsAccountLocked(context.Context, *IsAccountLockedRequest) (*IsAccountLockedResponse, error)
@@ -219,6 +232,9 @@ func (UnimplementedAccountServiceServer) Sign(context.Context, *SignRequest) (*S
 }
 func (UnimplementedAccountServiceServer) GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) GetNonce(context.Context, *GetNonceRequest) (*GetNonceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNonce not implemented")
 }
 func (UnimplementedAccountServiceServer) IsApproved(context.Context, *IsApprovedRequest) (*IsApprovedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsApproved not implemented")
@@ -394,6 +410,24 @@ func _AccountService_GetAccount_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_GetNonce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNonceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetNonce(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetNonce_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetNonce(ctx, req.(*GetNonceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AccountService_IsApproved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IsApprovedRequest)
 	if err := dec(in); err != nil {
@@ -486,6 +520,10 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAccount",
 			Handler:    _AccountService_GetAccount_Handler,
+		},
+		{
+			MethodName: "GetNonce",
+			Handler:    _AccountService_GetNonce_Handler,
 		},
 		{
 			MethodName: "IsApproved",

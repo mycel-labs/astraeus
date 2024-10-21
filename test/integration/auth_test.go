@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	"github.com/mycel-labs/astraeus/src/go/framework"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -75,21 +77,24 @@ func TestAuth(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			messageHash, signature, err := testutil.SignTimedSignatureMessage(tc.validFor, privKey)
+			functionHash := common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
+			timedSignature, err := testutil.NewTimedSignature(taStoreContract, privKey, uint64(tc.validFor), functionHash)
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
 
-			modifiedSignature := tc.modifySig(signature)
+			modifiedSignature := tc.modifySig([]byte(timedSignature.Signature))
 
-			sig := &tas.SignatureVerifierTimedSignature{
-				ValidFor:    uint64(tc.validFor),
-				MessageHash: messageHash,
-				Signature:   modifiedSignature,
-				Signer:      crypto.PubkeyToAddress(privKey.PublicKey),
+			sig := &ct.SignatureVerifierTimedSignature{
+				ValidFor:           timedSignature.ValidFor,
+				MessageHash:        timedSignature.MessageHash,
+				Signature:          modifiedSignature,
+				Signer:             timedSignature.Signer,
+				Nonce:              timedSignature.Nonce,
+				TargetFunctionHash: timedSignature.TargetFunctionHash,
 			}
 
-			result := taStoreContract.Call("verifyTimedSignature", []interface{}{sig})
+			result := taStoreContract.Call("verifyTimedSignature", []interface{}{sig, timedSignature.TargetFunctionHash})
 			if len(result) == 0 || result[0] == nil {
 				t.Fatalf("empty result")
 			}
