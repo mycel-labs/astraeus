@@ -171,9 +171,9 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 		Y:     account.PublicKeyY,
 	}
 
-	address := crypto.PubkeyToAddress(publicKey)
+	ethereum_address := crypto.PubkeyToAddress(publicKey)
 
-	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId, Address: address.Hex()}, nil
+	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId, EthereumAddress: ethereum_address.Hex()}, nil
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
