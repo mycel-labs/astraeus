@@ -56,6 +56,10 @@ interface ITransferableAccountStore {
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         external
         returns (bytes memory);
-
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
+    function consumeNonce(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
+        external
+        returns (bool);
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
+        external
+        returns (bool);
 }
