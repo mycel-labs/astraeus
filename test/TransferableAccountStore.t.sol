@@ -59,21 +59,21 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testVerifyTimedSignature() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 VERIFY_TIMEDSIGNATRE = keccak256("test timedSignature");
+        bytes32 VERIFY_TIMEDSIGNATURE = keccak256("test timedSignature");
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), VERIFY_TIMEDSIGNATRE
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), VERIFY_TIMEDSIGNATURE
         );
 
         vm.warp(1000);
-        bool isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATRE);
+        bool isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
         assertTrue(isValid, "Valid signature should be accepted");
 
         vm.warp(uint64(block.timestamp + 86401));
-        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATRE);
+        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
         assertFalse(isValid, "Expired signature should be rejected");
 
         sig_0.signature[0] ^= 0xFF;
-        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATRE);
+        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
         assertFalse(isValid, "Invalid signature should be rejected");
     }
 
