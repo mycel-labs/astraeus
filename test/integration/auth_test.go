@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setup(t *testing.T) {
+func setup(_ *testing.T) {
 	fr = framework.New()
 
 	// Deploy contract
