@@ -63,27 +63,27 @@ func TestAuth(t *testing.T) {
 			modifySig:   func(sig []byte) []byte { return sig },
 			expectValid: true,
 		},
-		// {
-		// 	name:        "Expired signature",
-		// 	validFor:    time.Now().Unix() - 86400, // 1 day ago
-		// 	modifySig:   func(sig []byte) []byte { return sig },
-		// 	expectValid: false,
-		// },
-		// {
-		// 	name:     "Invalid signature",
-		// 	validFor: time.Now().Unix() + 86400,
-		// 	modifySig: func(sig []byte) []byte {
-		// 		sig[0] ^= 0xFF // Flip all bits in the first byte
-		// 		return sig
-		// 	},
-		// 	expectValid: false,
-		// },
+		{
+			name:        "Expired signature",
+			validFor:    time.Now().Unix() - 86400, // 1 day ago
+			modifySig:   func(sig []byte) []byte { return sig },
+			expectValid: false,
+		},
+		{
+			name:     "Invalid signature",
+			validFor: time.Now().Unix() + 86400,
+			modifySig: func(sig []byte) []byte {
+				sig[0] ^= 0xFF // Flip all bits in the first byte
+				return sig
+			},
+			expectValid: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			functionHash := common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
-			timedSignature := signTestUtil.NewTimedSignature(privKey, functionHash)
+			timedSignature := signTestUtil.NewTimedSignature(privKey, uint64(tc.validFor), functionHash)
 
 			modifiedSignature := tc.modifySig([]byte(timedSignature.Signature))
 

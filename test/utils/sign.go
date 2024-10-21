@@ -24,7 +24,8 @@ type SignTestUtil struct {
 
 func (su *SignTestUtil) NewAccount(privateKey *ecdsa.PrivateKey) *pb.Account {
 	targetFunctionHash := common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
-	sig := su.NewTimedSignature(privateKey, targetFunctionHash)
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	sig := su.NewTimedSignature(privateKey, validFor, targetFunctionHash)
 	receipt := su.TaStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
 	ev, err := su.TaStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
 	if err != nil {
@@ -38,10 +39,10 @@ func (su *SignTestUtil) NewAccount(privateKey *ecdsa.PrivateKey) *pb.Account {
 	}
 }
 
-func (su *SignTestUtil) NewPbTimedSignature(privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *pb.TimedSignature {
-	sig := su._newTimedSignature(privateKey, targetFunctionHash)
+func (su *SignTestUtil) NewPbTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *pb.TimedSignature {
+	sig := su._newTimedSignature(privateKey, validFor, targetFunctionHash)
 	return &pb.TimedSignature{
-		ValidFor:           sig.ValidFor,
+		ValidFor:           validFor,
 		MessageHash:        hex.EncodeToString(sig.MessageHash[:]),
 		Signature:          hex.EncodeToString(sig.Signature),
 		Signer:             sig.Signer.Hex(),
@@ -50,12 +51,11 @@ func (su *SignTestUtil) NewPbTimedSignature(privateKey *ecdsa.PrivateKey, target
 	}
 }
 
-func (su *SignTestUtil) NewTimedSignature(privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
-	return su._newTimedSignature(privateKey, targetFunctionHash)
+func (su *SignTestUtil) NewTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
+	return su._newTimedSignature(privateKey, validFor, targetFunctionHash)
 }
 
-func (su *SignTestUtil) _newTimedSignature(privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+func (su *SignTestUtil) _newTimedSignature(privateKey *ecdsa.PrivateKey, validFor uint64, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
 	nonce := su.getNonce(crypto.PubkeyToAddress(privateKey.PublicKey))
 	messageHash, signature, err := su.generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
 	if err != nil {

@@ -3,6 +3,7 @@ package testutil
 import (
 	"crypto/ecdsa"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,8 @@ func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, priv
 		T:               t,
 		TaStoreContract: taStoreContract,
 	}
-	createSig := signTestUtil.NewPbTimedSignature(privKey, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	createSig := signTestUtil.NewPbTimedSignature(privKey, validFor, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 	createAccountRequest := &pb.CreateAccountRequest{
 		Proof: createSig,
 	}
@@ -35,7 +37,8 @@ func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, acc
 		T:               t,
 		TaStoreContract: taStoreContract,
 	}
-	approveSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	approveSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, validFor, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
 	approveAddressRequest := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: accountId,
@@ -54,7 +57,8 @@ func UnlockAccountHelper(t *testing.T, taStoreContract *framework.Contract, acco
 		T:               t,
 		TaStoreContract: taStoreContract,
 	}
-	unlockSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	unlockSig := signTestUtil.NewPbTimedSignature(ownerPrivKey, validFor, common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
 	unlockAccountRequest := &pb.UnlockAccountRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: accountId,
