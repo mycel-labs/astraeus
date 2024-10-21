@@ -11,8 +11,11 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -20,21 +23,18 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
-	fr              *framework.Framework
-	taStoreContract *framework.Contract
-}
-
-type TimedSignature struct {
-	ValidFor    uint64
-	MessageHash [32]byte
-	Signature   []byte
-	Signer      common.Address
+	fr                  *framework.Framework
+	taStoreContract     *framework.Contract
+	taStoreContractBind *tas.Contract
+	auth                *bind.TransactOpts
+	client              *ethclient.Client
 }
 
 const (
@@ -43,14 +43,9 @@ const (
 	taStoreContractPath = "TransferableAccountStore.sol/TransferableAccountStore.json"
 )
 
-var (
-	privKey             string
-	taStoreContractAddr string
-)
-
 func checkEnvVars(fatal bool) {
-	taStoreContractAddr = os.Getenv("TA_STORE_CONTRACT_ADDRESS")
-	privKey = os.Getenv("PRIVATE_KEY")
+	taStoreContractAddr := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
+	privKey := os.Getenv("PRIVATE_KEY")
 
 	if taStoreContractAddr == "" {
 		if fatal {
@@ -72,30 +67,69 @@ func init() {
 	checkEnvVars(false)
 }
 
+func NewServer(rpcUrl string, privateKey string, taStoreContractAddr string) (*server, error) {
+
+	fr := framework.New(framework.WithCustomConfig(privateKey, rpcUrl))
+
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind to existing contract: %v", err)
+	}
+
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial RPC: %v", err)
+	}
+
+	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind to contract: %v", err)
+	}
+
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain ID: %v", err)
+	}
+
+	priv, err := crypto.HexToECDSA(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert hex to private key: %v", err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(priv, chainId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transactor: %v", err)
+	}
+
+	return &server{fr: fr, taStoreContract: taStoreContract, taStoreContractBind: taStoreContractBind, auth: auth, client: client}, nil
+}
+
 func StartServer(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Ensure env variables are set
 	checkEnvVars(true)
-
 	// Setup framework and contract
-	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
-	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(taStoreContractAddr), taStoreContractPath)
+	rpcUrl := os.Getenv("RPC_URL")
+	privateKeyStr := os.Getenv("PRIVATE_KEY")
+	taStoreContractAddr := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
+
+	s, err := NewServer(rpcUrl, privateKeyStr, taStoreContractAddr)
 	if err != nil {
-		log.Fatalf("Failed to bind to existing contract: %v", err)
+		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// gRPC server
-	s := grpc.NewServer()
+	gprcs := grpc.NewServer()
 	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen for gRPC server: %v", err)
 	}
-	pb.RegisterAccountServiceServer(s, &server{fr: fr, taStoreContract: taStoreContract})
+	pb.RegisterAccountServiceServer(gprcs, s)
 	log.Println("gRPC server started on", grpcPort)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := gprcs.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC server: %v", err)
 		}
 	}()
@@ -156,153 +190,105 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	// Use an anonymous function to handle potential panics
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Convert panic to error
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("transferAccount", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.To)}, nil)
-	}()
+	tx, err := s.taStoreContractBind.TransferAccount(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.To))
+	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
 
-	// Check if a panic occurred and was converted to an error
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if the transaction was successful
-	if result == nil {
-		return nil, fmt.Errorf("failed to transfer account")
-	}
-
-	return &pb.TransferAccountResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.TransferAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
+	tx, err := s.taStoreContractBind.DeleteAccount(s.auth, *sig, req.Base.AccountId)
+	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	// Use an anonymous function to handle potential panics
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Convert panic to error
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		// Execute the confidential request
-		result = s.taStoreContract.SendConfidentialRequest("deleteAccount", []interface{}{sig, req.Base.AccountId}, nil)
-	}()
-
-	// Check if a panic occurred and was converted to an error
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if the transaction was successful
-	if result == nil {
-		return nil, fmt.Errorf("failed to delete account")
-	}
-
-	return &pb.DeleteAccountResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.DeleteAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) UnlockAccount(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
+		log.Printf("err: %v", err)
 		return nil, err
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		result = s.taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, req.Base.AccountId}, nil)
-	}()
+	tx, err := s.taStoreContractBind.UnlockAccount(s.auth, *sig, req.Base.AccountId)
+	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
 
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, fmt.Errorf("failed to unlock account")
-	}
-
-	return &pb.UnlockAccountResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.UnlockAccountResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) ApproveAddress(ctx context.Context, req *pb.ApproveAddressRequest) (*pb.ApproveAddressResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		result = s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.Address)}, nil)
-	}()
+	tx, err := s.taStoreContractBind.ApproveAddress(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.Address))
+	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
 
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, fmt.Errorf("failed to approve address")
-	}
-
-	return &pb.ApproveAddressResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.ApproveAddressResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) RevokeApproval(ctx context.Context, req *pb.RevokeApprovalRequest) (*pb.RevokeApprovalResponse, error) {
-	var result *types.Receipt
-	var err error
 	sig, err := populateTimedSignature(req.Base.Proof)
 	if err != nil {
 		return nil, err
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("error occurred during transaction execution: %v", r)
-			}
-		}()
-		result = s.taStoreContract.SendConfidentialRequest("revokeApproval", []interface{}{sig, req.Base.AccountId, common.HexToAddress(req.Address)}, nil)
-	}()
+	tx, err := s.taStoreContractBind.RevokeApproval(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.Address))
+	if err != nil {
+		log.Printf("err: %v", err)
+		return nil, err
+	}
 
+	receipt, err := s.waitForTransaction(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, fmt.Errorf("failed to revoke approval")
-	}
-
-	return &pb.RevokeApprovalResponse{TxHash: result.TxHash.Hex()}, nil
+	return &pb.RevokeApprovalResponse{TxHash: receipt.TxHash.Hex()}, nil
 }
 
 func (s *server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
@@ -355,12 +341,12 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	}
 
 	ac, ok := result[0].(struct {
-		AccountId  [16]uint8      `json:"accountId"`
-		Owner      common.Address `json:"owner"`
-		PublicKeyX *big.Int       `json:"publicKeyX"`
-		PublicKeyY *big.Int       `json:"publicKeyY"`
-		Curve      uint8          `json:"curve"`
-		IsLocked   bool           `json:"isLocked"`
+		AccountId          [16]uint8      `json:"accountId"`
+		Owner              common.Address `json:"owner"`
+		PublicKeyX         *big.Int       `json:"publicKeyX"`
+		PublicKeyY         *big.Int       `json:"publicKeyY"`
+		SignatureAlgorithm uint8          `json:"signatureAlgorithm"`
+		IsLocked           bool           `json:"isLocked"`
 	})
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "account data type is invalid or unexpected")
@@ -372,12 +358,12 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	}
 
 	pbac := &pb.Account{
-		AccountId:  req.AccountId,
-		Owner:      ac.Owner.Hex(),
-		PublicKeyX: ac.PublicKeyX.Text(16),
-		PublicKeyY: ac.PublicKeyY.Text(16),
-		Curve:      pb.Curve(ac.Curve),
-		IsLocked:   ac.IsLocked,
+		AccountId:          req.AccountId,
+		Owner:              ac.Owner.Hex(),
+		PublicKeyX:         ac.PublicKeyX.Text(16),
+		PublicKeyY:         ac.PublicKeyY.Text(16),
+		SignatureAlgorithm: pb.SignatureAlgorithm(ac.SignatureAlgorithm),
+		IsLocked:           ac.IsLocked,
 	}
 
 	return &pb.GetAccountResponse{Account: pbac}, nil
@@ -432,6 +418,22 @@ func (s *server) IsAccountLocked(ctx context.Context, req *pb.IsAccountLockedReq
 ** Helper functions
  */
 
+func (s *server) waitForTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+	// Wait for the transaction to be mined
+	receipt, err := bind.WaitMined(ctx, s.client, tx)
+	if err != nil {
+		log.Printf("error waiting for transaction to be mined: %v", err)
+		return nil, err
+	}
+
+	// Check if the transaction was successful
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return nil, fmt.Errorf("transaction failed")
+	}
+
+	return receipt, nil
+}
+
 func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	var messageHashBytes [32]byte
 	if len(messageHash) != 32 {
@@ -441,7 +443,7 @@ func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	return messageHashBytes, nil
 }
 
-func populateTimedSignature(sig *pb.TimedSignature) (*TimedSignature, error) {
+func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimedSignature, error) {
 	messageHash, err := hex.DecodeString(sig.MessageHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message hash: %v", err)
@@ -457,7 +459,7 @@ func populateTimedSignature(sig *pb.TimedSignature) (*TimedSignature, error) {
 		return nil, fmt.Errorf("failed to convert message hash: %v", err)
 	}
 
-	return &TimedSignature{
+	return &tas.SignatureVerifierTimedSignature{
 		ValidFor:    sig.ValidFor,
 		MessageHash: messageHashBytes,
 		Signature:   signature,
