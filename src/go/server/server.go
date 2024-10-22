@@ -187,12 +187,12 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	accountId := caEvent["accountId"].(string)
 	account := caEvent["account"].(struct {
-		AccountId  [16]uint8      `json:"accountId"`
-		Owner      common.Address `json:"owner"`
-		PublicKeyX *big.Int       `json:"publicKeyX"`
-		PublicKeyY *big.Int       `json:"publicKeyY"`
-		Curve      uint8          `json:"curve"`
-		IsLocked   bool           `json:"isLocked"`
+		AccountId          [16]uint8      `json:"accountId"`
+		Owner              common.Address `json:"owner"`
+		PublicKeyX         *big.Int       `json:"publicKeyX"`
+		PublicKeyY         *big.Int       `json:"publicKeyY"`
+		SignatureAlgorithm uint8          `json:"signatureAlgorithm"`
+		IsLocked           bool           `json:"isLocked"`
 	})
 	if account.PublicKeyX == nil || account.PublicKeyY == nil {
 		return nil, fmt.Errorf("public key components are missing")
