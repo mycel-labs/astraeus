@@ -81,6 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
 	assert.NotEmpty(t, resp.TxHash, "TxHash should not be empty")
 	assert.NotEmpty(t, resp.AccountId, "Account ID should not be empty")
+	assert.NotEmpty(t, resp.EthereumAddress, "EthereumAddress should not be empty")
 
 	// Verify the account was created
 	accountReq := &pb.GetAccountRequest{AccountId: resp.AccountId}

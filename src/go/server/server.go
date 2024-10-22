@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -182,11 +183,30 @@ func (s *server) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest
 	}
 	caEvent, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(result.Logs[0])
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to parse AccountCreated event: %v", err)
 	}
 	accountId := caEvent["accountId"].(string)
+	account := caEvent["account"].(struct {
+		AccountId          [16]uint8      `json:"accountId"`
+		Owner              common.Address `json:"owner"`
+		PublicKeyX         *big.Int       `json:"publicKeyX"`
+		PublicKeyY         *big.Int       `json:"publicKeyY"`
+		SignatureAlgorithm uint8          `json:"signatureAlgorithm"`
+		IsLocked           bool           `json:"isLocked"`
+	})
+	if account.PublicKeyX == nil || account.PublicKeyY == nil {
+		return nil, fmt.Errorf("public key components are missing")
+	}
 
-	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId}, nil
+	publicKey := ecdsa.PublicKey{
+		Curve: crypto.S256(), // Use the secp256k1 curve, standard for Ethereum
+		X:     account.PublicKeyX,
+		Y:     account.PublicKeyY,
+	}
+
+	ethereum_address := crypto.PubkeyToAddress(publicKey)
+
+	return &pb.CreateAccountResponse{TxHash: result.TxHash.Hex(), AccountId: accountId, EthereumAddress: ethereum_address.Hex()}, nil
 }
 
 func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountRequest) (*pb.TransferAccountResponse, error) {

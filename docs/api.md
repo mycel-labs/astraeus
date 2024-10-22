@@ -140,6 +140,7 @@ Responses
 | ----- | ---- | ----- | ----------- |
 | tx_hash | [string](#string) |  |  |
 | account_id | [string](#string) |  |  |
+| ethereum_address | [string](#string) |  |  |
 
 
 
