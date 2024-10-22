@@ -10,6 +10,7 @@ This project implements a transferable account system using smart contracts.
 ### Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- Docker 
 
 ### Installation
 
@@ -21,12 +22,12 @@ This project implements a transferable account system using smart contracts.
 
 2. Install dependencies:
    ```
-   forge install
+   make install
    ```
 
 3. Compile the contracts:
    ```
-   forge build
+   make build
    ```
 
 ## Getting Started
