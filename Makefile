@@ -50,7 +50,6 @@ check-fmt-go:
 .PHONY: run-proto
 run-proto:
 	@docker build -t $(PROTOBUF_DOCKER_IMAGE) -f $(PROTOBUF_DOCKERFILE) .
-	@rm -f docs/api.md
 	@docker run --rm -v $(PWD):/workspace \
 		$(PROTOBUF_DOCKER_IMAGE) \
 		generate
