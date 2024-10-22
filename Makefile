@@ -68,7 +68,10 @@ check-fmt-proto:
 	buf format -d src/proto
 
 # General
-.PHONY: build test lint fmt check-fmt
+.PHONY: install build test lint fmt check-fmt
+install:
+	forge install
+
 build: build-solidity build-go compile-proto
 
 test: test-solidity test-go
