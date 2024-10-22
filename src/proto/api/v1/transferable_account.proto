@@ -12,14 +12,14 @@ message Account {
     string owner = 2;
     string public_key_x = 3;
     string public_key_y = 4;
-    Curve curve = 5;
+    SignatureAlgorithm signature_algorithm = 5;
     bool is_locked = 6;
 }
 
-enum Curve {
-  CURVE_UNSPECIFIED = 0;
-  CURVE_ECDSA = 1;
-  CURVE_EDDSA = 2;
+enum SignatureAlgorithm {
+    SignatureAlgorithm_UNSPECIFIED = 0;
+    SignatureAlgorithm_ECDSA = 1;
+    SignatureAlgorithm_EDDSA = 2;
 }
 
 // Requests

@@ -10,14 +10,14 @@ interface ITransferableAccountStore {
         address owner;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        Curve curve;
+        SignatureAlgorithm signatureAlgorithm;
         bool isLocked;
     }
 
-    enum Curve {
-        CURVE_UNKNOWN,
-        ECDSA,
-        EDDSA
+    enum SignatureAlgorithm {
+        SignatureAlgorithm_UNSPECIFIED,
+        SignatureAlgorithm_ECDSA,
+        SignatureAlgorithm_EDDSA
     }
 
     // Events
@@ -39,28 +39,27 @@ interface ITransferableAccountStore {
     // Actions
     function createAccount(SignatureVerifier.TimedSignature calldata signature) external returns (bytes memory);
     function transferAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId, address to)
-        external
-        returns (bytes memory);
-    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        external
-        returns (bytes memory);
-    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId)
-        external
-        returns (bytes memory);
+        external;
+    function deleteAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId) external;
+    function unlockAccount(SignatureVerifier.TimedSignature calldata signature, string memory accountId) external;
     function approveAddress(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external returns (bytes memory);
+    ) external;
     function revokeApproval(
         SignatureVerifier.TimedSignature calldata signature,
         string memory accountId,
         address _address
-    ) external returns (bytes memory);
+    ) external;
 
     function sign(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId, bytes memory data)
         external
         returns (bytes memory);
-
-    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata signature) external view returns (bool);
+    function consumeNonce(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
+        external
+        returns (bool);
+    function verifyTimedSignature(SignatureVerifier.TimedSignature calldata timedSignature, bytes32 targetFunctionHash)
+        external
+        returns (bool);
 }
