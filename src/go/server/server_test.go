@@ -665,7 +665,6 @@ func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 		t.Fatalf("failed to parse log: %v", err)
 	}
 	accountId = ev["accountId"].(string)
-	// accountに紐づくethereumアドレスが取得できているか確認する
 
 	return &pb.Account{
 		AccountId: accountId,
