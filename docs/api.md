@@ -14,6 +14,8 @@
     - [DeleteAccountResponse](#api-v1-DeleteAccountResponse)
     - [GetAccountRequest](#api-v1-GetAccountRequest)
     - [GetAccountResponse](#api-v1-GetAccountResponse)
+    - [GetNonceRequest](#api-v1-GetNonceRequest)
+    - [GetNonceResponse](#api-v1-GetNonceResponse)
     - [IsAccountLockedRequest](#api-v1-IsAccountLockedRequest)
     - [IsAccountLockedResponse](#api-v1-IsAccountLockedResponse)
     - [IsApprovedRequest](#api-v1-IsApprovedRequest)
@@ -204,6 +206,36 @@ Responses
 
 
 
+<a name="api-v1-GetNonceRequest"></a>
+
+### GetNonceRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api-v1-GetNonceResponse"></a>
+
+### GetNonceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| nonce | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="api-v1-IsAccountLockedRequest"></a>
 
 ### IsAccountLockedRequest
@@ -386,6 +418,8 @@ Requests
 | message_hash | [string](#string) |  | hex encoded |
 | signature | [string](#string) |  | hex encoded |
 | signer | [string](#string) |  | address |
+| nonce | [uint64](#uint64) |  |  |
+| target_function_hash | [string](#string) |  | hex encoded |
 
 
 
@@ -487,6 +521,7 @@ Service
 | RevokeApproval | [RevokeApprovalRequest](#api-v1-RevokeApprovalRequest) | [RevokeApprovalResponse](#api-v1-RevokeApprovalResponse) |  |
 | Sign | [SignRequest](#api-v1-SignRequest) | [SignResponse](#api-v1-SignResponse) |  |
 | GetAccount | [GetAccountRequest](#api-v1-GetAccountRequest) | [GetAccountResponse](#api-v1-GetAccountResponse) |  |
+| GetNonce | [GetNonceRequest](#api-v1-GetNonceRequest) | [GetNonceResponse](#api-v1-GetNonceResponse) |  |
 | IsApproved | [IsApprovedRequest](#api-v1-IsApprovedRequest) | [IsApprovedResponse](#api-v1-IsApprovedResponse) |  |
 | IsOwner | [IsOwnerRequest](#api-v1-IsOwnerRequest) | [IsOwnerResponse](#api-v1-IsOwnerResponse) |  |
 | IsAccountLocked | [IsAccountLockedRequest](#api-v1-IsAccountLockedRequest) | [IsAccountLockedResponse](#api-v1-IsAccountLockedResponse) |  |

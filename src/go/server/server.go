@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	tas "github.com/mycel-labs/astraeus/src/go/contract/transferable_account_store"
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
@@ -32,7 +32,7 @@ type server struct {
 	pb.UnimplementedAccountServiceServer
 	fr                  *framework.Framework
 	taStoreContract     *framework.Contract
-	taStoreContractBind *tas.Contract
+	taStoreContractBind *ct.Transferableaccountstore
 	auth                *bind.TransactOpts
 	client              *ethclient.Client
 }
@@ -81,7 +81,7 @@ func NewServer(rpcUrl string, privateKey string, taStoreContractAddr string) (*s
 		return nil, fmt.Errorf("failed to dial RPC: %v", err)
 	}
 
-	taStoreContractBind, err := tas.NewContract(taStoreContract.Contract.Address(), client)
+	taStoreContractBind, err := ct.NewTransferableaccountstore(taStoreContract.Contract.Address(), client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bind to contract: %v", err)
 	}
@@ -369,6 +369,21 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	return &pb.GetAccountResponse{Account: pbac}, nil
 }
 
+func (s *server) GetNonce(ctx context.Context, req *pb.GetNonceRequest) (*pb.GetNonceResponse, error) {
+	result := s.taStoreContract.Call("getNonce", []interface{}{common.HexToAddress(req.Address)})
+
+	if len(result) == 0 || result[0] == nil {
+		return nil, fmt.Errorf("empty result")
+	}
+
+	nonce, ok := result[0].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("nonce data type is unexpected")
+	}
+
+	return &pb.GetNonceResponse{Nonce: nonce}, nil
+}
+
 func (s *server) IsApproved(ctx context.Context, req *pb.IsApprovedRequest) (*pb.IsApprovedResponse, error) {
 	result := s.taStoreContract.Call("isApproved", []interface{}{req.AccountId, common.HexToAddress(req.Address)})
 
@@ -443,7 +458,7 @@ func convertMessageHash(messageHash []byte) ([32]byte, error) {
 	return messageHashBytes, nil
 }
 
-func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimedSignature, error) {
+func populateTimedSignature(sig *pb.TimedSignature) (*ct.SignatureVerifierTimedSignature, error) {
 	messageHash, err := hex.DecodeString(sig.MessageHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message hash: %v", err)
@@ -459,10 +474,12 @@ func populateTimedSignature(sig *pb.TimedSignature) (*tas.SignatureVerifierTimed
 		return nil, fmt.Errorf("failed to convert message hash: %v", err)
 	}
 
-	return &tas.SignatureVerifierTimedSignature{
-		ValidFor:    sig.ValidFor,
-		MessageHash: messageHashBytes,
-		Signature:   signature,
-		Signer:      common.HexToAddress(sig.Signer),
+	return &ct.SignatureVerifierTimedSignature{
+		ValidFor:           sig.ValidFor,
+		MessageHash:        messageHashBytes,
+		Signature:          signature,
+		Signer:             common.HexToAddress(sig.Signer),
+		Nonce:              sig.Nonce,
+		TargetFunctionHash: common.HexToHash(sig.TargetFunctionHash),
 	}, nil
 }
