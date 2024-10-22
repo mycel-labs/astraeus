@@ -81,6 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
 	assert.NotEmpty(t, resp.TxHash, "TxHash should not be empty")
 	assert.NotEmpty(t, resp.AccountId, "Account ID should not be empty")
+	assert.NotEmpty(t, resp.EthereumAddress, "EthereumAddress should not be empty")
 
 	// Verify the account was created
 	accountReq := &pb.GetAccountRequest{AccountId: resp.AccountId}
@@ -664,6 +665,7 @@ func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
 		t.Fatalf("failed to parse log: %v", err)
 	}
 	accountId = ev["accountId"].(string)
+	// accountに紐づくethereumアドレスが取得できているか確認する
 
 	return &pb.Account{
 		AccountId: accountId,
