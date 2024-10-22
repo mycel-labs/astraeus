@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0;  
+      }
+
+       
+      .field-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(3) {  
+        width: 6em;
+      }
+      .field-table td:nth-child(4) {  
+        width: auto;
+      }
+
+       
+      .extension-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) {  
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) {  
+        width: auto;
+      }
+
+       
+      .enum-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) {  
+        width: auto;
+      }
+
+       
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+       
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+       
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+       
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        
+          
+          <li>
+            <a href="#google%2fapi%2fhttp.proto">google/api/http.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#google.api.CustomHttpPattern"><span class="badge">M</span>CustomHttpPattern</a>
+                </li>
+              
+                <li>
+                  <a href="#google.api.Http"><span class="badge">M</span>Http</a>
+                </li>
+              
+                <li>
+                  <a href="#google.api.HttpRule"><span class="badge">M</span>HttpRule</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#google%2fapi%2fannotations.proto">google/api/annotations.proto</a>
+            <ul>
+              
+              
+              
+                <li>
+                  <a href="#google%2fapi%2fannotations.proto-extensions"><span class="badge">X</span>File-level Extensions</a>
+                </li>
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#api%2fv1%2ftransferable_account.proto">api/v1/transferable_account.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#api.v1.Account"><span class="badge">M</span>Account</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.AccountOperationRequest"><span class="badge">M</span>AccountOperationRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.ApproveAddressRequest"><span class="badge">M</span>ApproveAddressRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.ApproveAddressResponse"><span class="badge">M</span>ApproveAddressResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.CreateAccountRequest"><span class="badge">M</span>CreateAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.CreateAccountResponse"><span class="badge">M</span>CreateAccountResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.DeleteAccountRequest"><span class="badge">M</span>DeleteAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.DeleteAccountResponse"><span class="badge">M</span>DeleteAccountResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.GetAccountRequest"><span class="badge">M</span>GetAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.GetAccountResponse"><span class="badge">M</span>GetAccountResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsAccountLockedRequest"><span class="badge">M</span>IsAccountLockedRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsAccountLockedResponse"><span class="badge">M</span>IsAccountLockedResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsApprovedRequest"><span class="badge">M</span>IsApprovedRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsApprovedResponse"><span class="badge">M</span>IsApprovedResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsOwnerRequest"><span class="badge">M</span>IsOwnerRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.IsOwnerResponse"><span class="badge">M</span>IsOwnerResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.LockAccountRequest"><span class="badge">M</span>LockAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.RevokeApprovalRequest"><span class="badge">M</span>RevokeApprovalRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.RevokeApprovalResponse"><span class="badge">M</span>RevokeApprovalResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.SignRequest"><span class="badge">M</span>SignRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.SignResponse"><span class="badge">M</span>SignResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.TimedSignature"><span class="badge">M</span>TimedSignature</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.TransferAccountRequest"><span class="badge">M</span>TransferAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.TransferAccountResponse"><span class="badge">M</span>TransferAccountResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.UnlockAccountRequest"><span class="badge">M</span>UnlockAccountRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.UnlockAccountResponse"><span class="badge">M</span>UnlockAccountResponse</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#api.v1.Curve"><span class="badge">E</span>Curve</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#api.v1.AccountService"><span class="badge">S</span>AccountService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    
+      
+      <div class="file-heading">
+        <h2 id="google/api/http.proto">google/api/http.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="google.api.CustomHttpPattern">CustomHttpPattern</h3>
+        <p>A custom pattern is used for defining custom HTTP verb.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>kind</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of this custom HTTP verb. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>path</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The path matched by this custom verb. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="google.api.Http">Http</h3>
+        <p>Defines the HTTP configuration for an API service. It contains a list of</p><p>[HttpRule][google.api.HttpRule], each specifying the mapping of an RPC method</p><p>to one or more HTTP REST API methods.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>rules</td>
+                  <td><a href="#google.api.HttpRule">HttpRule</a></td>
+                  <td>repeated</td>
+                  <td><p>A list of HTTP configuration rules that apply to individual API methods.
+
+**NOTE:** All service configuration rules follow &#34;last one wins&#34; order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>fully_decode_reserved_expansion</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>When set to true, URL path parameters will be fully URI-decoded except in
+cases of single segment matches in reserved expansion, where &#34;%2F&#34; will be
+left encoded.
+
+The default behavior is to not decode RFC 6570 reserved characters in multi
+segment matches. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="google.api.HttpRule">HttpRule</h3>
+        <p>gRPC Transcoding</p><p>gRPC Transcoding is a feature for mapping between a gRPC method and one or</p><p>more HTTP REST endpoints. It allows developers to build a single API service</p><p>that supports both gRPC APIs and REST APIs. Many systems, including [Google</p><p>APIs](https://github.com/googleapis/googleapis),</p><p>[Cloud Endpoints](https://cloud.google.com/endpoints), [gRPC</p><p>Gateway](https://github.com/grpc-ecosystem/grpc-gateway),</p><p>and [Envoy](https://github.com/envoyproxy/envoy) proxy support this feature</p><p>and use it for large scale production services.</p><p>`HttpRule` defines the schema of the gRPC/REST mapping. The mapping specifies</p><p>how different portions of the gRPC request message are mapped to the URL</p><p>path, URL query parameters, and HTTP request body. It also controls how the</p><p>gRPC response message is mapped to the HTTP response body. `HttpRule` is</p><p>typically specified as an `google.api.http` annotation on the gRPC method.</p><p>Each mapping specifies a URL path template and an HTTP method. The path</p><p>template may refer to one or more fields in the gRPC request message, as long</p><p>as each field is a non-repeated field with a primitive (non-message) type.</p><p>The path template controls how fields of the request message are mapped to</p><p>the URL path.</p><p>Example:</p><p>service Messaging {</p><p>rpc GetMessage(GetMessageRequest) returns (Message) {</p><p>option (google.api.http) = {</p><p>get: "/v1/{name=messages/*}"</p><p>};</p><p>}</p><p>}</p><p>message GetMessageRequest {</p><p>string name = 1; // Mapped to URL path.</p><p>}</p><p>message Message {</p><p>string text = 1; // The resource content.</p><p>}</p><p>This enables an HTTP REST to gRPC mapping as below:</p><p>- HTTP: `GET /v1/messages/123456`</p><p>- gRPC: `GetMessage(name: "messages/123456")`</p><p>Any fields in the request message which are not bound by the path template</p><p>automatically become HTTP query parameters if there is no HTTP request body.</p><p>For example:</p><p>service Messaging {</p><p>rpc GetMessage(GetMessageRequest) returns (Message) {</p><p>option (google.api.http) = {</p><p>get:"/v1/messages/{message_id}"</p><p>};</p><p>}</p><p>}</p><p>message GetMessageRequest {</p><p>message SubMessage {</p><p>string subfield = 1;</p><p>}</p><p>string message_id = 1; // Mapped to URL path.</p><p>int64 revision = 2;    // Mapped to URL query parameter `revision`.</p><p>SubMessage sub = 3;    // Mapped to URL query parameter `sub.subfield`.</p><p>}</p><p>This enables a HTTP JSON to RPC mapping as below:</p><p>- HTTP: `GET /v1/messages/123456?revision=2&sub.subfield=foo`</p><p>- gRPC: `GetMessage(message_id: "123456" revision: 2 sub:</p><p>SubMessage(subfield: "foo"))`</p><p>Note that fields which are mapped to URL query parameters must have a</p><p>primitive type or a repeated primitive type or a non-repeated message type.</p><p>In the case of a repeated type, the parameter can be repeated in the URL</p><p>as `...?param=A&param=B`. In the case of a message type, each field of the</p><p>message is mapped to a separate parameter, such as</p><p>`...?foo.a=A&foo.b=B&foo.c=C`.</p><p>For HTTP methods that allow a request body, the `body` field</p><p>specifies the mapping. Consider a REST update method on the</p><p>message resource collection:</p><p>service Messaging {</p><p>rpc UpdateMessage(UpdateMessageRequest) returns (Message) {</p><p>option (google.api.http) = {</p><p>patch: "/v1/messages/{message_id}"</p><p>body: "message"</p><p>};</p><p>}</p><p>}</p><p>message UpdateMessageRequest {</p><p>string message_id = 1; // mapped to the URL</p><p>Message message = 2;   // mapped to the body</p><p>}</p><p>The following HTTP JSON to RPC mapping is enabled, where the</p><p>representation of the JSON in the request body is determined by</p><p>protos JSON encoding:</p><p>- HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`</p><p>- gRPC: `UpdateMessage(message_id: "123456" message { text: "Hi!" })`</p><p>The special name `*` can be used in the body mapping to define that</p><p>every field not bound by the path template should be mapped to the</p><p>request body.  This enables the following alternative definition of</p><p>the update method:</p><p>service Messaging {</p><p>rpc UpdateMessage(Message) returns (Message) {</p><p>option (google.api.http) = {</p><p>patch: "/v1/messages/{message_id}"</p><p>body: "*"</p><p>};</p><p>}</p><p>}</p><p>message Message {</p><p>string message_id = 1;</p><p>string text = 2;</p><p>}</p><p>The following HTTP JSON to RPC mapping is enabled:</p><p>- HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`</p><p>- gRPC: `UpdateMessage(message_id: "123456" text: "Hi!")`</p><p>Note that when using `*` in the body mapping, it is not possible to</p><p>have HTTP parameters, as all fields not bound by the path end in</p><p>the body. This makes this option more rarely used in practice when</p><p>defining REST APIs. The common usage of `*` is in custom methods</p><p>which don't use the URL at all for transferring data.</p><p>It is possible to define multiple HTTP methods for one RPC by using</p><p>the `additional_bindings` option. Example:</p><p>service Messaging {</p><p>rpc GetMessage(GetMessageRequest) returns (Message) {</p><p>option (google.api.http) = {</p><p>get: "/v1/messages/{message_id}"</p><p>additional_bindings {</p><p>get: "/v1/users/{user_id}/messages/{message_id}"</p><p>}</p><p>};</p><p>}</p><p>}</p><p>message GetMessageRequest {</p><p>string message_id = 1;</p><p>string user_id = 2;</p><p>}</p><p>This enables the following two alternative HTTP JSON to RPC mappings:</p><p>- HTTP: `GET /v1/messages/123456`</p><p>- gRPC: `GetMessage(message_id: "123456")`</p><p>- HTTP: `GET /v1/users/me/messages/123456`</p><p>- gRPC: `GetMessage(user_id: "me" message_id: "123456")`</p><p>Rules for HTTP mapping</p><p>1. Leaf request fields (recursive expansion nested messages in the request</p><p>message) are classified into three categories:</p><p>- Fields referred by the path template. They are passed via the URL path.</p><p>- Fields referred by the [HttpRule.body][google.api.HttpRule.body]. They</p><p>are passed via the HTTP</p><p>request body.</p><p>- All other fields are passed via the URL query parameters, and the</p><p>parameter name is the field path in the request message. A repeated</p><p>field can be represented as multiple query parameters under the same</p><p>name.</p><p>2. If [HttpRule.body][google.api.HttpRule.body] is "*", there is no URL</p><p>query parameter, all fields</p><p>are passed via URL path and HTTP request body.</p><p>3. If [HttpRule.body][google.api.HttpRule.body] is omitted, there is no HTTP</p><p>request body, all</p><p>fields are passed via URL path and URL query parameters.</p><p>Path template syntax</p><p>Template = "/" Segments [ Verb ] ;</p><p>Segments = Segment { "/" Segment } ;</p><p>Segment  = "*" | "**" | LITERAL | Variable ;</p><p>Variable = "{" FieldPath [ "=" Segments ] "}" ;</p><p>FieldPath = IDENT { "." IDENT } ;</p><p>Verb     = ":" LITERAL ;</p><p>The syntax `*` matches a single URL path segment. The syntax `**` matches</p><p>zero or more URL path segments, which must be the last part of the URL path</p><p>except the `Verb`.</p><p>The syntax `Variable` matches part of the URL path as specified by its</p><p>template. A variable template must not contain other variables. If a variable</p><p>matches a single path segment, its template may be omitted, e.g. `{var}`</p><p>is equivalent to `{var=*}`.</p><p>The syntax `LITERAL` matches literal text in the URL path. If the `LITERAL`</p><p>contains any reserved character, such characters should be percent-encoded</p><p>before the matching.</p><p>If a variable contains exactly one path segment, such as `"{var}"` or</p><p>`"{var=*}"`, when such a variable is expanded into a URL path on the client</p><p>side, all characters except `[-_.~0-9a-zA-Z]` are percent-encoded. The</p><p>server side does the reverse decoding. Such variables show up in the</p><p>[Discovery</p><p>Document](https://developers.google.com/discovery/v1/reference/apis) as</p><p>`{var}`.</p><p>If a variable contains multiple path segments, such as `"{var=foo/*}"`</p><p>or `"{var=**}"`, when such a variable is expanded into a URL path on the</p><p>client side, all characters except `[-_.~/0-9a-zA-Z]` are percent-encoded.</p><p>The server side does the reverse decoding, except "%2F" and "%2f" are left</p><p>unchanged. Such variables show up in the</p><p>[Discovery</p><p>Document](https://developers.google.com/discovery/v1/reference/apis) as</p><p>`{+var}`.</p><p>Using gRPC API Service Configuration</p><p>gRPC API Service Configuration (service config) is a configuration language</p><p>for configuring a gRPC service to become a user-facing product. The</p><p>service config is simply the YAML representation of the `google.api.Service`</p><p>proto message.</p><p>As an alternative to annotating your proto file, you can configure gRPC</p><p>transcoding in your service config YAML files. You do this by specifying a</p><p>`HttpRule` that maps the gRPC method to a REST endpoint, achieving the same</p><p>effect as the proto annotation. This can be particularly useful if you</p><p>have a proto that is reused in multiple services. Note that any transcoding</p><p>specified in the service config will override any matching transcoding</p><p>configuration in the proto.</p><p>The following example selects a gRPC method and applies an `HttpRule` to it:</p><p>http:</p><p>rules:</p><p>- selector: example.v1.Messaging.GetMessage</p><p>get: /v1/messages/{message_id}/{sub.subfield}</p><p>Special notes</p><p>When gRPC Transcoding is used to map a gRPC to JSON REST endpoints, the</p><p>proto to JSON conversion must follow the [proto3</p><p>specification](https://developers.google.com/protocol-buffers/docs/proto3#json).</p><p>While the single segment variable follows the semantics of</p><p>[RFC 6570](https://tools.ietf.org/html/rfc6570) Section 3.2.2 Simple String</p><p>Expansion, the multi segment variable **does not** follow RFC 6570 Section</p><p>3.2.3 Reserved Expansion. The reason is that the Reserved Expansion</p><p>does not expand special characters like `?` and `#`, which would lead</p><p>to invalid URLs. As the result, gRPC Transcoding uses a custom encoding</p><p>for multi segment variables.</p><p>The path variables **must not** refer to any repeated or mapped field,</p><p>because client libraries are not capable of handling such variable expansion.</p><p>The path variables **must not** capture the leading "/" character. The reason</p><p>is that the most common use case "{var}" does not capture the leading "/"</p><p>character. For consistency, all path variables must share the same behavior.</p><p>Repeated message fields must not be mapped to URL query parameters, because</p><p>no client library can support such complicated mapping.</p><p>If an API needs to use a JSON array for request or response body, it can map</p><p>the request or response body to a repeated field. However, some gRPC</p><p>Transcoding implementations may not support this feature.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>selector</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Selects a method to which this rule applies.
+
+Refer to [selector][google.api.DocumentationRule.selector] for syntax
+details. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>get</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Maps to HTTP GET. Used for listing and getting information about
+resources. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>put</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Maps to HTTP PUT. Used for replacing a resource. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>post</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Maps to HTTP POST. Used for creating a resource or performing an action. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>delete</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Maps to HTTP DELETE. Used for deleting a resource. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>patch</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Maps to HTTP PATCH. Used for updating a resource. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>custom</td>
+                  <td><a href="#google.api.CustomHttpPattern">CustomHttpPattern</a></td>
+                  <td></td>
+                  <td><p>The custom pattern is used for specifying an HTTP method that is not
+included in the `pattern` field, such as HEAD, or &#34;*&#34; to leave the
+HTTP method unspecified for this rule. The wild-card rule is useful
+for services that provide content to Web (HTML) clients. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>body</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the request field whose value is mapped to the HTTP request
+body, or `*` for mapping all request fields not captured by the path
+pattern to the HTTP body, or omitted for not having any HTTP request body.
+
+NOTE: the referred field must be present at the top-level of the request
+message type. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>response_body</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional. The name of the response field whose value is mapped to the HTTP
+response body. When omitted, the entire response message will be used
+as the HTTP response body.
+
+NOTE: The referred field must be present at the top-level of the response
+message type. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>additional_bindings</td>
+                  <td><a href="#google.api.HttpRule">HttpRule</a></td>
+                  <td>repeated</td>
+                  <td><p>Additional HTTP bindings for the selector. Nested bindings must
+not contain an `additional_bindings` field themselves (that is,
+the nesting may only be one level deep). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="google/api/annotations.proto">google/api/annotations.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+
+      
+
+      
+        <h3 id="google/api/annotations.proto-extensions">File-level Extensions</h3>
+        <table class="extension-table">
+          <thead>
+            <tr><td>Extension</td><td>Type</td><td>Base</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>http</td>
+                <td><a href="#google.api.HttpRule">HttpRule</a></td>
+                <td><a href="#google.protobuf.MethodOptions">.google.protobuf.MethodOptions</a></td>
+                <td>72295728</td>
+                <td><p>See `HttpRule`.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="api/v1/transferable_account.proto">api/v1/transferable_account.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="api.v1.Account">Account</h3>
+        <p>Structs</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>owner</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>public_key_x</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>public_key_y</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>curve</td>
+                  <td><a href="#api.v1.Curve">Curve</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>is_locked</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.AccountOperationRequest">AccountOperationRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>proof</td>
+                  <td><a href="#api.v1.TimedSignature">TimedSignature</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.ApproveAddressRequest">ApproveAddressRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.ApproveAddressResponse">ApproveAddressResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.CreateAccountRequest">CreateAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>proof</td>
+                  <td><a href="#api.v1.TimedSignature">TimedSignature</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.CreateAccountResponse">CreateAccountResponse</h3>
+        <p>Responses</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.DeleteAccountRequest">DeleteAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.DeleteAccountResponse">DeleteAccountResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.GetAccountRequest">GetAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.GetAccountResponse">GetAccountResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account</td>
+                  <td><a href="#api.v1.Account">Account</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsAccountLockedRequest">IsAccountLockedRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsAccountLockedResponse">IsAccountLockedResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>result</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsApprovedRequest">IsApprovedRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsApprovedResponse">IsApprovedResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>result</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsOwnerRequest">IsOwnerRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>account_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.IsOwnerResponse">IsOwnerResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>result</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.LockAccountRequest">LockAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.RevokeApprovalRequest">RevokeApprovalRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.RevokeApprovalResponse">RevokeApprovalResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.SignRequest">SignRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>hex encoded </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.SignResponse">SignResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>signature</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>hex encoded </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.TimedSignature">TimedSignature</h3>
+        <p>Requests</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>valid_for</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>unix timestamp </p></td>
+                </tr>
+              
+                <tr>
+                  <td>message_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>hex encoded </p></td>
+                </tr>
+              
+                <tr>
+                  <td>signature</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>hex encoded </p></td>
+                </tr>
+              
+                <tr>
+                  <td>signer</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>address </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.TransferAccountRequest">TransferAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>to</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.TransferAccountResponse">TransferAccountResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.UnlockAccountRequest">UnlockAccountRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>base</td>
+                  <td><a href="#api.v1.AccountOperationRequest">AccountOperationRequest</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.UnlockAccountResponse">UnlockAccountResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tx_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="api.v1.Curve">Curve</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CURVE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>CURVE_ECDSA</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>CURVE_EDDSA</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="api.v1.AccountService">AccountService</h3>
+        <p>Service</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CreateAccount</td>
+                <td><a href="#api.v1.CreateAccountRequest">CreateAccountRequest</a></td>
+                <td><a href="#api.v1.CreateAccountResponse">CreateAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>TransferAccount</td>
+                <td><a href="#api.v1.TransferAccountRequest">TransferAccountRequest</a></td>
+                <td><a href="#api.v1.TransferAccountResponse">TransferAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteAccount</td>
+                <td><a href="#api.v1.DeleteAccountRequest">DeleteAccountRequest</a></td>
+                <td><a href="#api.v1.DeleteAccountResponse">DeleteAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>UnlockAccount</td>
+                <td><a href="#api.v1.UnlockAccountRequest">UnlockAccountRequest</a></td>
+                <td><a href="#api.v1.UnlockAccountResponse">UnlockAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>ApproveAddress</td>
+                <td><a href="#api.v1.ApproveAddressRequest">ApproveAddressRequest</a></td>
+                <td><a href="#api.v1.ApproveAddressResponse">ApproveAddressResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>RevokeApproval</td>
+                <td><a href="#api.v1.RevokeApprovalRequest">RevokeApprovalRequest</a></td>
+                <td><a href="#api.v1.RevokeApprovalResponse">RevokeApprovalResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>Sign</td>
+                <td><a href="#api.v1.SignRequest">SignRequest</a></td>
+                <td><a href="#api.v1.SignResponse">SignResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>GetAccount</td>
+                <td><a href="#api.v1.GetAccountRequest">GetAccountRequest</a></td>
+                <td><a href="#api.v1.GetAccountResponse">GetAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>IsApproved</td>
+                <td><a href="#api.v1.IsApprovedRequest">IsApprovedRequest</a></td>
+                <td><a href="#api.v1.IsApprovedResponse">IsApprovedResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>IsOwner</td>
+                <td><a href="#api.v1.IsOwnerRequest">IsOwnerRequest</a></td>
+                <td><a href="#api.v1.IsOwnerResponse">IsOwnerResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>IsAccountLocked</td>
+                <td><a href="#api.v1.IsAccountLockedRequest">IsAccountLockedRequest</a></td>
+                <td><a href="#api.v1.IsAccountLockedResponse">IsAccountLockedResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+          
+          
+          <h4>Methods with HTTP bindings</h4>
+          <table>
+            <thead>
+              <tr>
+                <td>Method Name</td>
+                <td>Method</td>
+                <td>Pattern</td>
+                <td>Body</td>
+              </tr>
+            </thead>
+            <tbody>
+            
+              
+              
+              <tr>
+                <td>CreateAccount</td>
+                <td>POST</td>
+                <td>/v1/accounts</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>TransferAccount</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/transfer</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>DeleteAccount</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/delete</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>UnlockAccount</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/unlock</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>ApproveAddress</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/approve</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>RevokeApproval</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/revoke</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>Sign</td>
+                <td>POST</td>
+                <td>/v1/accounts/{base.account_id}/sign</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetAccount</td>
+                <td>GET</td>
+                <td>/v1/accounts/{account_id}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>IsApproved</td>
+                <td>GET</td>
+                <td>/v1/accounts/{account_id}/approved/{address}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>IsOwner</td>
+                <td>GET</td>
+                <td>/v1/accounts/{account_id}/owner/{address}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>IsAccountLocked</td>
+                <td>GET</td>
+                <td>/v1/accounts/{account_id}/locked</td>
+                <td></td>
+              </tr>
+              
+            
+            </tbody>
+          </table>
+          
+        
+    
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        
+          <tr id="double">
+            <td>double</td>
+            <td></td>
+            <td>double</td>
+            <td>double</td>
+            <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="float">
+            <td>float</td>
+            <td></td>
+            <td>float</td>
+            <td>float</td>
+            <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="int32">
+            <td>int32</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="int64">
+            <td>int64</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="uint32">
+            <td>uint32</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="uint64">
+            <td>uint64</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint32">
+            <td>sint32</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint64">
+            <td>sint64</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="fixed32">
+            <td>fixed32</td>
+            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="fixed64">
+            <td>fixed64</td>
+            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="sfixed32">
+            <td>sfixed32</td>
+            <td>Always four bytes.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sfixed64">
+            <td>sfixed64</td>
+            <td>Always eight bytes.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="bool">
+            <td>bool</td>
+            <td></td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
+          </tr>
+        
+          <tr id="string">
+            <td>string</td>
+            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+            <td>string</td>
+            <td>String</td>
+            <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
+          </tr>
+        
+          <tr id="bytes">
+            <td>bytes</td>
+            <td>May contain any arbitrary sequence of bytes.</td>
+            <td>string</td>
+            <td>ByteString</td>
+            <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </body>
+</html>
+
