@@ -41,7 +41,7 @@ build-go:
 	go build ./src/go
 
 test-go:
-	go test ./src/go/... ./test/...
+	go test ./src/go/... ./test/... -count=1 
 
 lint-go:
 	golangci-lint run
