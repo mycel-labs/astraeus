@@ -10,6 +10,7 @@ This project implements a transferable account system using smart contracts.
 ### Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- Docker 
 
 ### Installation
 
@@ -21,12 +22,12 @@ This project implements a transferable account system using smart contracts.
 
 2. Install dependencies:
    ```
-   forge install
+   make install
    ```
 
 3. Compile the contracts:
    ```
-   forge build
+   make build
    ```
 
 ## Getting Started
@@ -98,7 +99,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
 
    Specify the `account_id` of the created account. Use the same values as before, and input the address of the other account in the `address` field.
    ```
-   curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/approve -d '{
+   curl -s -X POST http://localhost:8080/v1/accounts/$account_id/approve -d '{
      "base": {
        "account_id": "0xb06e9fd4baf654208e7886284cdcdab2",
        "proof": {
@@ -120,7 +121,7 @@ If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet F
    In this example, the transfer is executed with the signature of the TA creator, but you can also create and execute the request with the signature of the recipient.
 
    ```
-   curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/transfer -d '{
+   curl -s -X POST http://localhost:8080/v1/accounts/$account_id/transfer -d '{
      "base": {
        "account_id": "0xb06e9fd4baf654208e7886284cdcdab2",
        "proof": {

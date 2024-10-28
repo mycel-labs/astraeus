@@ -1,0 +1,486 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: AccountService API
+    description: Service
+    version: 0.0.1
+paths:
+    /v1/accounts:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_CreateAccount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{accountId}:
+        get:
+            tags:
+                - AccountService
+            operationId: AccountService_GetAccount
+            parameters:
+                - name: accountId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{accountId}/approved/{address}:
+        get:
+            tags:
+                - AccountService
+            operationId: AccountService_IsApproved
+            parameters:
+                - name: accountId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: address
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IsApprovedResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{accountId}/locked:
+        get:
+            tags:
+                - AccountService
+            operationId: AccountService_IsAccountLocked
+            parameters:
+                - name: accountId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IsAccountLockedResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{accountId}/owner/{address}:
+        get:
+            tags:
+                - AccountService
+            operationId: AccountService_IsOwner
+            parameters:
+                - name: accountId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: address
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IsOwnerResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/approve:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_ApproveAddress
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ApproveAddressRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApproveAddressResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/delete:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_DeleteAccount
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/revoke:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_RevokeApproval
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeApprovalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RevokeApprovalResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/sign:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_Sign
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SignRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SignResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/transfer:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_TransferAccount
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TransferAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TransferAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/accounts/{base.account_id}/unlock:
+        post:
+            tags:
+                - AccountService
+            operationId: AccountService_UnlockAccount
+            parameters:
+                - name: base.account_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UnlockAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnlockAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+components:
+    schemas:
+        Account:
+            type: object
+            properties:
+                accountId:
+                    type: string
+                owner:
+                    type: string
+                publicKeyX:
+                    type: string
+                publicKeyY:
+                    type: string
+                curve:
+                    type: integer
+                    format: enum
+                isLocked:
+                    type: boolean
+            description: Structs
+        AccountOperationRequest:
+            type: object
+            properties:
+                accountId:
+                    type: string
+                proof:
+                    $ref: '#/components/schemas/TimedSignature'
+        ApproveAddressRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+                address:
+                    type: string
+        ApproveAddressResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+        CreateAccountRequest:
+            type: object
+            properties:
+                proof:
+                    $ref: '#/components/schemas/TimedSignature'
+        CreateAccountResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+                accountId:
+                    type: string
+            description: Responses
+        DeleteAccountRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+        DeleteAccountResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+        GetAccountResponse:
+            type: object
+            properties:
+                account:
+                    $ref: '#/components/schemas/Account'
+        GoogleProtobufAny:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        IsAccountLockedResponse:
+            type: object
+            properties:
+                result:
+                    type: boolean
+        IsApprovedResponse:
+            type: object
+            properties:
+                result:
+                    type: boolean
+        IsOwnerResponse:
+            type: object
+            properties:
+                result:
+                    type: boolean
+        RevokeApprovalRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+                address:
+                    type: string
+        RevokeApprovalResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+        SignRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+                data:
+                    type: string
+        SignResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+                signature:
+                    type: string
+        Status:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+                    format: int32
+                message:
+                    type: string
+                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GoogleProtobufAny'
+                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
+            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
+        TimedSignature:
+            type: object
+            properties:
+                validFor:
+                    type: string
+                messageHash:
+                    type: string
+                signature:
+                    type: string
+                signer:
+                    type: string
+            description: Requests
+        TransferAccountRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+                to:
+                    type: string
+        TransferAccountResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+        UnlockAccountRequest:
+            type: object
+            properties:
+                base:
+                    $ref: '#/components/schemas/AccountOperationRequest'
+        UnlockAccountResponse:
+            type: object
+            properties:
+                txHash:
+                    type: string
+tags:
+    - name: AccountService
