@@ -34,6 +34,9 @@ run-go:
 build-go:
 	go build ./src/go
 
+vet-go:
+	go vet ./src/go
+
 test-go:
 	go test ./src/go/... ./test/...
 
@@ -71,7 +74,7 @@ check-fmt-proto:
 install:
 	forge install
 
-build: build-solidity build-go compile-proto
+build: build-solidity vet-go compile-proto
 
 test: test-solidity test-go
 
