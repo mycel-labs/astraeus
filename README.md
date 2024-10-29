@@ -62,7 +62,7 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    To execute a request against the API, you need to prepare a signature each time that indicates from which account and for which function the request is being made.
 
    ```
-   go run scripts/utils/generate_timed_signature/main.go <your_private_key> <targetFunction>
+   go run scripts/utils/generate_timed_signature/main.go <your_private_key> CreateAccount
    ```
    
    First, we are creating a signature for "CreateAccount"
@@ -87,6 +87,21 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 5. **Create Account Request to API Server**
 
    Execute the request to create a TA. Use the output from step 4 in the `proof` section:
+
+   ```
+   curl -X POST http://localhost:8080/v1/accounts -d '{
+      "proof": {
+         "validFor": <validFor>,
+         "messageHash": "<messageHash>",
+         "signature": "<signature>",
+         "signer": "<signer>",
+         "nonce": <nonce>,
+         "target_function_hash": "<target_function_hash>"
+      }
+   }'
+   ```
+
+   input example:
    ```
    curl -X POST http://localhost:8080/v1/accounts -d '{
       "proof": {
@@ -98,6 +113,10 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
          "target_function_hash": "030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f"
       }
    }'
+   ```
+   
+   output example:
+   ```
    {"txHash":"0x98f3367e503d32d6e817ca251bc7cfefdd6d11c970fbac1bc74ad06efe7f8d49","accountId":"0x5f927be8e73951a99a84fa7b21e1d5c4","ethereumAddress":"0x6b972Cc0A1CdF473a48C27831B0A3b64CBD8E549"}
    ```
 
