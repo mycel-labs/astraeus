@@ -122,24 +122,74 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
    Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` and `ethereumAddress` are the ID of the account and The account's address on EVM
 
-7. **Approve Address Request to API Server**
+6. **Approve Address Request to API Server**
 
    Approve the transfer of TA ownership from the current account to another account.
 
-   Specify the `account_id` of the created account. Use the same values as before, and input the address of the other account in the `address` field.
+   You need to create a signature to execute the ApproveAddress Function. (As with the previous step)
+
    ```
-   curl -s -X POST http://localhost:8080/v1/accounts/$create_account_account_id/approve -d '{
+   go run scripts/utils/generate_timed_signature/main.go <your_private_key> ApproveAddress
+   ```
+
+   input example:
+   ```
+    go run scripts/utils/generate_timed_signature/main.go 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94 ApproveAddress
+   ```
+   
+   output example:
+   ```
+   "proof": {
+      "validFor": 1730262911,
+      "messageHash": "9978c1ecc11cd29ea7aa2d1571ef6fdba80b0501a0938d5c17ead3baa4b5dfb0",
+      "signature": "a1c818ebef4d29ae7d8fff29648d6aa3936d5657a03324ffa758f792a79fbca44087ce49ab485fd81c30d8da29f1b292ed744aff2071f0207385f8f44635af311b",
+      "signer": "0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3",
+      "nonce": 4,
+      "target_function_hash": "16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f"
+   }
+   ```
+
+   Once the signature is created, try executing the API using the signature information. 
+   The PATH of the URL for executing the API must include the accountId of the TA you created.
+
+   ```
+   curl -s -X POST http://localhost:8080/v1/accounts/<your TA's accountId>/approve -d '{
      "base": {
-       "account_id": "0xb06e9fd4baf654208e7886284cdcdab2",
-       "proof": {
-         "validFor": "1726946480",
-         "messageHash": "32948247c695a2545f9b35c040a293f1c6cd300062e9d7abdf0b3ed2a7b596d1",
-         "signature": "50346a31ad859f211294496e01083dcb85803bb27923b8d256756c71bdbfe36e1e89741215f58fd4bb8db42f04775303e60748b99f10c64e189d1f585d6b77531c",
-         "signer": "1b1374742cb5f84b1ef167db57236350380084e1"
-       }
+      "account_id": "<your TA's accountId>",
+      "proof": {
+         "validFor": <validFor>,
+         "messageHash": "<messageHash>",
+         "signature": "<signature>",
+         "signer": "<signer>",
+         "nonce": <nonce>,
+         "target_function_hash": "<target_function_hash>"
+      }
      },
-     "address": "your_another_account_address"
+     "address": "<another suave account address>"
    }'
+   ```
+
+   input example:
+   ```
+   curl -s -X POST http://localhost:8080/v1/accounts/0x5f927be8e73951a99a84fa7b21e1d5c4/approve -d '{
+     "base": {
+      "account_id": "0x5f927be8e73951a99a84fa7b21e1d5c4",
+      "proof": {
+         "validFor": 1730262911,
+         "messageHash": "9978c1ecc11cd29ea7aa2d1571ef6fdba80b0501a0938d5c17ead3baa4b5dfb0",
+         "signature": "a1c818ebef4d29ae7d8fff29648d6aa3936d5657a03324ffa758f792a79fbca44087ce49ab485fd81c30d8da29f1b292ed744aff2071f0207385f8f44635af311b",
+         "signer": "0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3",
+         "nonce": 4,
+         "target_function_hash": "16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f"
+      }
+     },
+     "address": "0x696600D88559ac1C0E84de6208F3C568Af9e6a48"
+   }'
+   ```
+   
+   output example:
+   ```
+   {"txHash":"0x19eb20300738d3d2ffa63fe35cb3cf9fe1737e4d19cd65fb693b784b0abd51f5"}
    ```
 
    Once the `txHash` is displayed, the account approval is complete.
