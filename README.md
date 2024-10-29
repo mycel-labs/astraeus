@@ -37,8 +37,9 @@ This guide will help you set up the Astraeus API server on the Suave Toliman Tes
 
 - An environment capable of running Docker
 - Two accounts on the Toliman Testnet with access to their private keys and TEETH tokens
+- Two accounts on the Sepolia Testnet with access to their private keys and SepoliaETH tokens
 
-If you do not have TEETH tokens, you can obtain them from the [Toliman Testnet Faucet](https://faucet.toliman.suave.flashbots.net/).
+If you do not have these tokens, you can obtain them from the [Toliman Testnet Faucet](https://faucet.toliman.suave.flashbots.net/) and [Sepolia Testne Faucet](https://www.alchemy.com/faucets/ethereum-sepolia)
 
 ### Steps
 
