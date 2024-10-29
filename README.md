@@ -122,7 +122,15 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
    Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` and `ethereumAddress` are the ID of the account and The account's address on EVM
 
-6. **Approve Address Request to API Server**
+6. **Deposit SepoliaETH to TA's Address**
+
+   Once the TA is created, try sending ETH on Sepolia to the ethereumAddress held by the TA.
+   You can refer to the ethereumAddress held by the created TA from the result of the CreateAccount execution.
+
+   This operation will be conducted on the Sepolia Testnet, not on the Suave Toliman Testnet, so please be careful.
+
+
+7. **Approve Address Request to API Server**
 
    Approve the transfer of TA ownership from the current account to another account.
 
@@ -194,7 +202,7 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
    Once the `txHash` is displayed, the account approval is complete.
 
-7. **Transfer Account Request to API Server**
+8. **Transfer Account Request to API Server**
 
    Execute the transfer of TA ownership. This can be done by either the current TA owner or the approved account.
    In this example, the transfer is executed with the signature of the TA creator, but you can also create and execute the request with the signature of the recipient.
