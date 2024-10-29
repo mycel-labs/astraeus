@@ -57,41 +57,51 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
    At this point, the API server should be running locally via Docker.
 
-4. **Generate the Timed Signature required for API requests. Replace `validFor` with the UnixTime until which the signature is valid, and `your_private_key` with the private key of your account:**
+4. **Generate the Timed Signature required for API requests. Replace `your_private_key` with the private key of your account on Suave and `targetFunction` with "CreateAccount":**
 
-   Generate signatures for both of your accounts.
+   To execute a request against the API, you need to prepare a signature each time that indicates from which account and for which function the request is being made.
+
    ```
-   go run scripts/utils/generate_timed_signature/main.go <validFor:1759244400> <your_private_key>
+   go run scripts/utils/generate_timed_signature/main.go <your_private_key> <targetFunction>
    ```
    
+   First, we are creating a signature for "CreateAccount"
+
    input example:
    ```
-    go run scripts/utils/generate_timed_signature/main.go 1759244400 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94
+    go run scripts/utils/generate_timed_signature/main.go 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94 CreateAccount
    ```
    
    output example:
    ```
-   Address: 1b1374742cb5f84b1ef167db57236350380084e1
-   Message Hash: 2f9cc010a830e69220428772a000f8c057229d5c8e668ec86d5d74cf07cffcd2
-   Signature: 31f8e01e19bfb2bf66f01e34006eef1ac9a3384a71832779e768b80c7a5f1b3c6db26a20a99abce0d612046e4e0b6a73c1da892f0f98a41155a9a4998f29dcbd1c
+   "proof": {
+      "validFor": 1730260787,
+      "messageHash": "7fe8d937495fbdf3324310fddedebd0ea6a14fd9451d42b692435f4db53fbdee",
+      "signature": "9cc6629cbf04e3f75f2ecb2fd9b780b886975938c8b1326ad2e92ef5a705e6305c4c28b92a270950a7153f91a5607da04c0a77937dd6f4c5128864cd34a33ba21c",
+      "signer": "0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3",
+      "nonce": 3,
+      "target_function_hash": "030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f"
+   }
    ```
 
-6. **Create Account Request to API Server**
+5. **Create Account Request to API Server**
 
    Execute the request to create a TA. Use the output from step 4 in the `proof` section:
    ```
    curl -X POST http://localhost:8080/v1/accounts -d '{
-     "proof": {
-       "validFor": 1759244400,
-       "messageHash": "2f9cc010a830e69220428772a000f8c057229d5c8e668ec86d5d74cf07cffcd2",
-       "signature": "31f8e01e19bfb2bf66f01e34006eef1ac9a3384a71832779e768b80c7a5f1b3c6db26a20a99abce0d612046e4e0b6a73c1da892f0f98a41155a9a4998f29dcbd1c",
-       "signer": "1b1374742cb5f84b1ef167db57236350380084e1"
-     }
+      "proof": {
+         "validFor": 1730260787,
+         "messageHash": "7fe8d937495fbdf3324310fddedebd0ea6a14fd9451d42b692435f4db53fbdee",
+         "signature": "9cc6629cbf04e3f75f2ecb2fd9b780b886975938c8b1326ad2e92ef5a705e6305c4c28b92a270950a7153f91a5607da04c0a77937dd6f4c5128864cd34a33ba21c",
+         "signer": "0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3",
+         "nonce": 3,
+         "target_function_hash": "030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f"
+      }
    }'
-   {"txHash":"0x87deac0a0982fcc41bc915f01c4924f27c1b1b16882d04e64d0f3e1442314fea", "accountId":"0x65c987ba099153e19942c809e2289120"}
+   {"txHash":"0x98f3367e503d32d6e817ca251bc7cfefdd6d11c970fbac1bc74ad06efe7f8d49","accountId":"0x5f927be8e73951a99a84fa7b21e1d5c4","ethereumAddress":"0x6b972Cc0A1CdF473a48C27831B0A3b64CBD8E549"}
    ```
 
-   Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` is the ID of the account you created.
+   Once the `txHash` is displayed, the account creation is complete. The displayed `accountId` and `ethereumAddress` are the ID of the account and The account's address on EVM
 
 7. **Approve Address Request to API Server**
 
