@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/mycel-labs/astraeus/src/go/framework"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
@@ -32,19 +33,19 @@ func main() {
 
 	switch targetFunction {
 	case "CreateAccount":
-		targetFunctionHash = common.HexToHash("0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f")
+		targetFunctionHash = common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
 	case "ApproveAddress":
-		targetFunctionHash = common.HexToHash("0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f")
+		targetFunctionHash = common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH)
 	case "RevokeApproval":
-		targetFunctionHash = common.HexToHash("0xdb4c3d2d6140b1cf852cff55c9c9a3d0c16d15c9da5e35f87fdc664b1bbf1c32")
+		targetFunctionHash = common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH)
 	case "TransferAccount":
-		targetFunctionHash = common.HexToHash("0x29535a955f68dc291a88a89b6112c958d2edce1684117ccd6b54ca173656f65f")
+		targetFunctionHash = common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH)
 	case "DeleteAccount":
-		targetFunctionHash = common.HexToHash("0x31819315e31d5175ae85114dd27816114c585abc7f9d53ef5ca9bf3c4f2db038")
+		targetFunctionHash = common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH)
 	case "UnlockAccount":
-		targetFunctionHash = common.HexToHash("0x062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332")
+		targetFunctionHash = common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH)
 	case "Sign":
-		targetFunctionHash = common.HexToHash("0xd34780a58dd276dd414ea2abde077f3492ca5422926cdcadf8def7a93f12e993")
+		targetFunctionHash = common.HexToHash(impl.SIGN_FUNCTION_HASH)
 	default:
 		log.Fatalf("Unknown target function: %s", targetFunction)
 	}
