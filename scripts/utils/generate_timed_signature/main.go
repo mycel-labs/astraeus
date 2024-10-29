@@ -23,11 +23,11 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	if len(os.Args) != 2 {
-		log.Fatalf("Usage: %s <targetFunction>", os.Args[0])
+	if len(os.Args) != 3 {
+		log.Fatalf("Usage: %s <privateKey> <targetFunction>", os.Args[0])
 	}
 
-	targetFunction := os.Args[1]
+	targetFunction := os.Args[2]
 
 	var targetFunctionHash [32]byte
 
@@ -50,7 +50,7 @@ func main() {
 		log.Fatalf("Unknown target function: %s", targetFunction)
 	}
 
-	privateKeyBytes, err := hex.DecodeString(os.Getenv("PRIVATE_KEY"))
+	privateKeyBytes, err := hex.DecodeString(os.Args[1])
 
 	if err != nil {
 		log.Fatalf("failed to decode hex string: %v", err)
