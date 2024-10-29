@@ -1,129 +1,86 @@
 package main
 
 import (
-	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
-	"math/big"
-	"net/http"
 	"os"
-	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
-	impl "github.com/mycel-labs/astraeus/src/go/server"
+	"github.com/mycel-labs/astraeus/src/go/framework"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
-func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-
-	// Step 1: Create the message hash
-	// Combine validFor timestamp, signer's address, nonce, and targetFunctionHash, then hash with Keccak256
-	messageHash = crypto.Keccak256Hash(
-		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
-		common.LeftPadBytes(address.Bytes(), 20),
-		common.LeftPadBytes(big.NewInt(int64(nonce)).Bytes(), 8),
-		targetFunctionHash[:],
-	)
-
-	// Step 2: Apply Mycel-specific prefix
-	// Prepend "\x19Mycel Signed Message:\n32" and hash again
-	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
-	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
-
-	// Step 3: Generate the signature
-	// Sign the prefixed message hash with the private key
-	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
-	if err != nil {
-		return [32]byte{}, nil, err
-	}
-
-	// Adjust the v value of the signature (add 27)
-	// This ensures compatibility with Mycel's signature standard
-	signature[64] += 27
-
-	return messageHash, signature, nil
-}
-
-func getNonce(address string) (*pb.GetNonceResponse, *http.Response, error) {
+func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
-	apiRpcUrl := os.Getenv("API_RPC_URL")
-	log.Printf("RPC URL: %s", apiRpcUrl)
-	if apiRpcUrl == "" {
-		log.Fatal("Failed to retrieve RPC_URL correctly")
+	if len(os.Args) != 2 {
+		log.Fatalf("Usage: %s <targetFunction>", os.Args[0])
 	}
 
-	url := fmt.Sprintf("%s/v1/nonce/%s", apiRpcUrl, address)
-	getNonceResponse := &pb.GetNonceResponse{}
-	resp := testutil.GetServer(url, getNonceResponse)
-	return getNonceResponse, resp, nil
-}
-
-func main() {
-
-	if len(os.Args) != 4 {
-		log.Fatalf("Usage: %s <validFor> <privateKey> <targetFunction>", os.Args[0])
-	}
-
-	validFor, err := strconv.ParseInt(os.Args[1], 10, 64)
-	if err != nil {
-		log.Fatalf("Invalid validFor value: %v", err)
-	}
-
-	privateKeyHex := os.Args[2]
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
-	if err != nil {
-		log.Fatalf("Invalid private key: %v", err)
-	}
-
-	targetFunction := os.Args[3]
+	targetFunction := os.Args[1]
 
 	var targetFunctionHash [32]byte
 
 	switch targetFunction {
 	case "CreateAccount":
-		targetFunctionHash = common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f")
 	case "ApproveAddress":
-		targetFunctionHash = common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f")
 	case "RevokeApproval":
-		targetFunctionHash = common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0xdb4c3d2d6140b1cf852cff55c9c9a3d0c16d15c9da5e35f87fdc664b1bbf1c32")
 	case "TransferAccount":
-		targetFunctionHash = common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0x29535a955f68dc291a88a89b6112c958d2edce1684117ccd6b54ca173656f65f")
 	case "DeleteAccount":
-		targetFunctionHash = common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0x31819315e31d5175ae85114dd27816114c585abc7f9d53ef5ca9bf3c4f2db038")
 	case "UnlockAccount":
-		targetFunctionHash = common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0x062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332")
 	case "Sign":
-		targetFunctionHash = common.HexToHash(impl.SIGN_FUNCTION_HASH)
+		targetFunctionHash = common.HexToHash("0xd34780a58dd276dd414ea2abde077f3492ca5422926cdcadf8def7a93f12e993")
 	default:
 		log.Fatalf("Unknown target function: %s", targetFunction)
 	}
 
-	log.Printf("Target Function Hash: %x", targetFunctionHash)
+	privateKeyBytes, err := hex.DecodeString(os.Getenv("PRIVATE_KEY"))
 
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-	log.Printf("Address: %s", address.Hex())
-	getNonceResponse, _, err := getNonce(address.String())
 	if err != nil {
-		log.Fatalf("Failed to get nonce: %v", err)
+		log.Fatalf("failed to decode hex string: %v", err)
 	}
-	nonce := getNonceResponse.Nonce
-	log.Printf("Nonce: %d", nonce)
+	privKey, err := crypto.ToECDSA(privateKeyBytes)
+	if err != nil {
+		log.Fatalf("Failed to create private key: %v", err)
+	}
 
-	messageHash, signature, err := generateTimedSignature(validFor, privateKey, nonce, targetFunctionHash)
+	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
+
+	log.Printf("Using TA_STORE_CONTRACT_ADDRESS: %s", os.Getenv("TA_STORE_CONTRACT_ADDRESS"))
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(os.Getenv("TA_STORE_CONTRACT_ADDRESS")), testutil.TAStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to bind to existing contract: %v", err)
+	}
+
+	valdFor := uint64(time.Now().Unix() + 86400)
+
+	timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, valdFor, targetFunctionHash)
+
 	if err != nil {
 		log.Fatalf("Failed to generate timed signature: %v", err)
 	}
 
-	fmt.Printf("Message Hash: %x\n", messageHash)
-	fmt.Printf("Signature: %x\n", signature)
+	fmt.Printf("\"proof\": {\n")
+	fmt.Printf("  \"validFor\": %d,\n", valdFor)
+	fmt.Printf("  \"messageHash\": \"%s\",\n", timedSignature.MessageHash)
+	fmt.Printf("  \"signature\": \"%s\",\n", timedSignature.Signature)
+	fmt.Printf("  \"signer\": \"%s\",\n", timedSignature.Signer)
+	fmt.Printf("  \"nonce\": %d,\n", timedSignature.Nonce)
+	fmt.Printf("  \"target_function_hash\": \"%s\"\n", timedSignature.TargetFunctionHash)
+	fmt.Printf("}\n")
 }
