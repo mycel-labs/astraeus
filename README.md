@@ -278,13 +278,88 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    For more details on API requests, refer to the documentation at:
    [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
 
-9. **Sign from Transferable Account Request to API Server**
+9. **Unlock the Transferable Account**
+
+   After the transfer of the TA is complete, let's perform the unlock operation from the account that received the TA.
+   By unlocking the TA, you will be able to withdraw assets from addresses on different chains associated with the TA.
+
+   You need to create a signature to execute the TransferAccount Function. (As with the previous step)
+   Please note that the private key of the account that received the TA on the Toliman Testnet will be required.
+
+   ```
+   go run scripts/utils/generate_timed_signature/main.go <your_private_key> UnlockAccount
+   ```
+
+   input example:
+   ```
+   go run scripts/utils/generate_timed_signature/main.go 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94 UnlockAccount
+   ```
+   
+   output example:
+   ```
+   "proof": {
+      "validFor": 1730276042,
+      "messageHash": "4dc2219469c3081b806b29d942e94c09aa949726d6a043c459e091a47fac5d09",
+      "signature": "b23824ac0edf74ba1b5771531d20ce3b549eba74976f955cb41484b88965fe432a3da3a37a22cc38c850e38819f52a38b24ee292fc32c62fb301fe96f48d668d1c",
+      "signer": "0x755201605CB3bBeE61320cc3d5Af2Bb5Ed15DE0F",
+      "nonce": 0,
+      "target_function_hash": "062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332"
+   }
+   ```
+
+   Once the signature is created, try executing the API using the signature information. 
+   The PATH of the URL for executing the API must include the accountId of the TA you created.
+
+   ```
+   curl -s -X POST http://localhost:8080/v1/accounts/<your TA's accountId>/unlock -d '{
+     "base": {
+      "account_id": "<your TA's accountId>",
+      "proof": {
+         "validFor": <validFor>,
+         "messageHash": "<messageHash>",
+         "signature": "<signature>",
+         "signer": "<signer>",
+         "nonce": <nonce>,
+         "target_function_hash": "<target_function_hash>"
+      }
+     }
+   }'
+   ```
+
+   input example:
+   ```
+   curl -s -X POST http://localhost:8080/v1/accounts/0x5f927be8e73951a99a84fa7b21e1d5c4/unlock -d '{
+     "base": {
+      "account_id": "0x5f927be8e73951a99a84fa7b21e1d5c4",
+      "proof": {
+         "validFor": 1730276042,
+         "messageHash": "4dc2219469c3081b806b29d942e94c09aa949726d6a043c459e091a47fac5d09",
+         "signature": "b23824ac0edf74ba1b5771531d20ce3b549eba74976f955cb41484b88965fe432a3da3a37a22cc38c850e38819f52a38b24ee292fc32c62fb301fe96f48d668d1c",
+         "signer": "0x755201605CB3bBeE61320cc3d5Af2Bb5Ed15DE0F",
+         "nonce": 0,
+         "target_function_hash": "062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332"
+      }
+     }
+   }'
+   ```
+   
+   output example:
+   ```
+   {"txHash":"0x26ad303c786550433848519411438b3f1531f568be25563d29645d1f6275341c"}
+   ```
+
+
+10. **Sign from Transferable Account**
 
    If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
 
    Before executing the command, make sure to set the RPC of the chain to broadcast the Tx as `WITHDRAW_TESTNET_RPC` in your `.env` file.
 
    Specify the arguments in the following order: the accountID of the TA you are using, the ChainID to execute the Tx, the address to which you want to send the ETH, and the amount of ETH to send.
+
+   ```
+   $ go run scripts/utils/execute_withdraw_tx/main.go <your TA's accountId> <external chainId> <recipient address on external chain> <transfer amount of ETH on external chain>
+   ```
 
    Example:
    ```
