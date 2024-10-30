@@ -436,7 +436,7 @@ Requests
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | base | [AccountOperationRequest](#api-v1-AccountOperationRequest) |  |  |
-| to | [string](#string) |  |  |
+| address | [string](#string) |  |  |
 
 
 
