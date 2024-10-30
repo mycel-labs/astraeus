@@ -136,6 +136,8 @@ func TestIsApproved(t *testing.T) {
 	}
 	log.Printf("tx: %v", tx)
 
+	time.Sleep(2 * time.Second)
+
 	// Test cases
 	testCases := []struct {
 		name      string
@@ -227,7 +229,7 @@ func TestTransferAccount(t *testing.T) {
 					AccountId: tc.accountId,
 					Proof:     sig,
 				},
-				To: tc.to,
+				Address: tc.to,
 			}
 			resp, err := s.TransferAccount(context.Background(), req)
 

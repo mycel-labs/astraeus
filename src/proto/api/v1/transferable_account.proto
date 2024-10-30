@@ -43,7 +43,7 @@ message CreateAccountRequest {
 
 message TransferAccountRequest {
     AccountOperationRequest base = 1;
-    string to = 2;
+    string address = 2;
 }
 
 message DeleteAccountRequest {
