@@ -12,8 +12,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/joho/godotenv"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -47,11 +45,6 @@ const (
 )
 
 func checkEnvVars(fatal bool) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
 	taStoreContractAddr := os.Getenv("TA_STORE_CONTRACT_ADDRESS")
 	privKey := os.Getenv("PRIVATE_KEY")
 
@@ -114,11 +107,6 @@ func NewServer(rpcUrl string, privateKey string, taStoreContractAddr string) (*s
 
 func StartServer(wg *sync.WaitGroup) {
 	defer wg.Done()
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
 
 	// Ensure env variables are set
 	checkEnvVars(true)
