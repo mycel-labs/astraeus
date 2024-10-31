@@ -397,6 +397,50 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
     }
 
+    function testSignAfterTransfer() public {
+        TransferableAccountStore tas = new TransferableAccountStore();
+        SignatureVerifier.TimedSignature memory aliceSig_0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        );
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig_0);
+        bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
+
+        (
+            SignatureVerifier.TimedSignature memory decodedTimedSignature,
+            ITransferableAccountStore.Account memory decodedAccount
+        ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
+        string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
+
+        SignatureVerifier.TimedSignature memory aliceSig_1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        );
+        tas.approveAddress(aliceSig_1, accountId, bob);
+
+        SignatureVerifier.TimedSignature memory bobSig_0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
+        );
+        tas.transferAccount(bobSig_0, accountId, bob);
+
+        SignatureVerifier.TimedSignature memory bobSig_1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), UNLOCK_ACCOUNT_FUNCTION_HASH
+        );
+        tas.unlockAccount(bobSig_1, accountId);
+
+        bytes memory dummyData = abi.encodePacked("dummy data");
+        bytes32 hashedDummyData = keccak256(dummyData);
+
+        SignatureVerifier.TimedSignature memory bobSig_2 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), SIGN_FUNCTION_HASH
+        );
+        bytes memory encodedSignData = tas.sign(bobSig_2, accountId, abi.encodePacked(hashedDummyData));
+        bytes4 selector;
+        assembly {
+            selector := mload(add(encodedSignData, 32))
+        }
+
+        assertEq(selector, tas.signCallback.selector, "Sign callback selector mismatch");
+    }
+
     function testSignWhenAccountIsLocked() public {
         TransferableAccountStore tas = new TransferableAccountStore();
         SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
