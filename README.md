@@ -371,48 +371,53 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
 10. **Sign from Transferable Account**
 
-   If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
+    If you own a TA and hold assets on an external chain with that TA, you can create a Tx to send assets from the TA account and broadcast it to the external chain.
 
-   Before executing the command, make sure to set the RPC of the chain to broadcast the Tx as `WITHDRAW_TESTNET_RPC` in your `.env` file.
+    Before executing the command, make sure to set the RPC of the chain to broadcast the Tx as `WITHDRAW_TESTNET_RPC` in your `.env` file.
 
-   Specify the arguments in the following order: the accountID of the TA you are using, the ChainID to execute the Tx, the address to which you want to send the ETH, and the amount of ETH to send.
+    Specify the arguments in the following order: the accountID of the TA you are using, the ChainID to execute the Tx, the address to which you want to send the ETH, and the amount of ETH to send.
 
-   Please note that the private key of the account that received the TA on the Toliman Testnet will be required.
+    Please note that the private key of the account that received the TA on the Toliman Testnet will be required.
 
-   ```
-   $ go run scripts/utils/execute_withdraw_tx/main.go <your_private_key> <your TA's accountId> <external chainId> <recipient address on external chain> <transfer amount of ETH on external chain>
-   ```
+    ```
+    $ go run scripts/utils/execute_withdraw_tx/main.go <your_private_key> <your TA's accountId> <external chainId> <recipient address on external chain> <transfer amount of ETH on external chain>
+    ```
 
-   When the transaction is ready, you will be prompted to confirm whether to proceed, as shown in the example below. If everything looks good, type ‘y’ and press Enter.
+    When the transaction is ready, you will be prompted to confirm whether to proceed, as shown in the example below. If everything looks good, type ‘y’ and press Enter.
 
-   input example:
-   ```
-   $ go run scripts/utils/execute_withdraw_tx/main.go 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94 0x439376239c54540980f027ac33e1c11a 11155111 0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3 0.0001
-   2024/10/31 15:12:11 Using PRIVATE_KEY: 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94
-   2024/10/31 15:12:11 Using RPC_URL: https://rpc.toliman.suave.flashbots.net
-   2024/10/31 15:12:11 Using TA_STORE_CONTRACT_ADDRESS: 0xEa8a6ce7098B79Bd8B4920120734a5081046C44F
-   2024/10/31 15:12:12 Get Account Response:  account:{account_id:"0x436d02ef904e536a870d12949e429819" owner:"0x755201605CB3bBeE61320cc3d5Af2Bb5Ed15DE0F" public_key_x:"a91cd998338946de2b6a1bc36dc109b5bcc8a826143174d7820eb0e26f05e042" public_key_y:"90bf93a068d2dc9aa497cb25e006f14e1abfc754935d1d98c8e5a8b8d0812e64" signature_algorithm:SignatureAlgorithm_ECDSA}
-   2024/10/31 15:12:12 TA's Ethereum Address:  0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c
-   2024/10/31 15:12:13 Suggested Gas Price: 4297882348
-   2024/10/31 15:12:13 Suggested Gas Tip Cap: 305482713
-   2024/10/31 15:12:13 Transaction Hash: c3f2f2779693bb9687ea25f1d8585f7907031fbbbfc57492296c94d3cf246f33
-   2024/10/31 15:12:17 Sign Response:  tx_hash:"0x74322f8c27019b1ce5c475cf76af225c47cc7a97ef4afb73cba4f68526dab132" signature:"323ab432a41b47a8e02383a0648262248850b84c9d5530394252de87e0869baa7944c6db4b50c2eacc6562bc85ec824eb0451ac6a6adac19b1ec42bcfe84bcd101"
-   2024/10/31 15:12:17 Sender Address:  0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c
-   You need to depoist send value & gas ETH to 0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c (y/n):
-   ```
+    input example:
+    ```
+    $ go run scripts/utils/execute_withdraw_tx/main.go 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94 0x439376239c54540980f027ac33e1c11a 11155111 0x0A772258e2f36999C6aA57B2Ba09B78caF7EbAd3 0.0001
+    2024/10/31 15:12:11 Using PRIVATE_KEY: 10c62a6364b1730ec101460c871952403631adb66fe7e043914c7d0056ca8e94
+    2024/10/31 15:12:11 Using RPC_URL: https://rpc.toliman.suave.flashbots.net
+    2024/10/31 15:12:11 Using TA_STORE_CONTRACT_ADDRESS: 0xEa8a6ce7098B79Bd8B4920120734a5081046C44F
+    2024/10/31 15:12:12 Get Account Response:  account:{account_id:"0x436d02ef904e536a870d12949e429819"
+    owner:"0x755201605CB3bBeE61320cc3d5Af2Bb5Ed15DE0F"
+    public_key_x:"a91cd998338946de2b6a1bc36dc109b5bcc8a826143174d7820eb0e26f05e042"
+    public_key_y:"90bf93a068d2dc9aa497cb25e006f14e1abfc754935d1d98c8e5a8b8d0812e64" signature_algorithm:SignatureAlgorithm_ECDSA}
+    2024/10/31 15:12:12 TA's Ethereum Address:  0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c
+    2024/10/31 15:12:13 Suggested Gas Price: 4297882348
+    2024/10/31 15:12:13 Suggested Gas Tip Cap: 305482713
+    2024/10/31 15:12:13 Transaction Hash: c3f2f2779693bb9687ea25f1d8585f7907031fbbbfc57492296c94d3cf246f33
+    2024/10/31 15:12:17 Sign Response:  tx_hash:"0x74322f8c27019b1ce5c475cf76af225c47cc7a97ef4afb73cba4f68526dab132" signature:"323ab432a41b47a8e02383a0648262248850b84c9d5530394252de87e0869baa7944c6db4b50c2eacc6562bc85ec824eb0451ac6a6adac19b1ec42bcfe84bcd101"
+    2024/10/31 15:12:17 Sender Address:  0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c
+    You need to depoist send value & gas ETH to 0x6a06c9e34f0e167c2aD2Ba3d97D588BaA9A0C37c (y/n):
+    ```
 
-   Once the transfer is successful, the `txHash` will be displayed.
+    Once the transfer is successful, the `txHash` will be displayed.
 
-   output example
-   ```
-   2024/10/31 15:12:19 Transaction sent successfully! Tx Hash:  0xf833ec2ea7202e929cf440b935702df8b56e24a2b4cea03d776f2d9357d2d7f8
-   ```
+    output example
+    ```
+    2024/10/31 15:12:19 Transaction sent successfully! Tx Hash:  0xf833ec2ea7202e929cf440b935702df8b56e24a2b4cea03d776f2d9357d2d7f8
+    ```
 
-   Let’s check the outputted Tx Hash on each chain’s explorer.
-   - [Sepoilia Testnet Etherscan](https://sepolia.etherscan.io/)
+    Let’s check the outputted Tx Hash on each chain’s explorer.
+    
+    - [Sepoilia Testnet Etherscan](https://sepolia.etherscan.io/)
 
-   For more details on API requests, refer to the documentation at:
-   [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
+    For more details on API requests, refer to the documentation at:
+    [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
+
 
 
 ## Testing
