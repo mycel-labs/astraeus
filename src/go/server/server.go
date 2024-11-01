@@ -228,7 +228,7 @@ func (s *server) TransferAccount(ctx context.Context, req *pb.TransferAccountReq
 		return nil, err
 	}
 
-	tx, err := s.taStoreContractBind.TransferAccount(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.To))
+	tx, err := s.taStoreContractBind.TransferAccount(s.auth, *sig, req.Base.AccountId, common.HexToAddress(req.Address))
 	if err != nil {
 		log.Printf("err: %v", err)
 		return nil, err

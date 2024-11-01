@@ -157,7 +157,7 @@ func TestTransferAccountE2E(t *testing.T) {
 					AccountId: accountId,
 					Proof:     transferSig,
 				},
-				To: tc.to,
+				Address: tc.to,
 			}
 			_, resp, err := testutil.TransferAccount(request)
 			if tc.expectValid && err != nil {
@@ -361,7 +361,7 @@ func TestApproveAddressE2E(t *testing.T) {
 						AccountId: accountId,
 						Proof:     transferSig,
 					},
-					To: tc.to.PublicKey.X.String(),
+					Address: tc.to.PublicKey.X.String(),
 				}
 				_, resp, err = testutil.TransferAccount(transferRequest)
 				if err != nil {
@@ -447,7 +447,7 @@ func TestRevokeApprovalE2E(t *testing.T) {
 						AccountId: accountId,
 						Proof:     transferSig,
 					},
-					To: tc.to.PublicKey.X.String(),
+					Address: tc.to.PublicKey.X.String(),
 				}
 				_, resp, err = testutil.TransferAccount(transferRequest)
 				assert.Error(t, err)
