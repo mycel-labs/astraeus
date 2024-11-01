@@ -47,6 +47,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     error OnlyOwnerCanUnlockAccount();
     error OnlyApprovedAccount();
     error OnlyUnlockAccount();
+    error InvalidTargetFunctionHash();
 
     /**
      * Functions
@@ -346,7 +347,9 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         view
         returns (bool)
     {
-        require(timedSignature.targetFunctionHash == targetFunctionHash, "Invalid targetFunctionHash");
+        if (timedSignature.targetFunctionHash != targetFunctionHash) {
+            revert InvalidTargetFunctionHash();
+        }
         return SignatureVerifier.verifyTimedSignature(
             timedSignature.validFor,
             timedSignature.messageHash,
