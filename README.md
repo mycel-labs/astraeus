@@ -275,8 +275,16 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
 
    Once these steps are completed, the ownership of the TA will be transferred.
 
-   For more details on API requests, refer to the documentation at:
-   [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
+   You can check the TA's owner address using the following command
+   ```
+   curl -X GET http://localhost:8080/v1/accounts/<your TA's accountId>
+   ```
+
+   example
+   ```
+   curl -X GET http://localhost:8080/v1/accounts/0x436d02ef904e536a870d12949e429819
+   {"account":{"accountId":"0x436d02ef904e536a870d12949e429819","owner":"0x755201605CB3bBeE61320cc3d5Af2Bb5Ed15DE0F","publicKeyX":"a91cd998338946de2b6a1bc36dc109b5bcc8a826143174d7820eb0e26f05e042","publicKeyY":"90bf93a068d2dc9aa497cb25e006f14e1abfc754935d1d98c8e5a8b8d0812e64","signatureAlgorithm":"SignatureAlgorithm_ECDSA","isLocked":false}}
+   ```
 
 9. **Unlock the Transferable Account**
 
@@ -348,6 +356,18 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    {"txHash":"0x26ad303c786550433848519411438b3f1531f568be25563d29645d1f6275341c"}
    ```
 
+   You can check the TA's lock status using the following command
+
+   ```
+   curl -X GET http://localhost:8080/v1/accounts/<your TA's accountId>/locked
+   ```
+
+   example
+   ```
+   curl -X GET http://localhost:8080/v1/accounts/0x436d02ef904e536a870d12949e429819/locked
+   {"result":false}
+   ```
+
 
 10. **Sign from Transferable Account**
 
@@ -389,6 +409,10 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    ```
 
    Let’s check the outputted Tx Hash on each chain’s explorer.
+   - [Sepoilia Testnet Etherscan](https://sepolia.etherscan.io/)
+
+   For more details on API requests, refer to the documentation at:
+   [API Documentation](https://github.com/mycel-labs/astraeus/blob/main/docs/api.md)
 
 
 ## Testing
