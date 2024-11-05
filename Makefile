@@ -40,6 +40,9 @@ run-go:
 build-go:
 	go build ./src/go
 
+vet-go:
+	go vet ./src/go
+
 test-go:
 	go test ./src/go/... ./test/... -count=1 
 
@@ -56,7 +59,6 @@ check-fmt-go:
 .PHONY: run-proto
 run-proto:
 	@docker build -t $(PROTOBUF_DOCKER_IMAGE) -f $(PROTOBUF_DOCKERFILE) .
-	@rm -f docs/api.md
 	@docker run --rm -v $(PWD):/workspace \
 		$(PROTOBUF_DOCKER_IMAGE) \
 		generate
@@ -74,8 +76,11 @@ check-fmt-proto:
 	buf format -d src/proto
 
 # General
-.PHONY: build test lint fmt check-fmt
-build: build-solidity build-go compile-proto
+.PHONY: install build test lint fmt check-fmt
+install:
+	forge install
+
+build: build-solidity vet-go compile-proto
 
 test: test-solidity test-go
 

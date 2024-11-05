@@ -10,6 +10,7 @@ This project implements a transferable account system using smart contracts.
 ### Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- Docker 
 
 ### Installation
 
@@ -21,12 +22,12 @@ This project implements a transferable account system using smart contracts.
 
 2. Install dependencies:
    ```
-   forge install
+   make install
    ```
 
 3. Compile the contracts:
    ```
-   forge build
+   make build
    ```
 
 ## Getting Started
@@ -84,7 +85,7 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    }
    ```
 
-5. **Create Account Request to API Server**
+6. **Create Account Request to API Server**
 
    Execute the request to create a TA. Use the output from step 4 in the `proof` section:
 
@@ -128,7 +129,6 @@ If you do not have these tokens, you can obtain them from the [Toliman Testnet F
    You can refer to the ethereumAddress held by the created TA from the result of the CreateAccount execution.
 
    This operation will be conducted on the Sepolia Testnet, not on the Suave Toliman Testnet, so please be careful.
-
 
 7. **Approve Address Request to API Server**
 
