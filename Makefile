@@ -21,7 +21,7 @@ gen-solidity-go-bindings:
 	./scripts/utils/gen-solidity-go-bindings.sh
 
 test-solidity:
-	forge test --ffi --via-ir test/**/*.t.sol
+	forge test --ffi --via-ir
 
 lint-solidity:
 	solhint 'src/**/*.sol'
