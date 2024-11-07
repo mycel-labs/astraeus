@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,21 +14,21 @@ import (
 	impl "github.com/mycel-labs/astraeus/src/go/server"
 )
 
-func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, privKey *ecdsa.PrivateKey) string {
+func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, privKey *ecdsa.PrivateKey) (string, error) {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	createSig, err := NewPbTimedSignature(taStoreContract, privKey, validFor, common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 	if err != nil {
-		t.Fatalf("Failed to generate timed signature: %v", err)
+		return "", fmt.Errorf("failed to generate timed signature: %v", err)
 	}
 	createAccountRequest := &pb.CreateAccountRequest{
 		Proof: createSig,
 	}
 	createAccountResponse, resp, err := CreateAccount(createAccountRequest)
 	if err != nil {
-		t.Fatalf("Failed to create account: %v", err)
+		return "", fmt.Errorf("failed to create account: %w", err)
 	}
 	assert.Equal(t, 200, resp.StatusCode)
-	return createAccountResponse.AccountId
+	return createAccountResponse.AccountId, nil
 }
 
 // Helper function to approve an address
