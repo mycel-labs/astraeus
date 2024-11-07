@@ -24,11 +24,21 @@ func NewAccount(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKe
 		return nil, fmt.Errorf("failed to create timed signature: %v", err)
 	}
 	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	if len(receipt.Logs) == 0 {
+		return nil, fmt.Errorf("no logs found in receipt")
+	}
 	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse log: %v", err)
 	}
-	accountId := ev["accountId"].(string)
+	accountIdInterface, exists := ev["accountId"]
+	if !exists {
+		return nil, fmt.Errorf("accountId not found in event data")
+	}
+	accountId, ok := accountIdInterface.(string)
+	if !ok {
+		return nil, fmt.Errorf("accountId is not a string")
+	}
 
 	return &pb.Account{
 		AccountId: accountId,
