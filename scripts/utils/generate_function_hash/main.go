@@ -10,11 +10,16 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <argument>")
+		fmt.Fprintln(os.Stderr, "Usage: go run main.go <function_signature>")
+		fmt.Fprintln(os.Stderr, "Example: go run main.go \"transfer(address,uint256)\"")
 		os.Exit(1)
 	}
 
 	argument := os.Args[1]
+	if len(argument) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: Empty input string")
+		os.Exit(1)
+	}
 
 	hash := keccak256(argument)
 	fmt.Printf("0x%s\n", hash)
