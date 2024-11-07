@@ -214,7 +214,10 @@ func TestDeleteAccountE2E(t *testing.T) {
 			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Delete the account
 			deleteSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH))
@@ -516,7 +519,10 @@ func TestSignE2E(t *testing.T) {
 			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Sign the message
 			signSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.SIGN_FUNCTION_HASH))
@@ -741,7 +747,10 @@ func TestIsAccountLockedE2E(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to create account: %v", err)
 				}
-				testutil.UnlockAccountHelper(t, taStoreContract, accountId, alicePrivKey)
+				err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to unlock account: %v", err)
+				}
 				return accountId
 			},
 			expectLocked: false,
