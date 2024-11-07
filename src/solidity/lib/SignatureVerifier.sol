@@ -14,12 +14,12 @@ library SignatureVerifier {
     event SignatureFailed(bytes32 messageHash, address signer, uint64 validFor);
     event SignatureVerified(bytes32 messageHash, address signer, uint64 validFor);
 
-    function hashMessage(uint64 validFor, address sender, uint64 nonce, bytes32 targetFunctionHash)
+    function hashMessage(uint64 validFor, address signer, uint64 nonce, bytes32 targetFunctionHash)
         internal
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(validFor, sender, nonce, targetFunctionHash));
+        return keccak256(abi.encode(validFor, signer, nonce, targetFunctionHash));
     }
 
     function verifyTimedSignature(
