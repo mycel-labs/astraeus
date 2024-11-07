@@ -434,7 +434,10 @@ func TestRevokeApprovalE2E(t *testing.T) {
 			}
 
 			// Step 2: Approve the account
-			testutil.ApproveAddressHelper(t, taStoreContract, accountId, tc.creator, tc.to.PublicKey.X.String())
+			err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, tc.to.PublicKey.X.String())
+			if err != nil {
+				t.Fatalf("Failed to approve address: %v", err)
+			}
 
 			// Step 3: Revoke the approval
 			revokeSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH))
@@ -627,7 +630,10 @@ func TestIsApprovedE2E(t *testing.T) {
 					t.Fatalf("Failed to create account: %v", err)
 				}
 				bobAddress := bobPrivKey.PublicKey.X.String()
-				testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, bobAddress)
+				err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, bobAddress)
+				if err != nil {
+					t.Fatalf("Failed to approve address: %v", err)
+				}
 				return accountId, bobAddress
 			},
 			expectValid: true,

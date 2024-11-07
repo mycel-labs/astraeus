@@ -32,11 +32,11 @@ func CreateAccountHelper(t *testing.T, taStoreContract *framework.Contract, priv
 }
 
 // Helper function to approve an address
-func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey, addressToApprove string) {
+func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, accountId string, ownerPrivKey *ecdsa.PrivateKey, addressToApprove string) error {
 	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
 	approveSig, err := NewPbTimedSignature(taStoreContract, ownerPrivKey, validFor, common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
 	if err != nil {
-		t.Fatalf("Failed to generate timed signature: %v", err)
+		return fmt.Errorf("failed to generate timed signature: %w", err)
 	}
 	approveAddressRequest := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
@@ -48,6 +48,13 @@ func ApproveAddressHelper(t *testing.T, taStoreContract *framework.Contract, acc
 	_, resp, err := ApproveAddress(approveAddressRequest)
 	assert.NoError(t, err, "Failed to approve address")
 	assert.Equal(t, 200, resp.StatusCode)
+	if err != nil {
+		return fmt.Errorf("failed to approve address: %w", err)
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // Helper function to unlock an account
