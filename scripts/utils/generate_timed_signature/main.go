@@ -20,7 +20,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	if len(os.Args) != 3 {
@@ -68,16 +68,16 @@ func main() {
 		log.Fatalf("Failed to bind to existing contract: %v", err)
 	}
 
-	valdFor := uint64(time.Now().Unix() + 86400)
+	validFor := uint64(time.Now().Unix() + 86400)
 
-	timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, valdFor, targetFunctionHash)
+	timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, validFor, targetFunctionHash)
 
 	if err != nil {
 		log.Fatalf("Failed to generate timed signature: %v", err)
 	}
 
 	fmt.Printf("\"proof\": {\n")
-	fmt.Printf("  \"validFor\": %d,\n", valdFor)
+	fmt.Printf("  \"validFor\": %d,\n", validFor)
 	fmt.Printf("  \"messageHash\": \"%s\",\n", timedSignature.MessageHash)
 	fmt.Printf("  \"signature\": \"%s\",\n", timedSignature.Signature)
 	fmt.Printf("  \"signer\": \"%s\",\n", timedSignature.Signer)
