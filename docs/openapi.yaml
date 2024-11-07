@@ -317,6 +317,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/nonce/{address}:
+        get:
+            tags:
+                - AccountService
+            operationId: AccountService_GetNonce
+            parameters:
+                - name: address
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNonceResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
 components:
     schemas:
         Account:
@@ -330,7 +354,7 @@ components:
                     type: string
                 publicKeyY:
                     type: string
-                curve:
+                signatureAlgorithm:
                     type: integer
                     format: enum
                 isLocked:
@@ -367,6 +391,8 @@ components:
                     type: string
                 accountId:
                     type: string
+                ethereumAddress:
+                    type: string
             description: Responses
         DeleteAccountRequest:
             type: object
@@ -383,6 +409,11 @@ components:
             properties:
                 account:
                     $ref: '#/components/schemas/Account'
+        GetNonceResponse:
+            type: object
+            properties:
+                nonce:
+                    type: string
         GoogleProtobufAny:
             type: object
             properties:
@@ -459,13 +490,17 @@ components:
                     type: string
                 signer:
                     type: string
+                nonce:
+                    type: string
+                targetFunctionHash:
+                    type: string
             description: Requests
         TransferAccountRequest:
             type: object
             properties:
                 base:
                     $ref: '#/components/schemas/AccountOperationRequest'
-                to:
+                address:
                     type: string
         TransferAccountResponse:
             type: object
