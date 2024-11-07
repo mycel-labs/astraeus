@@ -23,7 +23,7 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
     uint256 public constant AA = 0;
     uint256 public constant BB = 7;
     uint256 public constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-    string public KEY_FA = "KEY";
+    string public constant KEY_FA = "KEY";
 
     mapping(string => Account) public accountsStore;
     mapping(Suave.DataId => address) public accountApprovals;
@@ -112,8 +112,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address _address
     ) external onlyLocked(accountId) {
         // keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 APPROVE_ADDRESS_FUNCTION_HASH = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
-        if (!consumeNonce(timedSignature, APPROVE_ADDRESS_FUNCTION_HASH)) {
+        bytes32 approveAddressFunctionHash = 0x16d1dabab53b460506870428d7a255f9bff53294080a73797c114f4e25b5e76f;
+        if (!consumeNonce(timedSignature, approveAddressFunctionHash)) {
             revert InvalidTimedSignature();
         }
         Account storage account = accountsStore[accountId];
@@ -135,8 +135,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address _address
     ) public onlyLocked(accountId) {
         // keccak256("RevokeApproval(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-        bytes32 REVOKE_APPROVAL_FUNCTION_HASH = 0xdb4c3d2d6140b1cf852cff55c9c9a3d0c16d15c9da5e35f87fdc664b1bbf1c32;
-        if (!consumeNonce(timedSignature, REVOKE_APPROVAL_FUNCTION_HASH)) {
+        bytes32 revokeApprovalFunctionHash = 0xdb4c3d2d6140b1cf852cff55c9c9a3d0c16d15c9da5e35f87fdc664b1bbf1c32;
+        if (!consumeNonce(timedSignature, revokeApprovalFunctionHash)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -171,8 +171,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         returns (string memory)
     {
         // keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
-        bytes32 CREATE_ACCOUNT_FUNCTION_HASH = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
-        if (!consumeNonce(timedSignature, CREATE_ACCOUNT_FUNCTION_HASH)) {
+        bytes32 createAccountFunctionHash = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
+        if (!consumeNonce(timedSignature, createAccountFunctionHash)) {
             revert InvalidTimedSignature();
         }
         require(timedSignature.signer == account.owner, "The signer is not the owner of the account.");
@@ -191,8 +191,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         returns (bytes memory)
     {
         // keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
-        bytes32 CREATE_ACCOUNT_FUNCTION_HASH = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
-        if (!verifyTimedSignature(timedSignature, CREATE_ACCOUNT_FUNCTION_HASH)) {
+        bytes32 createAccountFunctionHash = 0x030bb6482ea73e1a5ab7ed4810436dc5d10770855cdbbba0acb9a90b04852e4f;
+        if (!verifyTimedSignature(timedSignature, createAccountFunctionHash)) {
             revert InvalidTimedSignature();
         }
 
@@ -230,8 +230,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         address to
     ) public onlyLocked(accountId) {
         // keccak256("TransferAccount(SignatureVerifier.TimedSignature timedSignature,string accountId,address to)");
-        bytes32 TRANSFER_ACCOUNT_FUNCTION_HASH = 0x29535a955f68dc291a88a89b6112c958d2edce1684117ccd6b54ca173656f65f;
-        if (!consumeNonce(timedSignature, TRANSFER_ACCOUNT_FUNCTION_HASH)) {
+        bytes32 transferAccountFunctionHash = 0x29535a955f68dc291a88a89b6112c958d2edce1684117ccd6b54ca173656f65f;
+        if (!consumeNonce(timedSignature, transferAccountFunctionHash)) {
             revert InvalidTimedSignature();
         }
         if (!isApproved(accountId, timedSignature.signer)) {
@@ -251,8 +251,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
      */
     function deleteAccount(SignatureVerifier.TimedSignature calldata timedSignature, string memory accountId) public {
         // keccak256("DeleteAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
-        bytes32 DELETE_ACCOUNT_FUNCTION_HASH = 0x31819315e31d5175ae85114dd27816114c585abc7f9d53ef5ca9bf3c4f2db038;
-        if (!consumeNonce(timedSignature, DELETE_ACCOUNT_FUNCTION_HASH)) {
+        bytes32 deleteAccountFunctionHash = 0x31819315e31d5175ae85114dd27816114c585abc7f9d53ef5ca9bf3c4f2db038;
+        if (!consumeNonce(timedSignature, deleteAccountFunctionHash)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -271,8 +271,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         onlyLocked(accountId)
     {
         // keccak256("UnlockAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
-        bytes32 UNLOCK_ACCOUNT_FUNCTION_HASH = 0x062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332;
-        if (!consumeNonce(timedSignature, UNLOCK_ACCOUNT_FUNCTION_HASH)) {
+        bytes32 unlockAccountFunctionHash = 0x062e71868bb32b076e90fa8fa0fa661f47d2f38ee0e9db39a5ab5569589f6332;
+        if (!consumeNonce(timedSignature, unlockAccountFunctionHash)) {
             revert InvalidTimedSignature();
         }
         if (!isOwner(accountId, timedSignature.signer)) {
@@ -297,8 +297,8 @@ contract TransferableAccountStore is Suapp, ITransferableAccountStore {
         returns (bytes memory)
     {
         // keccak256("Sign(SignatureVerifier.TimedSignature timedSignature,string accountId,bytes data)");
-        bytes32 SIGN_FUNCTION_HASH = 0xd34780a58dd276dd414ea2abde077f3492ca5422926cdcadf8def7a93f12e993;
-        if (!verifyTimedSignature(timedSignature, SIGN_FUNCTION_HASH)) {
+        bytes32 signFunctionHash = 0xd34780a58dd276dd414ea2abde077f3492ca5422926cdcadf8def7a93f12e993;
+        if (!verifyTimedSignature(timedSignature, signFunctionHash)) {
             revert InvalidTimedSignature();
         }
         if (!isApproved(accountId, timedSignature.signer)) {
