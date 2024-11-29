@@ -257,6 +257,14 @@
                 </li>
               
                 <li>
+                  <a href="#api.v1.GetNonceRequest"><span class="badge">M</span>GetNonceRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.GetNonceResponse"><span class="badge">M</span>GetNonceResponse</a>
+                </li>
+              
+                <li>
                   <a href="#api.v1.IsAccountLockedRequest"><span class="badge">M</span>IsAccountLockedRequest</a>
                 </li>
               
@@ -322,7 +330,7 @@
               
               
                 <li>
-                  <a href="#api.v1.Curve"><span class="badge">E</span>Curve</a>
+                  <a href="#api.v1.SignatureAlgorithm"><span class="badge">E</span>SignatureAlgorithm</a>
                 </li>
               
               
@@ -606,8 +614,8 @@ the nesting may only be one level deep). </p></td>
                 </tr>
               
                 <tr>
-                  <td>curve</td>
-                  <td><a href="#api.v1.Curve">Curve</a></td>
+                  <td>signature_algorithm</td>
+                  <td><a href="#api.v1.SignatureAlgorithm">SignatureAlgorithm</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -760,6 +768,13 @@ the nesting may only be one level deep). </p></td>
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>ethereum_address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -852,6 +867,54 @@ the nesting may only be one level deep). </p></td>
                 <tr>
                   <td>account</td>
                   <td><a href="#api.v1.Account">Account</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.GetNonceRequest">GetNonceRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="api.v1.GetNonceResponse">GetNonceResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>nonce</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -1200,6 +1263,20 @@ the nesting may only be one level deep). </p></td>
                   <td><p>address </p></td>
                 </tr>
               
+                <tr>
+                  <td>nonce</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>target_function_hash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>hex encoded </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -1225,7 +1302,7 @@ the nesting may only be one level deep). </p></td>
                 </tr>
               
                 <tr>
-                  <td>to</td>
+                  <td>address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1312,7 +1389,7 @@ the nesting may only be one level deep). </p></td>
       
 
       
-        <h3 id="api.v1.Curve">Curve</h3>
+        <h3 id="api.v1.SignatureAlgorithm">SignatureAlgorithm</h3>
         <p></p>
         <table class="enum-table">
           <thead>
@@ -1321,19 +1398,19 @@ the nesting may only be one level deep). </p></td>
           <tbody>
             
               <tr>
-                <td>CURVE_UNSPECIFIED</td>
+                <td>SignatureAlgorithm_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
             
               <tr>
-                <td>CURVE_ECDSA</td>
+                <td>SignatureAlgorithm_ECDSA</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
             
               <tr>
-                <td>CURVE_EDDSA</td>
+                <td>SignatureAlgorithm_EDDSA</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
@@ -1406,6 +1483,13 @@ the nesting may only be one level deep). </p></td>
                 <td>GetAccount</td>
                 <td><a href="#api.v1.GetAccountRequest">GetAccountRequest</a></td>
                 <td><a href="#api.v1.GetAccountResponse">GetAccountResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>GetNonce</td>
+                <td><a href="#api.v1.GetNonceRequest">GetNonceRequest</a></td>
+                <td><a href="#api.v1.GetNonceResponse">GetNonceResponse</a></td>
                 <td><p></p></td>
               </tr>
             
@@ -1524,6 +1608,16 @@ the nesting may only be one level deep). </p></td>
                 <td>GetAccount</td>
                 <td>GET</td>
                 <td>/v1/accounts/{account_id}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetNonce</td>
+                <td>GET</td>
+                <td>/v1/nonce/{address}</td>
                 <td></td>
               </tr>
               

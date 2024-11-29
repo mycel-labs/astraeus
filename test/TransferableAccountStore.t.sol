@@ -10,25 +10,29 @@ import "../src/solidity/lib/SignatureVerifier.sol";
 
 contract TransferableAccountStoreTest is Test, SuaveEnabled {
     address public admin = address(this);
-    uint256 alicePrivateKey = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
-    uint256 bobPrivateKey = 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
+    uint256 public constant ALICE_PRIVATE_KEY = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+    uint256 public constant BOB_PRIVATE_KEY = 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;
 
-    address public alice = vm.addr(alicePrivateKey);
-    address public bob = vm.addr(bobPrivateKey);
+    address public alice = vm.addr(ALICE_PRIVATE_KEY);
+    address public bob = vm.addr(BOB_PRIVATE_KEY);
 
-    bytes32 CREATE_ACCOUNT_FUNCTION_HASH = keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
-    bytes32 APPROVE_ADDRESS_FUNCTION_HASH =
+    bytes32 public constant CREATE_ACCOUNT_FUNCTION_HASH =
+        keccak256("CreateAccount(SignatureVerifier.TimedSignature timedSignature)");
+    bytes32 public constant APPROVE_ADDRESS_FUNCTION_HASH =
         keccak256("ApproveAddress(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-    bytes32 TRANSFER_ACCOUNT_FUNCTION_HASH =
+    bytes32 public constant TRANSFER_ACCOUNT_FUNCTION_HASH =
         keccak256("TransferAccount(SignatureVerifier.TimedSignature timedSignature,string accountId,address to)");
-    bytes32 REVOKE_APPROVAL_FUNCTION_HASH =
+    bytes32 public constant REVOKE_APPROVAL_FUNCTION_HASH =
         keccak256("RevokeApproval(SignatureVerifier.TimedSignature timedSignature,string accountId,address _address)");
-    bytes32 DELETE_ACCOUNT_FUNCTION_HASH =
+    bytes32 public constant DELETE_ACCOUNT_FUNCTION_HASH =
         keccak256("DeleteAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
-    bytes32 UNLOCK_ACCOUNT_FUNCTION_HASH =
+    bytes32 public constant UNLOCK_ACCOUNT_FUNCTION_HASH =
         keccak256("UnlockAccount(SignatureVerifier.TimedSignature timedSignature,string accountId)");
-    bytes32 SIGN_FUNCTION_HASH =
+    bytes32 public constant SIGN_FUNCTION_HASH =
         keccak256("Sign(SignatureVerifier.TimedSignature timedSignature,string accountId,bytes data)");
+
+    error AccountLocked();
+    error AccountLockedError();
 
     function generateTimedSignature(
         uint64 validFor,
@@ -59,21 +63,21 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testVerifyTimedSignature() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        bytes32 VERIFY_TIMEDSIGNATURE = keccak256("test timedSignature");
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), VERIFY_TIMEDSIGNATURE
+        bytes32 targetFunctionHashDemo = keccak256("test timedSignature");
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), targetFunctionHashDemo
         );
 
         vm.warp(1000);
-        bool isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
+        bool isValid = tas.verifyTimedSignature(sig0, targetFunctionHashDemo);
         assertTrue(isValid, "Valid signature should be accepted");
 
         vm.warp(uint64(block.timestamp + 86401));
-        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
+        isValid = tas.verifyTimedSignature(sig0, targetFunctionHashDemo);
         assertFalse(isValid, "Expired signature should be rejected");
 
-        sig_0.signature[0] ^= 0xFF;
-        isValid = tas.verifyTimedSignature(sig_0, VERIFY_TIMEDSIGNATURE);
+        sig0.signature[0] ^= 0xFF;
+        isValid = tas.verifyTimedSignature(sig0, targetFunctionHashDemo);
         assertFalse(isValid, "Invalid signature should be rejected");
     }
 
@@ -88,11 +92,11 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testCreateAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
 
-        bytes memory encodedData = tas.createAccount(sig_0);
+        bytes memory encodedData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedData);
 
         (
@@ -100,17 +104,17 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
             ITransferableAccountStore.Account memory decodedAccount
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
 
-        assertEq(decodedTimedSignature.signature, sig_0.signature, "Signature should be same");
-        assertEq(decodedAccount.owner, sig_0.signer, "Owner should be alice");
+        assertEq(decodedTimedSignature.signature, sig0.signature, "Signature should be same");
+        assertEq(decodedAccount.owner, sig0.signer, "Owner should be alice");
         assertTrue(decodedAccount.isLocked, "Account should be locked");
     }
 
     function testCreateAccountCallback() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedData = tas.createAccount(sig_0);
+        bytes memory encodedData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedData);
 
         (
@@ -142,10 +146,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testApproveAddress() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -154,10 +158,14 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            APPROVE_ADDRESS_FUNCTION_HASH
         );
-        tas.approveAddress(sig_1, accountId, bob);
+        tas.approveAddress(sig1, accountId, bob);
 
         address approvedAddress = tas.accountApprovals(decodedAccount.accountId);
         assertEq(bob, approvedAddress, "Approved account address should match");
@@ -165,10 +173,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testTransferAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory aliceSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory aliceSig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -177,16 +185,20 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        SignatureVerifier.TimedSignature memory aliceSig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory aliceSig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            APPROVE_ADDRESS_FUNCTION_HASH
         );
-        tas.approveAddress(aliceSig_1, accountId, bob);
+        tas.approveAddress(aliceSig1, accountId, bob);
 
-        SignatureVerifier.TimedSignature memory bobSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory bobSig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, BOB_PRIVATE_KEY, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
         );
 
-        tas.transferAccount(bobSig_0, accountId, bob);
+        tas.transferAccount(bobSig0, accountId, bob);
 
         (, address newOwner,,,, bool isAccountLocked) = tas.accountsStore(accountId);
 
@@ -196,10 +208,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testIsApproved() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -208,28 +220,36 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            APPROVE_ADDRESS_FUNCTION_HASH
         );
-        tas.approveAddress(sig_1, accountId, bob);
+        tas.approveAddress(sig1, accountId, bob);
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        SignatureVerifier.TimedSignature memory sig_2 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), REVOKE_APPROVAL_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig2 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            REVOKE_APPROVAL_FUNCTION_HASH
         );
-        tas.revokeApproval(sig_2, accountId, bob);
+        tas.revokeApproval(sig2, accountId, bob);
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
     }
 
     function testIsOwner() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -247,10 +267,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testGetAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -275,10 +295,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testRevokeApproval() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -287,18 +307,26 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            APPROVE_ADDRESS_FUNCTION_HASH
         );
-        tas.approveAddress(sig_1, accountId, bob);
+        tas.approveAddress(sig1, accountId, bob);
 
         bool isApproved = tas.isApproved(accountId, bob);
         assertTrue(isApproved, "Address should be approved");
 
-        SignatureVerifier.TimedSignature memory sig_2 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), REVOKE_APPROVAL_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig2 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            REVOKE_APPROVAL_FUNCTION_HASH
         );
-        tas.revokeApproval(sig_2, accountId, bob);
+        tas.revokeApproval(sig2, accountId, bob);
 
         isApproved = tas.isApproved(accountId, bob);
         assertFalse(isApproved, "Address should not be approved after revocation");
@@ -306,10 +334,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testDeleteAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -321,10 +349,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ITransferableAccountStore.Account memory retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, decodedAccount.owner, "Owner should match before deletion");
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), DELETE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), DELETE_ACCOUNT_FUNCTION_HASH
         );
-        tas.deleteAccount(sig_1, accountId);
+        tas.deleteAccount(sig1, accountId);
 
         retrievedAccount = tas.getAccount(accountId);
         assertEq(retrievedAccount.owner, address(0), "Owner should be zero address after deletion");
@@ -332,10 +360,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testUnlockAccount() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -347,10 +375,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), UNLOCK_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), UNLOCK_ACCOUNT_FUNCTION_HASH
         );
-        tas.unlockAccount(sig_1, accountId);
+        tas.unlockAccount(sig1, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
         assertFalse(isAccountLocked, "Account should be unlocked");
@@ -358,10 +386,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testSign() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -373,22 +401,24 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), UNLOCK_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), UNLOCK_ACCOUNT_FUNCTION_HASH
         );
-        tas.unlockAccount(sig_1, accountId);
+        tas.unlockAccount(sig1, accountId);
 
         isAccountLocked = tas.isAccountLocked(accountId);
 
         bytes memory dummyData = abi.encodePacked("dummy data");
         bytes32 hashedDummyData = keccak256(dummyData);
 
-        require(!isAccountLocked, "Account is still locked");
+        if (isAccountLocked) {
+            revert AccountLocked();
+        }
 
-        SignatureVerifier.TimedSignature memory sig_2 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), SIGN_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig2 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), SIGN_FUNCTION_HASH
         );
-        bytes memory encodedSignData = tas.sign(sig_2, accountId, abi.encodePacked(hashedDummyData));
+        bytes memory encodedSignData = tas.sign(sig2, accountId, abi.encodePacked(hashedDummyData));
         bytes4 selector;
         assembly {
             selector := mload(add(encodedSignData, 32))
@@ -399,10 +429,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testSignAfterTransfer() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory aliceSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory aliceSig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(aliceSig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -411,28 +441,32 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         ) = abi.decode(accountData, (SignatureVerifier.TimedSignature, ITransferableAccountStore.Account));
         string memory accountId = tas.createAccountCallback(decodedTimedSignature, decodedAccount);
 
-        SignatureVerifier.TimedSignature memory aliceSig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), APPROVE_ADDRESS_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory aliceSig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400),
+            alice,
+            ALICE_PRIVATE_KEY,
+            tas.getNonce(alice),
+            APPROVE_ADDRESS_FUNCTION_HASH
         );
-        tas.approveAddress(aliceSig_1, accountId, bob);
+        tas.approveAddress(aliceSig1, accountId, bob);
 
-        SignatureVerifier.TimedSignature memory bobSig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory bobSig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, BOB_PRIVATE_KEY, tas.getNonce(bob), TRANSFER_ACCOUNT_FUNCTION_HASH
         );
-        tas.transferAccount(bobSig_0, accountId, bob);
+        tas.transferAccount(bobSig0, accountId, bob);
 
-        SignatureVerifier.TimedSignature memory bobSig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), UNLOCK_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory bobSig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, BOB_PRIVATE_KEY, tas.getNonce(bob), UNLOCK_ACCOUNT_FUNCTION_HASH
         );
-        tas.unlockAccount(bobSig_1, accountId);
+        tas.unlockAccount(bobSig1, accountId);
 
         bytes memory dummyData = abi.encodePacked("dummy data");
         bytes32 hashedDummyData = keccak256(dummyData);
 
-        SignatureVerifier.TimedSignature memory bobSig_2 = generateTimedSignature(
-            uint64(block.timestamp + 86400), bob, bobPrivateKey, tas.getNonce(bob), SIGN_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory bobSig2 = generateTimedSignature(
+            uint64(block.timestamp + 86400), bob, BOB_PRIVATE_KEY, tas.getNonce(bob), SIGN_FUNCTION_HASH
         );
-        bytes memory encodedSignData = tas.sign(bobSig_2, accountId, abi.encodePacked(hashedDummyData));
+        bytes memory encodedSignData = tas.sign(bobSig2, accountId, abi.encodePacked(hashedDummyData));
         bytes4 selector;
         assembly {
             selector := mload(add(encodedSignData, 32))
@@ -443,10 +477,10 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
 
     function testSignWhenAccountIsLocked() public {
         TransferableAccountStore tas = new TransferableAccountStore();
-        SignatureVerifier.TimedSignature memory sig_0 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig0 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), CREATE_ACCOUNT_FUNCTION_HASH
         );
-        bytes memory encodedCreateAccountData = tas.createAccount(sig_0);
+        bytes memory encodedCreateAccountData = tas.createAccount(sig0);
         bytes memory accountData = decodeEncodedData(encodedCreateAccountData);
 
         (
@@ -458,16 +492,14 @@ contract TransferableAccountStoreTest is Test, SuaveEnabled {
         bool isAccountLocked = tas.isAccountLocked(accountId);
         assertTrue(isAccountLocked, "Account should be locked immediately after creation");
 
-        require(isAccountLocked, "Account should be still locked");
-
         bytes memory dummyData = abi.encodePacked("dummy data");
         bytes32 hashedDummyData = keccak256(dummyData);
 
-        SignatureVerifier.TimedSignature memory sig_1 = generateTimedSignature(
-            uint64(block.timestamp + 86400), alice, alicePrivateKey, tas.getNonce(alice), SIGN_FUNCTION_HASH
+        SignatureVerifier.TimedSignature memory sig1 = generateTimedSignature(
+            uint64(block.timestamp + 86400), alice, ALICE_PRIVATE_KEY, tas.getNonce(alice), SIGN_FUNCTION_HASH
         );
         vm.expectRevert();
-        tas.sign(sig_1, accountId, abi.encodePacked(hashedDummyData));
+        tas.sign(sig1, accountId, abi.encodePacked(hashedDummyData));
     }
 }
 

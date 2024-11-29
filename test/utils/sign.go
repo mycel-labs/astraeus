@@ -24,11 +24,21 @@ func NewAccount(taStoreContract *framework.Contract, privateKey *ecdsa.PrivateKe
 		return nil, fmt.Errorf("failed to create timed signature: %v", err)
 	}
 	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	if len(receipt.Logs) == 0 {
+		return nil, fmt.Errorf("no logs found in receipt")
+	}
 	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse log: %v", err)
 	}
-	accountId := ev["accountId"].(string)
+	accountIdInterface, exists := ev["accountId"]
+	if !exists {
+		return nil, fmt.Errorf("accountId not found in event data")
+	}
+	accountId, ok := accountIdInterface.(string)
+	if !ok {
+		return nil, fmt.Errorf("accountId is not a string")
+	}
 
 	return &pb.Account{
 		AccountId: accountId,
@@ -60,7 +70,7 @@ func newTimedSignature(taStoreContract *framework.Contract, privateKey *ecdsa.Pr
 	if err != nil {
 		return nil, err
 	}
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
+	messageHash, signature, err := generateTimedSignature(validFor, privateKey, nonce, targetFunctionHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate timed signature: %v", err)
 	}
@@ -86,13 +96,13 @@ func getNonce(taStoreContract *framework.Contract, address common.Address) (uint
 	return nonce, nil
 }
 
-func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
+func generateTimedSignature(validFor uint64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	// Step 1: Create the message hash
 	// Combine validFor timestamp, signer's address, nonce, and targetFunctionHash, then hash with Keccak256
 	messageHash = crypto.Keccak256Hash(
-		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
+		common.LeftPadBytes(big.NewInt(int64(validFor)).Bytes(), 8),
 		common.LeftPadBytes(address.Bytes(), 20),
 		common.LeftPadBytes(big.NewInt(int64(nonce)).Bytes(), 8),
 		targetFunctionHash[:],

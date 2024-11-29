@@ -145,7 +145,10 @@ func TestTransferAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Transfer account
 			transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
@@ -205,10 +208,16 @@ func TestDeleteAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Delete the account
 			deleteSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH))
@@ -268,7 +277,10 @@ func TestUnlockAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
 			unlockSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
@@ -330,7 +342,10 @@ func TestApproveAddressE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Approve the account
 			approveSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
@@ -413,10 +428,16 @@ func TestRevokeApprovalE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Approve the account
-			testutil.ApproveAddressHelper(t, taStoreContract, accountId, tc.creator, tc.to.PublicKey.X.String())
+			err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, tc.to.PublicKey.X.String())
+			if err != nil {
+				t.Fatalf("Failed to approve address: %v", err)
+			}
 
 			// Step 3: Revoke the approval
 			revokeSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH))
@@ -495,10 +516,16 @@ func TestSignE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Sign the message
 			signSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.SIGN_FUNCTION_HASH))
@@ -539,7 +566,11 @@ func TestGetAccountE2E(t *testing.T) {
 		{
 			name: "Valid account retrieval",
 			setupFunc: func() string {
-				return testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				return accountId
 			},
 			expectValid: true,
 		},
@@ -594,9 +625,15 @@ func TestIsApprovedE2E(t *testing.T) {
 		{
 			name: "Approved address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				bobAddress := bobPrivKey.PublicKey.X.String()
-				testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, bobAddress)
+				err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, bobAddress)
+				if err != nil {
+					t.Fatalf("Failed to approve address: %v", err)
+				}
 				return accountId, bobAddress
 			},
 			expectValid: true,
@@ -604,7 +641,10 @@ func TestIsApprovedE2E(t *testing.T) {
 		{
 			name: "Non-approved address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, bobPrivKey.PublicKey.X.String()
 			},
 			expectValid: false,
@@ -646,7 +686,10 @@ func TestIsOwnerE2E(t *testing.T) {
 		{
 			name: "Account owner",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, crypto.PubkeyToAddress(alicePrivKey.PublicKey).Hex()
 			},
 			expectOwner: true,
@@ -654,7 +697,10 @@ func TestIsOwnerE2E(t *testing.T) {
 		{
 			name: "Non-owner address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, crypto.PubkeyToAddress(bobPrivKey.PublicKey).Hex()
 			},
 			expectOwner: false,
@@ -692,15 +738,25 @@ func TestIsAccountLockedE2E(t *testing.T) {
 		{
 			name: "Newly created account (locked)",
 			setupFunc: func() string {
-				return testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				return accountId
 			},
 			expectLocked: true,
 		},
 		{
 			name: "Unlocked account",
 			setupFunc: func() string {
-				accountId := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
-				testutil.UnlockAccountHelper(t, taStoreContract, accountId, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to unlock account: %v", err)
+				}
 				return accountId
 			},
 			expectLocked: false,
