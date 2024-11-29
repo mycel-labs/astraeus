@@ -5,24 +5,27 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
+	ct "github.com/mycel-labs/astraeus/src/go/contract"
 	framework "github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
 )
 
 var (
-	fr              *framework.Framework
-	taStoreContract *framework.Contract
-	accountId       string
-	privateKey      *ecdsa.PrivateKey
+	fr         *framework.Framework
+	accountId  string
+	privateKey *ecdsa.PrivateKey
+	s          *server
 )
 
 const fundedAddress = "0xBE69d72ca5f88aCba033a063dF5DBe43a4148De0"
@@ -44,7 +47,7 @@ func setup(t *testing.T) {
 	fr = framework.New()
 
 	// Deploy contract
-	taStoreContract = fr.Suave.DeployContract(taStoreContractPath)
+	taStoreContract := fr.Suave.DeployContract(taStoreContractPath)
 	os.Setenv("TA_STORE_CONTRACT_ADDRESS", taStoreContract.Contract.Address().Hex())
 
 	// Initialize test data
@@ -53,96 +56,22 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert hex to private key: %v", err)
 	}
-}
+	rpcUrl := "http://localhost:8545"
 
-func createAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
-	sig := newTimedSignature(t, privateKey)
-	receipt := taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
-	ev, err := taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	s, err = NewServer(rpcUrl, hex.EncodeToString(crypto.FromECDSA(privateKey)), taStoreContract.Contract.Address().Hex())
 	if err != nil {
-		t.Fatalf("failed to parse log: %v", err)
+		t.Fatalf("failed to create server: %v", err)
 	}
-	accountId = ev["accountId"].(string)
-
-	return &pb.Account{
-		AccountId: accountId,
-		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
-	}
-}
-
-func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.TimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
-	if err != nil {
-		t.Fatalf("failed to generate timed signature: %v", err)
-	}
-	return &pb.TimedSignature{
-		ValidFor:    validFor,
-		MessageHash: hex.EncodeToString(messageHash[:]),
-		Signature:   hex.EncodeToString(signature),
-		Signer:      fundedAddress,
-	}
-}
-
-func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey) *TimedSignature {
-	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
-	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey)
-	if err != nil {
-		t.Fatalf("failed to generate timed signature: %v", err)
-	}
-	sig := &TimedSignature{
-		ValidFor:    validFor,
-		MessageHash: messageHash,
-		Signature:   signature,
-		Signer:      crypto.PubkeyToAddress(privateKey.PublicKey),
-	}
-	return sig
-}
-
-func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey) (messageHash [32]byte, signature []byte, err error) {
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-
-	// Step 1: Create the message hash
-	// Combine validFor timestamp and signer's address, then hash with Keccak256
-	messageHash = crypto.Keccak256Hash(
-		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
-		common.LeftPadBytes(address.Bytes(), 20),
-	)
-
-	// Step 2: Apply Mycel-specific prefix
-	// Prepend "\x19Mycel Signed Message:\n32" and hash again
-	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
-	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
-
-	// Step 3: Generate the signature
-	// Sign the prefixed message hash with the private key
-	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
-	if err != nil {
-		return [32]byte{}, nil, err
-	}
-
-	// Adjust the v value of the signature (add 27)
-	// This ensures compatibility with Mycel's signature standard
-	signature[64] += 27
-
-	return messageHash, signature, nil
 }
 
 func TestCreateAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	sig := newTimedSignature(t, privateKey)
+	targetFunctionHash := common.HexToHash(CREATE_ACCOUNT_FUNCTION_HASH)
+	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Execute
 	req := &pb.CreateAccountRequest{
-		Proof: &pb.TimedSignature{
-			ValidFor:    sig.ValidFor,
-			MessageHash: hex.EncodeToString(sig.MessageHash[:]),
-			Signature:   hex.EncodeToString(sig.Signature),
-			Signer:      sig.Signer.Hex(),
-		},
+		Proof: sig,
 	}
 	resp, err := s.CreateAccount(context.Background(), req)
 
@@ -152,6 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	assert.IsType(t, &pb.CreateAccountResponse{}, resp, "Response type is incorrect")
 	assert.NotEmpty(t, resp.TxHash, "TxHash should not be empty")
 	assert.NotEmpty(t, resp.AccountId, "Account ID should not be empty")
+	assert.NotEmpty(t, resp.EthereumAddress, "EthereumAddress should not be empty")
 
 	// Verify the account was created
 	accountReq := &pb.GetAccountRequest{AccountId: resp.AccountId}
@@ -163,10 +93,7 @@ func TestCreateAccount(t *testing.T) {
 
 func TestGetAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -199,12 +126,17 @@ func TestGetAccount(t *testing.T) {
 
 func TestIsApproved(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
+	testAddress := common.HexToAddress("0x123456789012345678901234568901234567890")
+	account := newAccount(t, privateKey)
+	targetFunctionHash := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
+	sig := newTimedSignature(t, privateKey, targetFunctionHash)
+	tx, err := s.taStoreContractBind.ApproveAddress(s.auth, *sig, account.AccountId, testAddress)
+	if err != nil {
+		t.Fatalf("failed to approve address: %v", err)
 	}
-	testAddress := common.HexToAddress("0x1234567890123456789012345678901234567890")
-	sig := newTimedSignature(t, privateKey)
-	s.taStoreContract.SendConfidentialRequest("approveAddress", []interface{}{sig, accountId, testAddress}, nil)
+	log.Printf("tx: %v", tx)
+
+	time.Sleep(2 * time.Second)
 
 	// Test cases
 	testCases := []struct {
@@ -213,8 +145,9 @@ func TestIsApproved(t *testing.T) {
 		address   string
 		expected  bool
 	}{
-		{"Approved address", accountId, testAddress.String(), true},
-		{"Not approved address", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Owner", account.AccountId, account.Owner, true},
+		{"Approved address", account.AccountId, testAddress.String(), true},
+		{"Not approved address", account.AccountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 		{"Non-existent account ID", "non_existent_account_id", "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 	}
 
@@ -238,9 +171,7 @@ func TestIsApproved(t *testing.T) {
 
 func TestIsOwner(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -249,8 +180,8 @@ func TestIsOwner(t *testing.T) {
 		address   string
 		expected  bool
 	}{
-		{"Is owner", accountId, fundedAddress, true},
-		{"Not owner", accountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
+		{"Is owner", account.AccountId, account.Owner, true},
+		{"Not owner", account.AccountId, "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false},
 		{"Non-existent account ID", "non_existent_account_id", fundedAddress, false},
 	}
 
@@ -274,10 +205,7 @@ func TestIsOwner(t *testing.T) {
 
 func TestTransferAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	newOwner := "0x1234567890123456789012345678901234567890"
 
 	// Test cases
@@ -294,13 +222,14 @@ func TestTransferAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			sig := newPbTimedSignature(t, privateKey)
+			targetFunctionHash := common.HexToHash(TRANSFER_ACCOUNT_FUNCTION_HASH)
+			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			req := &pb.TransferAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
 					Proof:     sig,
 				},
-				To: tc.to,
+				Address: tc.to,
 			}
 			resp, err := s.TransferAccount(context.Background(), req)
 
@@ -327,10 +256,7 @@ func TestTransferAccount(t *testing.T) {
 
 func TestDeleteAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -344,7 +270,8 @@ func TestDeleteAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sig := newPbTimedSignature(t, privateKey)
+			targetFunctionHash := common.HexToHash(DELETE_ACCOUNT_FUNCTION_HASH)
+			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			// Execute
 			req := &pb.DeleteAccountRequest{
 				Base: &pb.AccountOperationRequest{
@@ -375,10 +302,7 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestUnlockAccount(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -392,7 +316,8 @@ func TestUnlockAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sig := newPbTimedSignature(t, privateKey)
+			targetFunctionHash := common.HexToHash(UNLOCK_ACCOUNT_FUNCTION_HASH)
+			sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 			// Execute
 			req := &pb.UnlockAccountRequest{
 				Base: &pb.AccountOperationRequest{
@@ -424,12 +349,10 @@ func TestUnlockAccount(t *testing.T) {
 
 func TestApproveAddress(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	newApprovedAddress := "0x1234567890123456789012345678901234567890"
-	sig := newPbTimedSignature(t, privateKey)
+	targetFunctionHash := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
+	sig := newPbTimedSignature(t, privateKey, targetFunctionHash)
 
 	// Test cases
 	testCases := []struct {
@@ -479,18 +402,17 @@ func TestApproveAddress(t *testing.T) {
 
 func TestRevokeApproval(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 	addressToApprove := "0x1234567890123456789012345678901234567890"
-	sig := newPbTimedSignature(t, privateKey)
+	targetFunctionHashApprove := common.HexToHash(APPROVE_ADDRESS_FUNCTION_HASH)
+	targetFunctionHashRevoke := common.HexToHash(REVOKE_APPROVAL_FUNCTION_HASH)
+	sigApprove := newPbTimedSignature(t, privateKey, targetFunctionHashApprove)
 
 	// Approve the address first
 	approveReq := &pb.ApproveAddressRequest{
 		Base: &pb.AccountOperationRequest{
 			AccountId: account.AccountId,
-			Proof:     sig,
+			Proof:     sigApprove,
 		},
 		Address: addressToApprove,
 	}
@@ -511,14 +433,15 @@ func TestRevokeApproval(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute
-			req := &pb.RevokeApprovalRequest{
+			sigRevoke := newPbTimedSignature(t, privateKey, targetFunctionHashRevoke)
+			revokeReq := &pb.RevokeApprovalRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: tc.accountId,
-					Proof:     sig,
+					Proof:     sigRevoke,
 				},
 				Address: tc.address,
 			}
-			resp, err := s.RevokeApproval(context.Background(), req)
+			resp, err := s.RevokeApproval(context.Background(), revokeReq)
 
 			// Assert
 			if tc.expectErr {
@@ -543,12 +466,48 @@ func TestRevokeApproval(t *testing.T) {
 	}
 }
 
+func TestGetNonce(t *testing.T) {
+	// Setup
+	signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey)
+	nonce := getNonce(t, signerAddress)
+	// Create a new account to increase the nonce
+	newAccount(t, privateKey)
+
+	// Test cases
+	testCases := []struct {
+		name      string
+		address   string
+		expectErr bool
+		expected  uint64
+	}{
+		{"Valid nonce", signerAddress.Hex(), false, nonce + 1},
+		{"Not used address", "0x0000000000000000000000000000000000000000", false, 0},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Execute
+			req := &pb.GetNonceRequest{
+				Address: tc.address,
+			}
+			resp, err := s.GetNonce(context.Background(), req)
+
+			// Assert
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.Equal(t, tc.expected, resp.Nonce)
+			}
+		})
+	}
+}
+
 func TestIsAccountLocked(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
+	account := newAccount(t, privateKey)
 
 	// Test cases
 	testCases := []struct {
@@ -585,13 +544,16 @@ func TestIsAccountLocked(t *testing.T) {
 
 func TestSign(t *testing.T) {
 	// Setup
-	s := &server{
-		taStoreContract: taStoreContract,
-	}
-	account := createAccount(t, privateKey)
-	sig := newTimedSignature(t, privateKey)
+	account := newAccount(t, privateKey)
 
-	taStoreContract.SendConfidentialRequest("unlockAccount", []interface{}{sig, account.AccountId}, nil)
+	targetFunctionHashUnlock := common.HexToHash(UNLOCK_ACCOUNT_FUNCTION_HASH)
+	_, err := s.UnlockAccount(context.Background(), &pb.UnlockAccountRequest{
+		Base: &pb.AccountOperationRequest{
+			AccountId: account.AccountId,
+			Proof:     newPbTimedSignature(t, privateKey, targetFunctionHashUnlock),
+		},
+	})
+	assert.NoError(t, err)
 
 	message := []byte("Test message to sign")
 	messageHash := crypto.Keccak256(message)
@@ -610,7 +572,8 @@ func TestSign(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sig := newPbTimedSignature(t, privateKey)
+			targetFunctionHashSign := common.HexToHash(SIGN_FUNCTION_HASH)
+			sig := newPbTimedSignature(t, privateKey, targetFunctionHashSign)
 			// Execute
 			req := &pb.SignRequest{
 				Base: &pb.AccountOperationRequest{
@@ -682,4 +645,95 @@ func TestSign(t *testing.T) {
 			}
 		})
 	}
+}
+
+/*
+ * Helpers
+ */
+func getNonce(t *testing.T, address common.Address) uint64 {
+	nonce, err := s.taStoreContractBind.Nonces(&bind.CallOpts{}, address)
+	if err != nil {
+		t.Fatalf("Failed to get nonce: %v", err)
+	}
+	return nonce
+}
+
+func newAccount(t *testing.T, privateKey *ecdsa.PrivateKey) *pb.Account {
+	targetFunctionHash := common.HexToHash(CREATE_ACCOUNT_FUNCTION_HASH)
+	sig := newTimedSignature(t, privateKey, targetFunctionHash)
+	receipt := s.taStoreContract.SendConfidentialRequest("createAccount", []interface{}{sig}, nil)
+	ev, err := s.taStoreContract.Abi.Events["AccountCreated"].ParseLog(receipt.Logs[0])
+	if err != nil {
+		t.Fatalf("failed to parse log: %v", err)
+	}
+	accountId = ev["accountId"].(string)
+
+	return &pb.Account{
+		AccountId: accountId,
+		Owner:     crypto.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+}
+
+func newPbTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *pb.TimedSignature {
+	sig := _newTimedSignature(t, privateKey, targetFunctionHash)
+	return &pb.TimedSignature{
+		ValidFor:           sig.ValidFor,
+		MessageHash:        hex.EncodeToString(sig.MessageHash[:]),
+		Signature:          hex.EncodeToString(sig.Signature),
+		Signer:             sig.Signer.Hex(),
+		Nonce:              sig.Nonce,
+		TargetFunctionHash: hex.EncodeToString(sig.TargetFunctionHash[:]),
+	}
+}
+
+func newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
+	return _newTimedSignature(t, privateKey, targetFunctionHash)
+}
+
+func _newTimedSignature(t *testing.T, privateKey *ecdsa.PrivateKey, targetFunctionHash [32]byte) *ct.SignatureVerifierTimedSignature {
+	validFor := uint64(time.Now().AddDate(1, 0, 0).Unix())
+	nonce := getNonce(t, crypto.PubkeyToAddress(privateKey.PublicKey))
+	messageHash, signature, err := generateTimedSignature(int64(validFor), privateKey, nonce, targetFunctionHash)
+	if err != nil {
+		t.Fatalf("failed to generate timed signature: %v", err)
+	}
+	return &ct.SignatureVerifierTimedSignature{
+		ValidFor:           validFor,
+		MessageHash:        messageHash,
+		Signature:          signature,
+		Signer:             crypto.PubkeyToAddress(privateKey.PublicKey),
+		Nonce:              nonce,
+		TargetFunctionHash: targetFunctionHash,
+	}
+}
+
+func generateTimedSignature(validFor int64, privateKey *ecdsa.PrivateKey, nonce uint64, targetFunctionHash [32]byte) (messageHash [32]byte, signature []byte, err error) {
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	// Step 1: Create the message hash
+	// Combine validFor timestamp, signer's address, nonce, and targetFunctionHash, then hash with Keccak256
+	messageHash = crypto.Keccak256Hash(
+		common.LeftPadBytes(big.NewInt(validFor).Bytes(), 8),
+		common.LeftPadBytes(address.Bytes(), 20),
+		common.LeftPadBytes(big.NewInt(int64(nonce)).Bytes(), 8),
+		targetFunctionHash[:],
+	)
+
+	// Step 2: Apply Mycel-specific prefix
+	// Prepend "\x19Mycel Signed Message:\n32" and hash again
+	prefixedMessage := fmt.Sprintf("\x19Mycel Signed Message:\n32%s", messageHash)
+	prefixedMessageHash := crypto.Keccak256Hash([]byte(prefixedMessage))
+
+	// Step 3: Generate the signature
+	// Sign the prefixed message hash with the private key
+	signature, err = crypto.Sign(prefixedMessageHash.Bytes(), privateKey)
+	if err != nil {
+		return [32]byte{}, nil, err
+	}
+
+	// Adjust the v value of the signature (add 27)
+	// This ensures compatibility with Mycel's signature standard
+	signature[64] += 27
+
+	return messageHash, signature, nil
 }

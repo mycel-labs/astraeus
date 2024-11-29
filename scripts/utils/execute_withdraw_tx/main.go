@@ -21,7 +21,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
+	"github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
@@ -62,30 +64,11 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	if len(os.Args) != 5 {
-		log.Fatalf("Usage: <TA's accountID> <TargetChainID> <ToAddress> <SendValue>")
+	if len(os.Args) != 6 {
+		log.Fatalf("Usage: <privateKey> <TA's accountID> <TargetChainID> <ToAddress> <SendValue>")
 	}
 
-	accountId := os.Args[1]
-	if common.HexToAddress(accountId) == (common.Address{}) {
-		log.Fatalf("Invalid accountId: %s", os.Args[1])
-	}
-
-	chainId, ok := new(big.Int).SetString(os.Args[2], 10)
-	if !ok {
-		log.Fatalf("Invalid chain ID: %s", chainId)
-	}
-	bobAddress := common.HexToAddress(os.Args[3])
-	if bobAddress == (common.Address{}) {
-		log.Fatalf("Invalid address: %s", os.Args[3])
-	}
-	value, err := strconv.ParseFloat(os.Args[4], 64)
-	if err != nil {
-		log.Fatalf("Invalid value: %v", err)
-	}
-	valueInWei := big.NewInt(int64(value * 1e18))
-
-	privateKeyBytes, err := hex.DecodeString(os.Getenv("PRIVATE_KEY"))
+	privateKeyBytes, err := hex.DecodeString(os.Args[1])
 	if err != nil {
 		log.Fatalf("failed to decode hex string: %v", err)
 	}
@@ -94,9 +77,31 @@ func main() {
 		log.Fatalf("Failed to create private key: %v", err)
 	}
 
-	timedSignature, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, privKey)
+	accountId := os.Args[2]
+	if common.HexToAddress(accountId) == (common.Address{}) {
+		log.Fatalf("Invalid accountId: %s", os.Args[2])
+	}
+
+	chainId, ok := new(big.Int).SetString(os.Args[3], 10)
+	if !ok {
+		log.Fatalf("Invalid chain ID: %s", chainId)
+	}
+	bobAddress := common.HexToAddress(os.Args[4])
+	if bobAddress == (common.Address{}) {
+		log.Fatalf("Invalid address: %s", os.Args[4])
+	}
+	value, err := strconv.ParseFloat(os.Args[5], 64)
 	if err != nil {
-		log.Fatalf("Failed to generate timed signature: %v", err)
+		log.Fatalf("Invalid value: %v", err)
+	}
+	valueInWei := big.NewInt(int64(value * 1e18))
+
+	fr := framework.New(framework.WithCustomConfig(os.Getenv("PRIVATE_KEY"), os.Getenv("RPC_URL")))
+
+	log.Printf("Using TA_STORE_CONTRACT_ADDRESS: %s", os.Getenv("TA_STORE_CONTRACT_ADDRESS"))
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(os.Getenv("TA_STORE_CONTRACT_ADDRESS")), testutil.TAStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to bind to existing contract: %v", err)
 	}
 
 	getAccountRequest := &pb.GetAccountRequest{
@@ -116,7 +121,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to calculate Ethereum address: %v", err)
 	}
-	log.Println("Account Address: ", accountAddress)
+	log.Println("TA's Ethereum Address: ", accountAddress)
 
 	IsAccountLockedRequest := &pb.IsAccountLockedRequest{
 		AccountId: accountId,
@@ -128,6 +133,11 @@ func main() {
 	isLocked := IsAccountLockedResponse.Result
 
 	if isLocked {
+		timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, uint64(time.Now().Unix()+86400), common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
+		if err != nil {
+			log.Fatalf("Failed to generate timed signature: %v", err)
+		}
+
 		unlockAccountRequest := &pb.UnlockAccountRequest{
 			Base: &pb.AccountOperationRequest{
 				AccountId: accountId,
@@ -178,6 +188,11 @@ func main() {
 
 	signer := types.LatestSignerForChainID(tx.ChainId())
 	txHash := signer.Hash(tx).Bytes()
+
+	timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, uint64(time.Now().Unix()+86400), common.HexToHash(impl.SIGN_FUNCTION_HASH))
+	if err != nil {
+		log.Fatalf("Failed to generate timed signature: %v", err)
+	}
 
 	signRequest := &pb.SignRequest{
 		Base: &pb.AccountOperationRequest{

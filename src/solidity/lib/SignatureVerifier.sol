@@ -7,26 +7,35 @@ library SignatureVerifier {
         bytes32 messageHash;
         bytes signature;
         address signer;
+        uint64 nonce;
+        bytes32 targetFunctionHash;
     }
 
     event SignatureFailed(bytes32 messageHash, address signer, uint64 validFor);
     event SignatureVerified(bytes32 messageHash, address signer, uint64 validFor);
 
-    function hashMessage(uint64 validFor, address sender) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(validFor, sender));
+    function hashMessage(uint64 validFor, address sender, uint64 nonce, bytes32 targetFunctionHash)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(validFor, sender, nonce, targetFunctionHash));
     }
 
-    function verifyTimedSignature(uint64 validFor, bytes32 messageHash, bytes memory signature, address signer)
-        internal
-        view
-        returns (bool)
-    {
+    function verifyTimedSignature(
+        uint64 validFor,
+        bytes32 messageHash,
+        bytes memory signature,
+        address signer,
+        uint64 nonce,
+        bytes32 targetFunctionHash
+    ) internal view returns (bool) {
         if (block.timestamp > validFor) {
             return false;
         }
 
         // Recalculate the message hash
-        if (messageHash != hashMessage(validFor, signer)) {
+        if (messageHash != hashMessage(validFor, signer, nonce, targetFunctionHash)) {
             return false;
         }
 

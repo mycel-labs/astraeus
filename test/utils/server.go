@@ -208,6 +208,13 @@ func GetAccount(getAccountRequest *pb.GetAccountRequest) (*pb.GetAccountResponse
 	return getAccountResponse, resp, nil
 }
 
+func GetNonce(getNonceRequest *pb.GetNonceRequest) (*pb.GetNonceResponse, *http.Response, error) {
+	url := fmt.Sprintf("%s/v1/nonce/%s", HostURL, getNonceRequest.Address)
+	getNonceResponse := &pb.GetNonceResponse{}
+	resp := GetServer(url, getNonceResponse)
+	return getNonceResponse, resp, nil
+}
+
 func IsApproved(isApprovedRequest *pb.IsApprovedRequest) (*pb.IsApprovedResponse, *http.Response, error) {
 	url := fmt.Sprintf("%s/v1/accounts/%s/approved/%s", HostURL, isApprovedRequest.AccountId, isApprovedRequest.Address)
 	isApprovedResponse := &pb.IsApprovedResponse{}

@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
@@ -47,15 +49,14 @@ func setup(t *testing.T) {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
-
-  // Set PRIVATE_KEY environment variable for testing
+	// Set PRIVATE_KEY environment variable for testing
 	err = os.Setenv("PRIVATE_KEY", "91ab9a7e53c220e6210460b65a7a3bb2ca181412a8a7b43ff336b3df1737ce12")
 	if err != nil {
 		fmt.Println("Error setting environment variable:", err)
 	}
 
-  // Set RPC URL
-  err = os.Setenv("RPC_URL", "http://localhost:8545")
+	// Set RPC URL
+	err = os.Setenv("RPC_URL", "http://localhost:8545")
 	if err != nil {
 		fmt.Println("Error setting environment variable:", err)
 	}
@@ -89,7 +90,7 @@ func TestCreateAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup
-			timedSignature, err := testutil.GenerateTimedSignature(tc.validFor, privKey)
+			timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, uint64(tc.validFor), common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
@@ -144,10 +145,13 @@ func TestTransferAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Transfer account
-			transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
@@ -156,7 +160,7 @@ func TestTransferAccountE2E(t *testing.T) {
 					AccountId: accountId,
 					Proof:     transferSig,
 				},
-				To: tc.to,
+				Address: tc.to,
 			}
 			_, resp, err := testutil.TransferAccount(request)
 			if tc.expectValid && err != nil {
@@ -204,13 +208,19 @@ func TestDeleteAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Delete the account
-			deleteSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			deleteSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.DELETE_ACCOUNT_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
@@ -267,14 +277,16 @@ func TestUnlockAccountE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
-			unlockSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			unlockSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.UNLOCK_ACCOUNT_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-
 			unlockAccountRequest := &pb.UnlockAccountRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -330,14 +342,16 @@ func TestApproveAddressE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Approve the account
-			approveSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			approveSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.APPROVE_ADDRESS_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
-
 			approveAddressRequest := &pb.ApproveAddressRequest{
 				Base: &pb.AccountOperationRequest{
 					AccountId: accountId,
@@ -353,7 +367,7 @@ func TestApproveAddressE2E(t *testing.T) {
 
 			// Step 3: Check if the address is approved
 			if tc.expectValid {
-				transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+				transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
 				if err != nil {
 					t.Fatalf("Failed to generate timed signature: %v", err)
 				}
@@ -362,7 +376,7 @@ func TestApproveAddressE2E(t *testing.T) {
 						AccountId: accountId,
 						Proof:     transferSig,
 					},
-					To: tc.to.PublicKey.X.String(),
+					Address: tc.to.PublicKey.X.String(),
 				}
 				_, resp, err = testutil.TransferAccount(transferRequest)
 				if err != nil {
@@ -414,13 +428,19 @@ func TestRevokeApprovalE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Approve the account
-			testutil.ApproveAddressHelper(t, accountId, tc.creator, tc.to.PublicKey.X.String())
+			err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, tc.to.PublicKey.X.String())
+			if err != nil {
+				t.Fatalf("Failed to approve address: %v", err)
+			}
 
 			// Step 3: Revoke the approval
-			revokeSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			revokeSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.REVOKE_APPROVAL_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
@@ -439,7 +459,7 @@ func TestRevokeApprovalE2E(t *testing.T) {
 
 			// Step 4: Check if the address is revoked
 			if tc.expectValid {
-				transferSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.to)
+				transferSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.to, uint64(tc.validFor), common.HexToHash(impl.TRANSFER_ACCOUNT_FUNCTION_HASH))
 				if err != nil {
 					t.Fatalf("Failed to generate timed signature: %v", err)
 				}
@@ -448,7 +468,7 @@ func TestRevokeApprovalE2E(t *testing.T) {
 						AccountId: accountId,
 						Proof:     transferSig,
 					},
-					To: tc.to.PublicKey.X.String(),
+					Address: tc.to.PublicKey.X.String(),
 				}
 				_, resp, err = testutil.TransferAccount(transferRequest)
 				assert.Error(t, err)
@@ -496,13 +516,19 @@ func TestSignE2E(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Step 1: Create account
-			accountId := testutil.CreateAccountHelper(t, tc.creator)
+			accountId, err := testutil.CreateAccountHelper(t, taStoreContract, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to create account: %v", err)
+			}
 
 			// Step 2: Unlock the account
-			testutil.UnlockAccountHelper(t, accountId, tc.creator)
+			err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, tc.creator)
+			if err != nil {
+				t.Fatalf("Failed to unlock account: %v", err)
+			}
 
 			// Step 3: Sign the message
-			signSig, err := testutil.GenerateTimedSignature(tc.validFor, tc.sender)
+			signSig, err := testutil.NewPbTimedSignature(taStoreContract, tc.sender, uint64(tc.validFor), common.HexToHash(impl.SIGN_FUNCTION_HASH))
 			if err != nil {
 				t.Fatalf("Failed to generate timed signature: %v", err)
 			}
@@ -540,7 +566,11 @@ func TestGetAccountE2E(t *testing.T) {
 		{
 			name: "Valid account retrieval",
 			setupFunc: func() string {
-				return testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				return accountId
 			},
 			expectValid: true,
 		},
@@ -595,9 +625,15 @@ func TestIsApprovedE2E(t *testing.T) {
 		{
 			name: "Approved address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				bobAddress := bobPrivKey.PublicKey.X.String()
-				testutil.ApproveAddressHelper(t, accountId, alicePrivKey, bobAddress)
+				err = testutil.ApproveAddressHelper(t, taStoreContract, accountId, alicePrivKey, bobAddress)
+				if err != nil {
+					t.Fatalf("Failed to approve address: %v", err)
+				}
 				return accountId, bobAddress
 			},
 			expectValid: true,
@@ -605,7 +641,10 @@ func TestIsApprovedE2E(t *testing.T) {
 		{
 			name: "Non-approved address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, bobPrivKey.PublicKey.X.String()
 			},
 			expectValid: false,
@@ -647,7 +686,10 @@ func TestIsOwnerE2E(t *testing.T) {
 		{
 			name: "Account owner",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, crypto.PubkeyToAddress(alicePrivKey.PublicKey).Hex()
 			},
 			expectOwner: true,
@@ -655,7 +697,10 @@ func TestIsOwnerE2E(t *testing.T) {
 		{
 			name: "Non-owner address",
 			setupFunc: func() (string, string) {
-				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
 				return accountId, crypto.PubkeyToAddress(bobPrivKey.PublicKey).Hex()
 			},
 			expectOwner: false,
@@ -693,15 +738,25 @@ func TestIsAccountLockedE2E(t *testing.T) {
 		{
 			name: "Newly created account (locked)",
 			setupFunc: func() string {
-				return testutil.CreateAccountHelper(t, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				return accountId
 			},
 			expectLocked: true,
 		},
 		{
 			name: "Unlocked account",
 			setupFunc: func() string {
-				accountId := testutil.CreateAccountHelper(t, alicePrivKey)
-				testutil.UnlockAccountHelper(t, accountId, alicePrivKey)
+				accountId, err := testutil.CreateAccountHelper(t, taStoreContract, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to create account: %v", err)
+				}
+				err = testutil.UnlockAccountHelper(t, taStoreContract, accountId, alicePrivKey)
+				if err != nil {
+					t.Fatalf("Failed to unlock account: %v", err)
+				}
 				return accountId
 			},
 			expectLocked: false,

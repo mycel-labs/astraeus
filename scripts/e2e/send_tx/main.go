@@ -20,7 +20,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
+	"github.com/mycel-labs/astraeus/src/go/framework"
 	pb "github.com/mycel-labs/astraeus/src/go/pb/api/v1"
+	impl "github.com/mycel-labs/astraeus/src/go/server"
 	testutil "github.com/mycel-labs/astraeus/test/utils"
 )
 
@@ -78,7 +80,13 @@ func main() {
 		log.Fatalf("Failed to create private key: %v", err)
 	}
 
-	timedSignature, err := testutil.GenerateTimedSignature(time.Now().Unix()+86400, privKey)
+	fr := framework.New(framework.WithCustomConfig(string(privateKeyBytes), os.Getenv("RPC_URL")))
+	taStoreContract, err := fr.Suave.BindToExistingContract(common.HexToAddress(os.Getenv("TA_STORE_CONTRACT_ADDRESS")), testutil.TAStoreContractPath)
+	if err != nil {
+		log.Fatalf("Failed to bind to existing contract: %v", err)
+	}
+
+	timedSignature, err := testutil.NewPbTimedSignature(taStoreContract, privKey, uint64(time.Now().Unix()+86400), common.HexToHash(impl.CREATE_ACCOUNT_FUNCTION_HASH))
 	if err != nil {
 		log.Fatalf("Failed to generate timed signature: %v", err)
 	}
